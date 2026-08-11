@@ -1,6 +1,6 @@
 # 🏈 NFL Gridlock
 
-A daily NFL trivia puzzle game. Each puzzle shows five facts about a mystery player — one of them is a lie. Spot the lie, name the player, and score points.
+A daily NFL trivia puzzle game. Each puzzle shows five facts about a mystery player, however one of them is a lie. Spot the lie, name the player, and score points.
 
 ## How it works
 

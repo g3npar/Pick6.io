@@ -11,8 +11,8 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false          # set manually in Render dashboard
+        sync: false
       - key: ALLOWED_ORIGINS
-        sync: false          # set to your Vercel URL, e.g. https://nfl-gridlock.vercel.app
+        sync: false
       - key: API_PORT
-        value: 10000         # Render assigns PORT but we bind to API_PORT or PORT
+        value: 10000
