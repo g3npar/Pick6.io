@@ -2,9 +2,8 @@ services:
   - type: web
     name: nfl-gridlock-api
     runtime: node
-    rootDir: api
-    buildCommand: npm install
-    startCommand: node index.js
+    buildCommand: cd api && npm install
+    startCommand: node api/index.js
     plan: free
     healthCheckPath: /puzzle/today
     envVars:
