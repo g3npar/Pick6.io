@@ -140,9 +140,7 @@ function PositionRow({ position, selection, result, isLocked, onUpdate, onLock }
     rowExtra = ' row-filled'
   }
 
-  const searchPlaceholder = position.searchType === 'team'
-    ? 'Search team defense…'
-    : `Search ${position.fullName.toLowerCase()}…`
+  const searchPlaceholder = `Search ${position.fullName.toLowerCase()}…`
 
   return (
     <div
@@ -201,7 +199,7 @@ function PositionRow({ position, selection, result, isLocked, onUpdate, onLock }
 
           <div className="input-group search-group" ref={wrapRef}>
             <label className="input-label">
-              {position.searchType === 'team' ? 'Team Defense' : 'Player Name'}
+              Player Name
             </label>
             <div className="search-input-container">
               <span className="search-icon">⌕</span>

@@ -1,36 +1,34 @@
-function Header() {
-  const dateStr = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month:   'short',
-    day:     'numeric',
-    year:    'numeric',
-  }).format(new Date())
-
+function Header({ screen, onNav }) {
+  const links = [
+    { id: 'daily',       label: 'Daily' },
+    { id: 'archive',     label: 'Archive' },
+    { id: 'leaderboard', label: 'Leaderboard' },
+    { id: 'how-to-play', label: 'How to Play' },
+  ]
   return (
     <header className="header">
       <div className="header-inner">
 
         {/* Logo */}
-        <a className="logo" href="#">
+        <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <span className="logo-icon">🏈</span>
           <span className="logo-text">
-            GRIDIRON<span className="logo-accent"> PUZZLE</span>
+            NFL<span className="logo-accent"> GRIDLOCK</span>
           </span>
-        </a>
+        </button>
 
         {/* Nav */}
         <nav className="nav">
-          <a href="#" className="nav-link active">Daily</a>
-          <a href="#" className="nav-link">Archive</a>
-          <a href="#" className="nav-link">Leaderboard</a>
-          <a href="#" className="nav-link">How to Play</a>
+          {links.map(l => (
+            <button
+              key={l.id}
+              className={`nav-link${screen === l.id ? ' active' : ''}`}
+              onClick={() => onNav(l.id)}
+            >
+              {l.label}
+            </button>
+          ))}
         </nav>
-
-        {/* Right side */}
-        <div className="header-right">
-          <span className="header-date">{dateStr}</span>
-          <button className="header-icon-btn" title="Settings" aria-label="Settings">⚙</button>
-        </div>
 
       </div>
     </header>

@@ -1,0 +1,9 @@
+nfl-data-py
+nflreadpy
+polars
+psycopg2-binary
+python-dotenv
+pandas
+requests
+lxml
+beautifulsoup4

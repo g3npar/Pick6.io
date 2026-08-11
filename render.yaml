@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nfl-gridlock-api
+    runtime: node
+    rootDir: api
+    buildCommand: npm install
+    startCommand: node index.js
+    plan: free
+    healthCheckPath: /puzzle/today
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false          # set manually in Render dashboard
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to your Vercel URL, e.g. https://nfl-gridlock.vercel.app
+      - key: API_PORT
+        value: 10000         # Render assigns PORT but we bind to API_PORT or PORT

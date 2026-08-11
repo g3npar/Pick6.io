@@ -52,5 +52,5 @@ const TEAM_SLUG = {
  */
 export function teamLogo(teamName) {
   const slug = TEAM_SLUG[teamName]
-  return slug ? `/logos/${slug}.png` : null
+  return slug ? `/logos/nfl/${slug}.png` : null
 }
