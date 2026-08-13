@@ -219,14 +219,13 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   border-radius: 50%;
 }
 .circle-nav-btn:hover {
   border-color: var(--red);
   color: var(--red);
   background: rgba(255, 34, 68, 0.1);
-  box-shadow: 0 0 8px rgba(255, 34, 68, 0.2);
 }
 
 /* ── Pagination dots ─────────────────────────────────────────────── */
@@ -702,13 +701,12 @@ body {
   color: #fff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 12px rgba(255, 34, 68, 0.25);
-  transition: box-shadow 0.15s, transform 0.1s, background 0.15s;
+  transition: transform 0.1s, background 0.15s;
 }
-.submit-btn:not(:disabled):hover  { background: linear-gradient(135deg, #ff4466 0%, #e8142f 100%); box-shadow: 0 4px 18px rgba(255, 34, 68, 0.3); }
+.submit-btn:not(:disabled):hover  { background: linear-gradient(135deg, #ff4466 0%, #e8142f 100%); }
 .submit-btn:not(:disabled):active { transform: scale(0.98); }
-.submit-btn.submit-btn--green { background: linear-gradient(135deg, #00c47a 0%, #008a50 100%); box-shadow: 0 2px 12px rgba(0, 200, 120, 0.25); }
-.submit-btn.submit-btn--green:not(:disabled):hover { background: linear-gradient(135deg, #00e88c 0%, #00a85f 100%); box-shadow: 0 4px 18px rgba(0, 200, 120, 0.35); }
+.submit-btn.submit-btn--green { background: linear-gradient(135deg, #00c47a 0%, #008a50 100%); }
+.submit-btn.submit-btn--green:not(:disabled):hover { background: linear-gradient(135deg, #00e88c 0%, #00a85f 100%); }
 
 /* ── Custom player puzzle form ───────────────────────────────────── */
 .custom-player-form {

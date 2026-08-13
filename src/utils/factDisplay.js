@@ -6,10 +6,7 @@
  *   sublabel — optional context (e.g. "in 2012", null)
  */
 
-const amp = s => (s ? s.replace(/ and /g, ' & ') : s)
-
 export function parseFact(text) {
-  const t = text.replace(/ and /g, ' & ')
   let m
 
   // Pro Bowls
@@ -77,8 +74,6 @@ export function parseFact(text) {
   // Hall of Fame
   m = text.match(/Hall of Fame in the class of (\d{4})/)
   if (m) return { label: 'INDUCTED INTO', value: 'HALL OF FAME', sublabel: `in ${m[1]}` }
-
-  if (/Has not been inducted/.test(text)) return { label: 'HALL OF FAME', value: 'Not inducted', sublabel: null }
 
   // Named AP awards (OROY, DROY, OPOY, DPOY, CPOY)
   const awardMap = {

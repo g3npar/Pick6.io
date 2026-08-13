@@ -495,13 +495,29 @@ function buildFactPool(player, seasons, dbAwards) {
   ].filter(Boolean)
 }
 
+const STAT_CATS = new Set(['passing', 'rushing', 'receiving', 'rec_tds', 'sacks'])
+
 // ── Build one puzzle from raw DB data ─────────────────────────────────────────
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
   const pool = buildFactPool(player, seasons, awards)
   if (pool.length < 5) return null
 
-  const chosen = seededShuffle(pool, rng).slice(0, 5)
+  const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
+  const nonStatFacts = seededShuffle(pool.filter(f => !STAT_CATS.has(f.cat)), rng)
+
+  // At most 1 stat fact; fill remaining 4 slots from non-stat facts
+  const chosen = [
+    ...statFacts.slice(0, 1),
+    ...nonStatFacts,
+  ].slice(0, 5)
+
+  // Fall back to including more stat facts only if we can't reach 5 otherwise
+  if (chosen.length < 5) {
+    chosen.push(...statFacts.slice(1, 5 - chosen.length + 1))
+  }
+
+  if (chosen.length < 5) return null
   const lieIdx = Math.floor(rng() * 5)
   const lie    = chosen[lieIdx].makeLie(rng)
 
@@ -587,10 +603,10 @@ async function pickOneFromBucket(bucket, rng, seed, pid, attempted) {
 }
 
 async function getDailyPuzzles() {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
   if (_cache?.date === today) return _cache.puzzles
 
-  const daySeed = Math.floor((Date.now() - EPOCH) / 86400000)
+  const daySeed = Math.floor((new Date(today) - EPOCH) / 86400000)
   const rng     = seedRng(daySeed)
   const { era1, era2, era3 } = await fetchEligibleIds()
 
