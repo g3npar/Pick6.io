@@ -574,6 +574,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
     facts:            chosen.map((f, i) => ({ id: i + 1, text: i === lieIdx ? lie.text : f.text })),
     falseFactId:      lieIdx + 1,
     falseExplanation: lie.explanation,
+    trueText:         chosen[lieIdx].text,
   }
 }
 

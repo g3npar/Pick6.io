@@ -491,6 +491,26 @@ body {
   color: var(--text);
   margin-top: 1px;
 }
+.wl-sublabel--true { color: rgba(0,240,128,0.85); }
+
+/* Lie reveal: cross out the wrong value, show the true one beneath it */
+.wl-wrong-value {
+  position: relative;
+  opacity: 0.5;
+  transform: scale(0.8);
+}
+.wl-wrong-value::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 50%;
+  height: 2px;
+  background: #ef4444;
+  transform: rotate(-8deg);
+}
+.wl-true-value { margin-top: 2px; }
+.wl-true-value .wl-value { color: var(--green); }
 .wl-hovered .wl-sublabel,
 .wl-selected .wl-sublabel { color: rgba(255,255,255,0.5); }
 .wl-true  .wl-sublabel { color: rgba(0,240,128,0.6); }

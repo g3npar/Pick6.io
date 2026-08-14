@@ -33,6 +33,34 @@ function getWedgeCentroid(i) {
 const WEDGE_PATHS   = Array.from({ length: N_WEDGES }, (_, i) => getWedgePath(i))
 const WEDGE_CENTERS = Array.from({ length: N_WEDGES }, (_, i) => getWedgeCentroid(i))
 
+// Renders a parsed fact's value as logo(s) or text — shared by the normal
+// wedge display and the crossed-out/corrected display shown for a lie.
+function FactValue({ display }) {
+  if (display.isTeams) {
+    return (
+      <div className={`wl-logos${display.value.split(', ').length >= 3 ? ' wl-logos--sm' : ''}`}>
+        {display.value.split(', ').map(team => {
+          const src = teamLogo(team)
+          return src
+            ? <img key={team} src={src} alt={team} className="wl-logo" title={team} />
+            : <span key={team} className="wl-text wl-value">{team}</span>
+        })}
+      </div>
+    )
+  }
+  if (display.isCollege) {
+    const src = collegeLogo(display.value)
+    return (
+      <div className="wl-logos">
+        {src
+          ? <img src={src} alt={display.value} className="wl-logo wl-logo-college" title={display.value} />
+          : <p className="wl-text wl-value">{display.value}</p>}
+      </div>
+    )
+  }
+  return <p className="wl-text wl-value">{display.value}</p>
+}
+
 
 function GameBoard({
   puzzle, totalPuzzles,
@@ -257,6 +285,8 @@ function GameBoard({
           const isFalse        = fact.id === puzzle.falseFactId
           const isConfirmedTrue = confirmedTrueIds.includes(fact.id)
           const display        = parseFact(fact.text)
+          const isRevealedLie   = isFalse && (submitted || liePhaseComplete)
+          const trueDisplay     = isRevealedLie && puzzle.trueText ? parseFact(puzzle.trueText) : null
 
           let cls = 'wedge-label'
           if (submitted)            cls += isFalse ? ' wl-false' : ' wl-true'
@@ -272,28 +302,18 @@ function GameBoard({
               style={{ left: `${x.toFixed(1)}%`, top: `${y.toFixed(1)}%` }}
             >
               <span className="wl-num">{display.label}</span>
-              {display.isTeams ? (
-                <div className={`wl-logos${display.value.split(', ').length >= 3 ? ' wl-logos--sm' : ''}`}>
-                  {display.value.split(', ').map(team => {
-                    const src = teamLogo(team)
-                    return src
-                      ? <img key={team} src={src} alt={team} className="wl-logo" title={team} />
-                      : <span key={team} className="wl-text wl-value">{team}</span>
-                  })}
-                </div>
-              ) : display.isCollege ? (
-                <div className="wl-logos">
-                  {(() => {
-                    const src = collegeLogo(display.value)
-                    return src
-                      ? <img src={src} alt={display.value} className="wl-logo wl-logo-college" title={display.value} />
-                      : <p className="wl-text wl-value">{display.value}</p>
-                  })()}
-                </div>
+              {trueDisplay ? (
+                <>
+                  <div className="wl-wrong-value"><FactValue display={display} /></div>
+                  <div className="wl-true-value"><FactValue display={trueDisplay} /></div>
+                  {trueDisplay.sublabel && <span className="wl-sublabel wl-sublabel--true">{trueDisplay.sublabel}</span>}
+                </>
               ) : (
-                <p className="wl-text wl-value">{display.value}</p>
+                <>
+                  <FactValue display={display} />
+                  {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
+                </>
               )}
-              {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
               {!submitted && (isSelected || isHovered) && (
                 <span className="wl-tag">
                   {isSelected ? '\u2717 MARKED AS LIE' : 'MARK AS LIE?'}
