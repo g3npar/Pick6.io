@@ -147,7 +147,8 @@ function GameBoard({
     }
   }
 
-  const playerCorrect = submitted && selectedPlayer.trim().toLowerCase() === puzzle.playerName.toLowerCase()
+  const normName = s => String(s ?? '').trim().toLowerCase().replace(/[\u2018\u2019\u02BC\u2032\u0060\uFF07]/g, "'")
+  const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
   const lieCorrect    = submitted && selectedLieId === puzzle.falseFactId
   const canSubmit     = selectedLieId !== null && selectedPlayer.trim().length > 0 && !submitted
   const score         = submitted ? (playerCorrect ? 1 : 0) + (lieCorrect ? 1 : 0) : null
