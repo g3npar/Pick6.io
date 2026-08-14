@@ -441,12 +441,14 @@ AP_MVP_EXTRA = {2003: "Steve McNair", 1997: "Brett Favre"}
 print("\n── 8. AP MVP ──")
 cur.execute("UPDATE player_seasons SET ap_mvp = false")
 for season, name in {**AP_MVP, **AP_MVP_EXTRA}.items():
+    # Exact full-name match — a last-name substring match (the old behavior)
+    # would flag every player sharing that surname, not just the real winner.
     cur.execute("""
         UPDATE player_seasons ps SET ap_mvp = true
         FROM players p
         WHERE ps.player_id = p.id
           AND ps.season_year = %s AND p.name ILIKE %s
-    """, (season, f"%{name.split()[-1]}%"))
+    """, (season, name))
 conn.commit()
 print("  ap_mvp updated")
 
@@ -472,9 +474,14 @@ HEISMAN = {
 print("\n── 9. Heisman winners ──")
 count = 0
 for year, name in HEISMAN.items():
+    # Exact full-name match — a last-name substring match (the old behavior)
+    # stamped heisman_year onto every player sharing that surname (e.g. every
+    # "Williams" got 1998 from Ricky Williams), and its heisman_year IS NULL
+    # guard meant the true winner could get locked onto a false year by an
+    # earlier, wrongly-matching entry and never self-correct.
     cur.execute(
         "UPDATE players SET heisman_year = %s WHERE name ILIKE %s AND heisman_year IS NULL",
-        (year, f"%{name.split()[-1]}%")
+        (year, name)
     )
     count += cur.rowcount
 conn.commit()
@@ -539,8 +546,9 @@ try:
         if player_col and pd.notna(row.get(player_col)):
             db_id = id_map.get(str(row[player_col]))
         if not db_id and name_col and pd.notna(row.get(name_col)):
-            last = str(row[name_col]).split()[-1]
-            cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (f"%{last}%",))
+            # Exact full-name match — a last-name substring match would risk
+            # attributing this award to an unrelated same-surname player.
+            cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (str(row[name_col]),))
             r = cur.fetchone()
             if r:
                 db_id = r[0]
