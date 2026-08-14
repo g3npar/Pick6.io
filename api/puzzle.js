@@ -496,8 +496,9 @@ function buildFactPool(player, seasons, dbAwards, rng) {
   // CSV awards: Pro Bowl count, HOF, OPOY/DPOY/OROY/DROY/CPOY
   const csvAwards = lookupAwards(player.name)
 
-  const allPro  = seasons.filter(s => s.ap_allpro_first).length
-  // CSV Pro Bowl count is more reliable than the DB's pro_bowl column
+  // CSV counts are more reliable than the DB's ap_allpro_first/pro_bowl columns
+  const csvAllProCount = csvAwards.filter(a => a.award === 'ALL_PRO_FIRST').length
+  const allPro      = csvAllProCount || seasons.filter(s => s.ap_allpro_first).length
   const csvPBCount = csvAwards.filter(a => a.award === 'PRO_BOWL').length
   const proBowl    = csvPBCount || seasons.filter(s => s.pro_bowl).length
   const sbWins  = seasons.filter(s => s.super_bowl_winner).length
