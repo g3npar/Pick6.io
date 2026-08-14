@@ -324,7 +324,8 @@ function recTdFact(p, season) {
 function sacksFact(p, season) {
   // Only valid for defensive / pass-rush positions; the DB sacks column for
   // offensive players records times sacked, which is not a useful puzzle fact.
-  const defPositions = /^(DE|DT|LB|OLB|ILB|MLB|EDGE|NT|DL|LDE|RDE|LE|RE)$/i
+  // The DB also splits many of these into left/right variants (e.g. RDT, LILB).
+  const defPositions = /^(DE|DT|LB|OLB|ILB|MLB|EDGE|NT|DL|LDE|RDE|LDT|RDT|LLB|RLB|LILB|RILB|LOLB|ROLB|LE|RE)$/i
   if (!defPositions.test(p.position || '')) return null
   if (!season || !season.sacks || season.sacks < 5) return null
   return {
@@ -541,7 +542,7 @@ const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 're
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
   const pool = buildFactPool(player, seasons, awards, rng)
-  if (pool.length < 5) return null
+  if (pool.length < 6) return null
 
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
   const nonStatFacts = seededShuffle(pool.filter(f => !STAT_CATS.has(f.cat)), rng)
@@ -556,8 +557,8 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   if (chosen.length < 6) {
     chosen.push(...statFacts.slice(1, 6 - chosen.length + 1))
   }
-  // Accept 5 if we can't get 6
-  if (chosen.length < 5) return null
+  // Every wedge on the wheel needs a fact — never hand back a partial puzzle
+  if (chosen.length < 6) return null
 
   const lieIdx = Math.floor(rng() * chosen.length)
   const lie    = chosen[lieIdx].makeLie(rng)
@@ -589,11 +590,14 @@ async function fetchEligibleIds() {
 
   const era1 = [], era2 = [], era3 = []
   for (const r of res.rows) {
-    const proBowls = lookupAwards(r.name).filter(a => a.award === 'PRO_BOWL' && a.year > 0)
-    if (proBowls.length < 1) continue
+    // awards.csv no longer carries PRO_BOWL rows (scrape_awards.py sources Pro
+    // Bowl from the DB's pro_bowl column instead, which is unpopulated) — use
+    // All-Pro selections to place a player in an era instead.
+    const allPros = lookupAwards(r.name).filter(a => a.award === 'ALL_PRO_FIRST' && a.year > 0)
+    if (allPros.length < 1) continue
 
-    // Use median Pro Bowl year to determine era — works even without historical DB seasons
-    const years = proBowls.map(a => a.year).sort((a, b) => a - b)
+    // Use median All-Pro year to determine era — works even without historical DB seasons
+    const years = allPros.map(a => a.year).sort((a, b) => a - b)
     const median = years[Math.floor(years.length / 2)]
 
     if (median <= 1995)      era1.push(r.id)
