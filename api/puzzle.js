@@ -1,6 +1,4 @@
 'use strict'
-// api/puzzle.js — daily puzzle generation from the DB
-// ─────────────────────────────────────────────────────────────────────────────
 const { Pool } = require('pg')
 const fs   = require('fs')
 const path = require('path')
@@ -255,6 +253,23 @@ function passingFact(p, season) {
   }
 }
 
+function passingTdsFact(p, season) {
+  if (!season || !season.passing_tds || season.passing_tds < 20) return null
+  return {
+    cat: 'passing_tds',
+    text: `Threw ${season.passing_tds} touchdown passes in the ${season.season_year} season`,
+    makeLie(rng) {
+      const delta = 3 + Math.floor(rng() * 7)
+      const sign  = rng() < 0.5 ? 1 : -1
+      const fake  = Math.max(1, season.passing_tds + sign * delta)
+      return {
+        text: `Threw ${fake} touchdown passes in the ${season.season_year} season`,
+        explanation: `${p.name} threw ${season.passing_tds} touchdown passes that season, not ${fake}.`,
+      }
+    },
+  }
+}
+
 function rushingFact(p, season) {
   if (!season || !season.rush_yards || season.rush_yards < 500) return null
   return {
@@ -327,6 +342,25 @@ function sacksFact(p, season) {
   }
 }
 
+function intsFact(p, season) {
+  const dbPositions = /^(CB|S|SS|FS|DB|SAF|LCB|RCB)$/i
+  if (!dbPositions.test(p.position || '')) return null
+  if (!season || !season.def_ints || season.def_ints < 3) return null
+  return {
+    cat: 'def_ints',
+    text: `Recorded ${season.def_ints} interceptions in the ${season.season_year} season`,
+    makeLie(rng) {
+      const delta = 1 + Math.floor(rng() * 3)
+      const sign  = rng() < 0.5 ? 1 : -1
+      const fake  = Math.max(1, season.def_ints + sign * delta)
+      return {
+        text: `Recorded ${fake} interceptions in the ${season.season_year} season`,
+        explanation: `${p.name} recorded ${season.def_ints} interceptions that season, not ${fake}.`,
+      }
+    },
+  }
+}
+
 function heismanFact(p) {
   if (!p.heisman_year) return null
   return {
@@ -371,7 +405,6 @@ function playedForFact(p, seasons) {
     cat: 'played_for',
     text: `Played for the ${teamStr} during their career`,
     makeLie(rng) {
-      // Replace one team with a random wrong team
       const allTeams = Object.values(TEAM_FULL).filter(t => !names.includes(t))
       const fakeTeam = allTeams[Math.floor(rng() * allTeams.length)]
       const fakeNames = names.length > 1
@@ -469,11 +502,13 @@ function buildFactPool(player, seasons, dbAwards) {
   const mvpYrs  = seasons.filter(s => s.ap_mvp).map(s => s.season_year)
 
   // Best single-season performances per category
-  const bestPass = [...seasons].filter(s => s.passing_yards  > 0).sort((a, b) => b.passing_yards  - a.passing_yards)[0]
-  const bestRush = [...seasons].filter(s => s.rush_yards     > 0).sort((a, b) => b.rush_yards     - a.rush_yards)[0]
+  const bestPass    = [...seasons].filter(s => s.passing_yards  > 0).sort((a, b) => b.passing_yards  - a.passing_yards)[0]
+  const bestPassTds = [...seasons].filter(s => s.passing_tds > 0).sort((a, b) => b.passing_tds - a.passing_tds)[0]
+  const bestRush    = [...seasons].filter(s => s.rush_yards     > 0).sort((a, b) => b.rush_yards     - a.rush_yards)[0]
   const bestRec  = [...seasons].filter(s => s.receiving_yards > 0).sort((a, b) => b.receiving_yards - a.receiving_yards)[0]
   const bestRTd  = [...seasons].filter(s => s.rec_tds        > 0).sort((a, b) => b.rec_tds        - a.rec_tds)[0]
   const bestSack = [...seasons].filter(s => s.sacks          > 0).sort((a, b) => b.sacks          - a.sacks)[0]
+  const bestInts = [...seasons].filter(s => s.def_ints       > 0).sort((a, b) => b.def_ints       - a.def_ints)[0]
 
   return [
     collegeFact(player),
@@ -483,19 +518,21 @@ function buildFactPool(player, seasons, dbAwards) {
     superBowlFact(player, sbWins),
     mvpYrs.length ? mvpFact(player, mvpYrs)       : null,
     passingFact(player, bestPass),
+    passingTdsFact(player, bestPassTds),
     rushingFact(player, bestRush),
     receivingFact(player, bestRec),
     recTdFact(player, bestRTd),
     sacksFact(player, bestSack),
+    intsFact(player, bestInts),
     heismanFact(player),
-    hofFact(player, csvAwards),           // Hall of Fame (CSV)
-    csvAwardFact(player, csvAwards),      // OPOY/DPOY/OROY/DROY/CPOY (CSV)
-    playedForFact(player, seasons),       // Teams played for
+    hofFact(player, csvAwards),
+    csvAwardFact(player, csvAwards),
+    playedForFact(player, seasons),
     ...dbAwards.map(a => awardFact(player, a)),
   ].filter(Boolean)
 }
 
-const STAT_CATS = new Set(['passing', 'rushing', 'receiving', 'rec_tds', 'sacks'])
+const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 'rec_tds', 'sacks', 'def_ints'])
 
 // ── Build one puzzle from raw DB data ─────────────────────────────────────────
 function buildPuzzle(id, player, seasons, awards, seed) {
@@ -537,7 +574,6 @@ function buildPuzzle(id, player, seasons, awards, seed) {
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
 async function fetchEligibleIds() {
-  // Fetch all players with at least 3 seasons in the DB
   const res = await pool.query(`
     SELECT p.id, p.name
     FROM players p

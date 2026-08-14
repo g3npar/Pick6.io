@@ -30,7 +30,6 @@ cur  = conn.cursor()
 # ════════════════════════════════════════════════════════════════════════════════
 print("── 1. Schema migration ──")
 for stmt in [
-    # players
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS college      TEXT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS draft_year   SMALLINT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS draft_round  SMALLINT",
@@ -38,6 +37,7 @@ for stmt in [
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS heisman_year SMALLINT",
     # player_seasons (existing cols are harmless to retry)
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS sacks             SMALLINT",
+    "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS def_ints          SMALLINT",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS super_bowl_winner BOOLEAN DEFAULT FALSE",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS ap_mvp            BOOLEAN DEFAULT FALSE",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS ap_allpro_first   BOOLEAN DEFAULT FALSE",
@@ -307,7 +307,7 @@ conn.commit()
 def_season_agg = (
     pfr_def_known
     .groupby(['gsis_id', 'season'])
-    .agg(tm=('tm', 'last'), sk=('sk', 'sum'))
+    .agg(tm=('tm', 'last'), sk=('sk', 'sum'), int_=('int', 'sum'))
     .reset_index()
 )
 def_season_rows = []
@@ -318,19 +318,22 @@ for _, row in def_season_agg.iterrows():
     def_season_rows.append((
         db_id, str(row['tm']) if pd.notna(row.get('tm')) else None, int(row['season']),
         0.0, None, None,
-        int(row['sk']) if pd.notna(row.get('sk')) else None,
+        int(row['sk'])   if pd.notna(row.get('sk'))   else None,
         None, None, None, None, False,
+        int(row['int_']) if pd.notna(row.get('int_')) else None,
     ))
 
 execute_values(cur, """
     INSERT INTO player_seasons
       (player_id, team, season_year, fpts,
        rush_yards, rec_tds, sacks,
-       passing_yards, passing_tds, passing_ints, receiving_yards, pro_bowl)
+       passing_yards, passing_tds, passing_ints, receiving_yards, pro_bowl,
+       def_ints)
     VALUES %s
     ON CONFLICT (player_id, season_year) DO UPDATE
-      SET team  = EXCLUDED.team,
-          sacks = EXCLUDED.sacks
+      SET team     = EXCLUDED.team,
+          sacks    = EXCLUDED.sacks,
+          def_ints = EXCLUDED.def_ints
 """, def_season_rows)
 conn.commit()
 print(f"  {len(def_season_rows)} defensive season rows upserted")
@@ -339,17 +342,26 @@ print(f"  {len(def_season_rows)} defensive season rows upserted")
 # 7 — Super Bowl winners
 # ════════════════════════════════════════════════════════════════════════════════
 print("\n── 7. Super Bowl winners ──")
-schedules  = nfl.import_schedules(list(range(1980, 2025)))
+# Pre-1999 winners hardcoded (import_schedules only supports 1999+)
+SB_WINNERS_PRE1999 = {
+    1980: 'OAK', 1981: 'SF',  1982: 'WAS', 1983: 'RAI', 1984: 'SF',
+    1985: 'CHI', 1986: 'NYG', 1987: 'WAS', 1988: 'SF',  1989: 'SF',
+    1990: 'NYG', 1991: 'WAS', 1992: 'DAL', 1993: 'DAL', 1994: 'SF',
+    1995: 'DAL', 1996: 'GB',  1997: 'DEN', 1998: 'DEN',
+}
+schedules  = nfl.import_schedules(list(range(1999, 2025)))
 sb_games   = schedules[schedules["game_type"] == "SB"][
     ["season", "home_team", "away_team", "home_score", "away_score"]
 ]
-sb_winners = {}
+sb_winners = dict(SB_WINNERS_PRE1999)
 for _, g in sb_games.iterrows():
     winner = g["home_team"] if g["home_score"] > g["away_score"] else g["away_team"]
     sb_winners[int(g["season"])] = winner
 print(f"  {len(sb_winners)} SB seasons found")
 
 cur.execute("UPDATE player_seasons SET super_bowl_winner = false")
+
+# Pass 1 — team-column match (works for all players with a team value)
 for season, team in sb_winners.items():
     cur.execute("""
         UPDATE player_seasons ps SET super_bowl_winner = true
@@ -357,6 +369,48 @@ for season, team in sb_winners.items():
         WHERE ps.player_id = p.id
           AND ps.season_year = %s AND ps.team = %s
     """, (season, team))
+
+# Pass 2 — roster-based match for 1999+ (catches defenders/ST with NULL team)
+roster_years = sorted(yr for yr in sb_winners if yr >= 1999)
+if roster_years:
+    print(f"  Loading seasonal rosters for {len(roster_years)} SB seasons (1999+)…")
+    rosters = nfl.import_seasonal_rosters(roster_years)
+    for yr in roster_years:
+        team = sb_winners[yr]
+        gsis_ids = (
+            rosters[(rosters['season'] == yr) & (rosters['team'] == team)]['player_id']
+            .dropna().tolist()
+        )
+        if not gsis_ids:
+            continue
+        cur.execute("SELECT id FROM players WHERE nfl_id = ANY(%s)", (gsis_ids,))
+        db_ids = [r[0] for r in cur.fetchall()]
+        if db_ids:
+            cur.execute("""
+                UPDATE player_seasons SET super_bowl_winner = true
+                WHERE player_id = ANY(%s) AND season_year = %s
+            """, (db_ids, yr))
+
+# Pass 3 — manual overrides for pre-1999 defenders / known gaps
+# Upserts a season row if missing, then sets the flag.
+SB_PLAYER_OVERRIDES = [
+    # (player_name, season_year, team)
+    ("Deion Sanders", 1994, "SF"),   # SF 49ers, SB XXIX
+    ("Deion Sanders", 1995, "DAL"),  # DAL Cowboys, SB XXX
+]
+for name, yr, team in SB_PLAYER_OVERRIDES:
+    cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (name,))
+    row = cur.fetchone()
+    if not row:
+        continue
+    cur.execute("""
+        INSERT INTO player_seasons (player_id, team, season_year, fpts, super_bowl_winner)
+        VALUES (%s, %s, %s, 0, true)
+        ON CONFLICT (player_id, season_year) DO UPDATE
+          SET super_bowl_winner = true,
+              team = COALESCE(player_seasons.team, EXCLUDED.team)
+    """, (row[0], team, yr))
+
 conn.commit()
 print("  super_bowl_winner updated")
 
@@ -395,7 +449,6 @@ for season, name in {**AP_MVP, **AP_MVP_EXTRA}.items():
 conn.commit()
 print("  ap_mvp updated")
 
-# ════════════════════════════════════════════════════════════════════════════════
 # ════════════════════════════════════════════════════════════════════════════════
 # 9 — Heisman winners
 # ════════════════════════════════════════════════════════════════════════════════
@@ -481,7 +534,6 @@ try:
         if not season:
             continue
 
-        # Resolve player db id
         db_id = None
         if player_col and pd.notna(row.get(player_col)):
             db_id = id_map.get(str(row[player_col]))
