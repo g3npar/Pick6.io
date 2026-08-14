@@ -130,7 +130,7 @@ app.get('/players/search', async (req, res) => {
   // Reject overly long or suspicious input
   if (raw.length < 2 || raw.length > 60) return res.json([])
 
-  const q = raw.toLowerCase().replace(/[^a-z0-9 .'\-]/g, '')
+  const q = raw.toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
   if (!q) return res.json([])
 
   try {
@@ -139,8 +139,9 @@ app.get('/players/search', async (req, res) => {
     return res.status(503).json({ error: 'Player data unavailable' })
   }
 
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
   const results = players
-    .filter(p => p.name.toLowerCase().includes(q))
+    .filter(p => norm(p.name).includes(q))
     .slice(0, 10)
 
   res.json(results)

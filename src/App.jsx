@@ -26,7 +26,7 @@ function preloadLogos(puzzles) {
 }
 
 // Normalize curly/smart apostrophes to straight apostrophe for comparison
-const normName = s => String(s ?? '').trim().toLowerCase().replace(/[\u2018\u2019\u02BC]/g, "'")
+const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
 
 function App() {
   const [screen,       setScreen]       = useState('daily')

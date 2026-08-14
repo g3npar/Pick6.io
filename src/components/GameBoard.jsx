@@ -147,7 +147,7 @@ function GameBoard({
     }
   }
 
-  const normName = s => String(s ?? '').trim().toLowerCase().replace(/[\u2018\u2019\u02BC\u2032\u0060\uFF07]/g, "'")
+  const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
   const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
   const lieCorrect    = submitted && selectedLieId === puzzle.falseFactId
   const canSubmit     = selectedLieId !== null && selectedPlayer.trim().length > 0 && !submitted
