@@ -79,17 +79,15 @@ function GameBoard({
 
   useEffect(() => {
     const handler = e => {
-      if (e.key === 'ArrowLeft')  { onPrev(); return }
-      if (e.key === 'ArrowRight') { onNext(); return }
       const tag = document.activeElement?.tagName
       const alreadyTyping = tag === 'INPUT' || tag === 'TEXTAREA'
-      if (!submitted && !alreadyTyping && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        inputRef.current?.focus()
+      if (!submitted && !liePhaseComplete && !alreadyTyping && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // no-op: search box is hidden during lie phase
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [onPrev, onNext, submitted])
+  }, [submitted, liePhaseComplete])
 
   useEffect(() => {
     const handler = e => {
