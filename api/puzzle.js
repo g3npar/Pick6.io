@@ -684,19 +684,19 @@ async function fetchCurrentPlayerIds() {
     .map(r => r.id)
 }
 
-async function getDailyCurrentPuzzle() {
+async function getDailyCurrentPuzzle(fresh = false) {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
-  if (_currentCache?.date === today) return _currentCache.puzzle
+  if (!fresh && _currentCache?.date === today) return _currentCache.puzzle
 
-  const daySeed   = Math.floor((new Date(today) - EPOCH) / 86400000) + 9999
+  const seed      = fresh ? Date.now() : Math.floor((new Date(today) - EPOCH) / 86400000) + 9999
   const ids       = await fetchCurrentPlayerIds()
   if (!ids.length) throw new Error('No current eligible players found')
 
   const attempted = new Set()
-  const puzzle    = await pickOneFromBucket(ids, seedRng(daySeed), daySeed, 1, attempted)
+  const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted)
   if (!puzzle) throw new Error('Could not build current player puzzle')
 
-  _currentCache = { date: today, puzzle }
+  if (!fresh) _currentCache = { date: today, puzzle }
   return puzzle
 }
 

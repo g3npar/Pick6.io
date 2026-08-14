@@ -25,6 +25,9 @@ function preloadLogos(puzzles) {
   urls.forEach(url => { const img = new Image(); img.src = url })
 }
 
+// Normalize curly/smart apostrophes to straight apostrophe for comparison
+const normName = s => String(s ?? '').trim().toLowerCase().replace(/[\u2018\u2019\u02BC]/g, "'")
+
 function App() {
   const [screen,       setScreen]       = useState('daily')
   const [mode,         setMode]         = useState('classic') // 'classic' | 'current'
@@ -101,7 +104,7 @@ function App() {
     const s = puzzleStates[i]
     if (!s?.submitted) return null
     return {
-      playerCorrect: (s.player ?? '').trim().toLowerCase() === puzzles[i].playerName.toLowerCase(),
+      playerCorrect: normName(s.player) === normName(puzzles[i].playerName),
       lieCorrect:    s.lieId === puzzles[i].falseFactId,
     }
   })
@@ -127,6 +130,15 @@ function App() {
       })
       .then(p => { setPuzzles([p]); setPuzzleStates({}); setPuzzleIndex(0); preloadLogos([p]) })
       .catch(err => alert(`Could not build puzzle: ${err.message}`))
+      .finally(() => setGenerating(false))
+  }
+
+  const handleGenerateCurrent = () => {
+    setGenerating(true)
+    fetch(`${API}/puzzle/today/current?fresh=${Date.now()}`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPuzzleIndex(0); preloadLogos([p]) })
+      .catch(() => {})
       .finally(() => setGenerating(false))
   }
 
@@ -169,7 +181,7 @@ function App() {
           onNext={() => navigate(puzzleIndex + 1)}
           onPrev={() => navigate(puzzleIndex - 1)}
           onGoTo={setPuzzleIndex}
-          onGenerate={mode === 'classic' ? handleGenerate : null}
+          onGenerate={mode === 'classic' ? handleGenerate : handleGenerateCurrent}
           onPlayerPuzzle={mode === 'classic' ? handlePlayerPuzzle : null}
           generating={generating}
           currentScore={currentScore}

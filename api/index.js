@@ -158,9 +158,10 @@ app.get('/puzzle/today', async (req, res) => {
 })
 
 // ── GET /puzzle/today/current ─────────────────────────────────────────────────
-app.get('/puzzle/today/current', async (req, res) => {
+app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
   try {
-    const puzzle = await getDailyCurrentPuzzle()
+    const fresh  = req.query.fresh !== undefined
+    const puzzle = await getDailyCurrentPuzzle(fresh)
     res.json(puzzle)
   } catch (err) {
     console.error('Current puzzle failed:', err.message)
