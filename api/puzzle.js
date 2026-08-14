@@ -683,7 +683,11 @@ async function fetchCurrentPlayerIds() {
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
   return res.rows
-    .filter(r => lookupAwards(r.name).some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021))
+    .filter(r => {
+      const awards = lookupAwards(r.name)
+      return awards.some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021)
+          || awards.some(a => a.award === 'PRO_BOWL')
+    })
     .map(r => r.id)
 }
 

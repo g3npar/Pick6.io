@@ -222,7 +222,7 @@ function GameBoard({
               fill = isFalse ? 'rgba(255,34,68,0.35)' : 'rgba(0,240,128,0.18)'
             } else if (isConfirmedTrue) {
               fill = 'rgba(0,240,128,0.18)'
-            } else if (lieFound && isFalse) {
+            } else if (liePhaseComplete && isFalse) {
               fill = 'rgba(255,34,68,0.35)'
             } else if (isSelected) {
               fill = 'rgba(255,34,68,0.28)'
@@ -230,7 +230,7 @@ function GameBoard({
               fill = '#20263e'
             }
 
-            const isInteractive = !liePhaseComplete && !isConfirmedTrue && !(lieFound && isFalse)
+            const isInteractive = !liePhaseComplete && !isConfirmedTrue && !isFalse
             return (
               <path
                 key={fact.id}
@@ -261,7 +261,7 @@ function GameBoard({
           let cls = 'wedge-label'
           if (submitted)            cls += isFalse ? ' wl-false' : ' wl-true'
           else if (isConfirmedTrue) cls += ' wl-true'
-          else if (lieFound && isFalse) cls += ' wl-false'
+          else if (liePhaseComplete && isFalse) cls += ' wl-false'
           else if (isSelected)      cls += ' wl-selected'
           else if (isHovered)       cls += ' wl-hovered'
 
@@ -300,7 +300,7 @@ function GameBoard({
                 </span>
               )}
               {/* Show verdict during gameplay for confirmed/found facts */}
-              {(submitted || isConfirmedTrue || (lieFound && isFalse)) && (
+              {(submitted || isConfirmedTrue || (liePhaseComplete && isFalse)) && (
                 <span className={`wl-verdict ${isFalse ? 'wlv-false' : 'wlv-true'}`}>
                   {isFalse ? '\u2717 LIE' : '\u2713 TRUE'}
                 </span>
