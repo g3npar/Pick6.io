@@ -143,9 +143,34 @@ body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   PUZZLE GAME
-   ════════════════════════════════════════════════════════════════ */
+/* ── Mode toggle ─────────────────────────────────────────────────── */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 4px;
+}
+.mode-btn {
+  padding: 7px 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-bright);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.mode-btn:first-child { border-right: none; }
+.mode-btn:hover { color: var(--text); border-color: var(--text-sec); }
+.mode-btn--active {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+/* ── Puzzle game ─────────────────────────────────────────────────────────────── */
 .puzzle-game {
   display: flex;
   flex-direction: column;

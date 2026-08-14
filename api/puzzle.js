@@ -394,18 +394,20 @@ const TEAM_FULL = {
   WAS:'Washington Commanders', WSH:'Washington Commanders',
 }
 
-function playedForFact(p, seasons) {
-  const MULTI_TEAM = /^\d+TM$/   // filters out "2TM", "3TM" etc.
+function playedForFact(p, seasons, rng) {
+  const MULTI_TEAM = /^\d+TM$/
   const abbrs = [...new Set(seasons.map(s => s.team).filter(a => a && !MULTI_TEAM.test(a)))]
   if (!abbrs.length) return null
-  const names = [...new Set(abbrs.map(a => TEAM_FULL[a] || a).filter(Boolean))].slice(0, 3)
-  if (!names.length) return null
+  const allNames = [...new Set(abbrs.map(a => TEAM_FULL[a] || a).filter(Boolean))]
+  if (!allNames.length) return null
+  const count = 1 + Math.floor(rng() * Math.min(3, allNames.length))
+  const names = allNames.slice(0, count)
   const teamStr = names.join(', ')
   return {
     cat: 'played_for',
     text: `Played for the ${teamStr} during their career`,
     makeLie(rng) {
-      const allTeams = Object.values(TEAM_FULL).filter(t => !names.includes(t))
+      const allTeams = Object.values(TEAM_FULL).filter(t => !allNames.includes(t))
       const fakeTeam = allTeams[Math.floor(rng() * allTeams.length)]
       const fakeNames = names.length > 1
         ? [...names.slice(0, -1), fakeTeam]
@@ -490,7 +492,7 @@ function csvAwardFact(p, csvAwards) {
 }
 
 // ── Assemble the fact pool for a player ──────────────────────────────────────
-function buildFactPool(player, seasons, dbAwards) {
+function buildFactPool(player, seasons, dbAwards, rng) {
   // CSV awards: Pro Bowl count, HOF, OPOY/DPOY/OROY/DROY/CPOY
   const csvAwards = lookupAwards(player.name)
 
@@ -527,7 +529,7 @@ function buildFactPool(player, seasons, dbAwards) {
     heismanFact(player),
     hofFact(player, csvAwards),
     csvAwardFact(player, csvAwards),
-    playedForFact(player, seasons),
+    playedForFact(player, seasons, rng),
     ...dbAwards.map(a => awardFact(player, a)),
   ].filter(Boolean)
 }
@@ -537,7 +539,7 @@ const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 're
 // ── Build one puzzle from raw DB data ─────────────────────────────────────────
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
-  const pool = buildFactPool(player, seasons, awards)
+  const pool = buildFactPool(player, seasons, awards, rng)
   if (pool.length < 5) return null
 
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
@@ -664,8 +666,41 @@ async function getDailyPuzzles() {
   return puzzles
 }
 
-async function generateFreshPuzzles() {
-  const seed = Date.now()
+// ── Current-player daily (single puzzle, active roster) ───────────────────────
+let _currentCache = null  // { date: 'YYYY-MM-DD', puzzle: {...} }
+
+async function fetchCurrentPlayerIds() {
+  const res = await pool.query(`
+    SELECT p.id, p.name
+    FROM players p
+    JOIN player_seasons ps ON ps.player_id = p.id
+    WHERE ps.season_year >= 2023
+    GROUP BY p.id
+    HAVING COUNT(ps.id) >= 1
+    ORDER BY p.id
+  `)
+  return res.rows
+    .filter(r => lookupAwards(r.name).filter(a => a.award === 'PRO_BOWL' && a.year >= 2020).length >= 1)
+    .map(r => r.id)
+}
+
+async function getDailyCurrentPuzzle() {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+  if (_currentCache?.date === today) return _currentCache.puzzle
+
+  const daySeed   = Math.floor((new Date(today) - EPOCH) / 86400000) + 9999
+  const ids       = await fetchCurrentPlayerIds()
+  if (!ids.length) throw new Error('No current eligible players found')
+
+  const attempted = new Set()
+  const puzzle    = await pickOneFromBucket(ids, seedRng(daySeed), daySeed, 1, attempted)
+  if (!puzzle) throw new Error('Could not build current player puzzle')
+
+  _currentCache = { date: today, puzzle }
+  return puzzle
+}
+
+async function generateFreshPuzzles() {  const seed = Date.now()
   const { era1, era2, era3 } = await fetchEligibleIds()
 
   if (era1.length < 1 || era2.length < 1 || era3.length < 1) {
@@ -685,4 +720,4 @@ async function generateFreshPuzzles() {
   return puzzles
 }
 
-module.exports = { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle }
+module.exports = { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle }

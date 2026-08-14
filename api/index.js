@@ -4,7 +4,7 @@ const cors         = require('cors')
 const helmet       = require('helmet')
 const rateLimit    = require('express-rate-limit')
 const https        = require('https')
-const { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle } = require('./puzzle')
+const { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle } = require('./puzzle')
 
 const app = express()
 
@@ -154,6 +154,17 @@ app.get('/puzzle/today', async (req, res) => {
   } catch (err) {
     console.error('Puzzle generation failed:', err.message)
     res.status(500).json({ error: 'Could not generate puzzles' })
+  }
+})
+
+// ── GET /puzzle/today/current ─────────────────────────────────────────────────
+app.get('/puzzle/today/current', async (req, res) => {
+  try {
+    const puzzle = await getDailyCurrentPuzzle()
+    res.json(puzzle)
+  } catch (err) {
+    console.error('Current puzzle failed:', err.message)
+    res.status(500).json({ error: 'Could not generate current puzzle' })
   }
 })
 

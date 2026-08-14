@@ -27,19 +27,30 @@ function preloadLogos(puzzles) {
 
 function App() {
   const [screen,       setScreen]       = useState('daily')
+  const [mode,         setMode]         = useState('classic') // 'classic' | 'current'
   const [puzzles,      setPuzzles]      = useState(null)
   const [generating,   setGenerating]   = useState(false)
   const [puzzleIndex,  setPuzzleIndex]  = useState(0)
   const [puzzleStates, setPuzzleStates] = useState({})
 
+  // Load puzzles whenever mode changes or on mount
   useEffect(() => {
-    fetch(`${API}/puzzle/today`)
+    if (screen !== 'daily') return
+    setPuzzles(null)
+    setPuzzleStates({})
+    setPuzzleIndex(0)
+    const url = mode === 'current' ? `${API}/puzzle/today/current` : `${API}/puzzle/today`
+    fetch(url)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { setPuzzles(p); preloadLogos(p) })
+      .then(p => {
+        const arr = Array.isArray(p) ? p : [p]
+        setPuzzles(arr); preloadLogos(arr)
+      })
       .catch(err => console.error('Failed to load puzzles:', err))
-  }, [])
+  }, [mode, screen])
 
   const handleGenerate = () => {
+    if (mode === 'current') return  // no random gen for current mode
     setGenerating(true)
     fetch(`${API}/puzzle/generate`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
@@ -129,6 +140,18 @@ function App() {
         {screen === 'archive'     && <ComingSoon title="Archive" />}
         {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
         {screen === 'daily'       && (
+          <>
+            {/* Mode toggle */}
+            <div className="mode-toggle">
+              <button
+                className={`mode-btn${mode === 'classic' ? ' mode-btn--active' : ''}`}
+                onClick={() => setMode('classic')}
+              >3 Eras</button>
+              <button
+                className={`mode-btn${mode === 'current' ? ' mode-btn--active' : ''}`}
+                onClick={() => setMode('current')}
+              >Experimental</button>
+            </div>
         <GameBoard
           puzzle={puzzle}
           puzzleNumber={puzzleIndex + 1}
@@ -146,11 +169,12 @@ function App() {
           onNext={() => navigate(puzzleIndex + 1)}
           onPrev={() => navigate(puzzleIndex - 1)}
           onGoTo={setPuzzleIndex}
-          onGenerate={handleGenerate}
-          onPlayerPuzzle={handlePlayerPuzzle}
+          onGenerate={mode === 'classic' ? handleGenerate : null}
+          onPlayerPuzzle={mode === 'classic' ? handlePlayerPuzzle : null}
           generating={generating}
           currentScore={currentScore}
         />
+          </>
         )}
       </main>
     </div>
