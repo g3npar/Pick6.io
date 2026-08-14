@@ -85,14 +85,12 @@ function App() {
       updateCurrent({ lieFound: true })
     } else {
       const newAttempts = lieAttempts + 1
-      // Reveal one unconfirmed true fact (not the actual lie, not already confirmed, not the bad guess)
-      const candidates = puzzle.facts.filter(
-        f => f.id !== puzzle.falseFactId && !confirmedTrueIds.includes(f.id) && f.id !== selectedLieId
-      )
-      const toReveal = candidates[lieAttempts % Math.max(1, candidates.length)]
+      // Reveal the wedge the player actually guessed as true (they were wrong to call it a lie)
       updateCurrent({
         lieAttempts: newAttempts,
-        confirmedTrueIds: toReveal ? [...confirmedTrueIds, toReveal.id] : confirmedTrueIds,
+        confirmedTrueIds: confirmedTrueIds.includes(selectedLieId)
+          ? confirmedTrueIds
+          : [...confirmedTrueIds, selectedLieId],
         lieId: null,
       })
     }
