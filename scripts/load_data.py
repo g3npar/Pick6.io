@@ -371,7 +371,10 @@ for season, team in sb_winners.items():
           AND ps.season_year = %s AND ps.team = %s
     """, (season, team))
 
-# Pass 2 — roster-based match for 1999+ (catches defenders/ST with NULL team)
+# Pass 2 — roster-based match for 1999+ (catches defenders/ST with NULL team,
+# and upserts a season row for anyone on the winning roster who doesn't
+# already have one for that year — e.g. a player whose only tracked seasons
+# are elsewhere in their career).
 roster_years = sorted(yr for yr in sb_winners if yr >= 1999)
 if roster_years:
     print(f"  Loading seasonal rosters for {len(roster_years)} SB seasons (1999+)…")
@@ -387,10 +390,13 @@ if roster_years:
         cur.execute("SELECT id FROM players WHERE nfl_id = ANY(%s)", (gsis_ids,))
         db_ids = [r[0] for r in cur.fetchall()]
         if db_ids:
-            cur.execute("""
-                UPDATE player_seasons SET super_bowl_winner = true
-                WHERE player_id = ANY(%s) AND season_year = %s
-            """, (db_ids, yr))
+            execute_values(cur, """
+                INSERT INTO player_seasons (player_id, team, season_year, super_bowl_winner)
+                VALUES %s
+                ON CONFLICT (player_id, season_year) DO UPDATE
+                  SET super_bowl_winner = true,
+                      team = COALESCE(player_seasons.team, EXCLUDED.team)
+            """, [(db_id, team, yr, True) for db_id in db_ids])
 
 # Pass 3 — manual overrides for pre-1999 defenders / known gaps
 # Upserts a season row if missing, then sets the flag.
