@@ -57,8 +57,8 @@ export default function HowToPlay() {
               <span className="htp-chip-lbl">Spotted the lie*</span>
             </div>
             <div className="htp-score-chip htp-chip-max">
-              <span className="htp-chip-val">30</span>
-              <span className="htp-chip-lbl">Max score (3 puzzles)</span>
+              <span className="htp-chip-val">10</span>
+              <span className="htp-chip-lbl">Max score per puzzle</span>
             </div>
           </div>
           <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Lie points only awarded when the player is also correct.</p>

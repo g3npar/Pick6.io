@@ -30,34 +30,25 @@ const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-
 
 function App() {
   const [screen,       setScreen]       = useState('daily')
-  const [mode,         setMode]         = useState('classic') // 'classic' | 'current'
   const [puzzles,      setPuzzles]      = useState(null)
   const [generating,   setGenerating]   = useState(false)
-  const [puzzleIndex,  setPuzzleIndex]  = useState(0)
   const [puzzleStates, setPuzzleStates] = useState({})
 
-  // Load puzzles whenever mode changes or on mount
   useEffect(() => {
     if (screen !== 'daily') return
     setPuzzles(null)
     setPuzzleStates({})
-    setPuzzleIndex(0)
-    const url = mode === 'current' ? `${API}/puzzle/today/current` : `${API}/puzzle/today`
-    fetch(url)
+    fetch(`${API}/puzzle/today/current`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => {
-        const arr = Array.isArray(p) ? p : [p]
-        setPuzzles(arr); preloadLogos(arr)
-      })
-      .catch(err => console.error('Failed to load puzzles:', err))
-  }, [mode, screen])
+      .then(p => { const arr = [p]; setPuzzles(arr); preloadLogos(arr) })
+      .catch(err => console.error('Failed to load puzzle:', err))
+  }, [screen])
 
   const handleGenerate = () => {
-    if (mode === 'current') return  // no random gen for current mode
     setGenerating(true)
-    fetch(`${API}/puzzle/generate`)
+    fetch(`${API}/puzzle/today/current?fresh=${Date.now()}`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { setPuzzles(p); setPuzzleStates({}); setPuzzleIndex(0); preloadLogos(p) })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); preloadLogos([p]) })
       .catch(() => {})
       .finally(() => setGenerating(false))
   }
@@ -100,7 +91,7 @@ function App() {
     .filter(([, s]) => s.submitted)
     .map(([idx]) => Number(idx))
 
-  const finalResults = Array.from({ length: PUZZLE_COUNT }, (_, i) => {
+  const finalResults = Array.from({ length: 1 }, (_, i) => {
     const s = puzzleStates[i]
     if (!s?.submitted) return null
     return {
@@ -128,21 +119,10 @@ function App() {
         })
         return r.json()
       })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPuzzleIndex(0); preloadLogos([p]) })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); preloadLogos([p]) })
       .catch(err => alert(`Could not build puzzle: ${err.message}`))
       .finally(() => setGenerating(false))
   }
-
-  const handleGenerateCurrent = () => {
-    setGenerating(true)
-    fetch(`${API}/puzzle/today/current?fresh=${Date.now()}`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPuzzleIndex(0); preloadLogos([p]) })
-      .catch(() => {})
-      .finally(() => setGenerating(false))
-  }
-
-  const navigate = newIdx => setPuzzleIndex(((newIdx % puzzles.length) + puzzles.length) % puzzles.length)
 
   return (
     <div className="app">
@@ -152,23 +132,11 @@ function App() {
         {screen === 'archive'     && <ComingSoon title="Archive" />}
         {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
         {screen === 'daily'       && (
-          <>
-            {/* Mode toggle */}
-            <div className="mode-toggle">
-              <button
-                className={`mode-btn${mode === 'classic' ? ' mode-btn--active' : ''}`}
-                onClick={() => setMode('classic')}
-              >3 Eras</button>
-              <button
-                className={`mode-btn${mode === 'current' ? ' mode-btn--active' : ''}`}
-                onClick={() => setMode('current')}
-              >Experimental</button>
-            </div>
         <GameBoard
           puzzle={puzzle}
-          puzzleNumber={puzzleIndex + 1}
-          puzzleIndex={puzzleIndex}
-          totalPuzzles={puzzles.length}
+          puzzleNumber={1}
+          puzzleIndex={0}
+          totalPuzzles={1}
           completedIndices={completedIndices}
           puzzleResults={puzzleResults}
           selectedLieId={selectedLieId}
@@ -178,15 +146,14 @@ function App() {
           onSelectPlayer={name => !submitted && updateCurrent({ player: name })}
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}
-          onNext={() => navigate(puzzleIndex + 1)}
-          onPrev={() => navigate(puzzleIndex - 1)}
-          onGoTo={setPuzzleIndex}
-          onGenerate={mode === 'classic' ? handleGenerate : handleGenerateCurrent}
-          onPlayerPuzzle={mode === 'classic' ? handlePlayerPuzzle : null}
+          onNext={null}
+          onPrev={null}
+          onGoTo={null}
+          onGenerate={handleGenerate}
+          onPlayerPuzzle={handlePlayerPuzzle}
           generating={generating}
           currentScore={currentScore}
         />
-          </>
         )}
       </main>
     </div>

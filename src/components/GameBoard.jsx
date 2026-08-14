@@ -164,7 +164,7 @@ function GameBoard({
     <div className="puzzle-game">
 
       <div className="puzzle-header">
-        <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 30 PTS</p>
+        <p className="puzzle-score"><span className="score-val">{displayScore}</span> / {totalPuzzles === 1 ? '10' : '30'} PTS</p>
       </div>
 
       {!submitted ? (
@@ -193,7 +193,7 @@ function GameBoard({
 
       {/* ── Circle ───────────────────────────────────── */}
       <div className="circle-nav-row">
-        <button className="circle-nav-btn" onClick={onPrev} aria-label="Previous puzzle">&#8592;</button>
+        {totalPuzzles > 1 && <button className="circle-nav-btn" onClick={onPrev} aria-label="Previous puzzle">&#8592;</button>}
 
         <div className="circle-game">
 
@@ -342,11 +342,11 @@ function GameBoard({
 
         </div>{/* end circle-game */}
 
-        <button className="circle-nav-btn" onClick={onNext} aria-label="Next puzzle">&#8594;</button>
+        {totalPuzzles > 1 && <button className="circle-nav-btn" onClick={onNext} aria-label="Next puzzle">&#8594;</button>}
       </div>{/* end circle-nav-row */}
 
       {/* ── Pagination dots ──────────────────────────── */}
-      <div className="puzzle-dots">
+      {totalPuzzles > 1 && <div className="puzzle-dots">
         {(() => {
           const VISIBLE = 5
           let start = Math.max(0, Math.min(puzzleIndex - 2, totalPuzzles - VISIBLE))
@@ -366,7 +366,7 @@ function GameBoard({
             )
           })
         })()}
-      </div>
+      </div>}
 
       {/* ── Generate button ───────────────────────────── */}
       {onGenerate && (
