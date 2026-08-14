@@ -672,13 +672,14 @@ let _currentCache = null  // { date: 'YYYY-MM-DD', puzzle: {...} }
 
 async function fetchCurrentPlayerIds() {
   const res = await pool.query(`
-    SELECT DISTINCT p.id
+    SELECT DISTINCT p.id, p.name
     FROM players p
     JOIN player_seasons ps ON ps.player_id = p.id
-    WHERE ps.season_year >= 2023
-      AND ps.pro_bowl = true
+    WHERE ps.season_year >= 2022
   `)
-  return res.rows.map(r => r.id)
+  return res.rows
+    .filter(r => lookupAwards(r.name).some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021))
+    .map(r => r.id)
 }
 
 async function getDailyCurrentPuzzle(fresh = false) {
