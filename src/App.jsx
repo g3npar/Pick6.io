@@ -67,8 +67,9 @@ function App() {
     )
   }
 
-  const puzzle       = puzzles[puzzleIndex]
-  const curState     = puzzleStates[puzzleIndex] || {}
+  const puzzle       = puzzles[0]
+  const puzzleIndex  = 0
+  const curState     = puzzleStates[0] || {}
   const selectedLieId  = curState.lieId  ?? null
   const selectedPlayer = curState.player ?? ''
   const submitted      = curState.submitted ?? false

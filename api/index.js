@@ -8,6 +8,9 @@ const { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCur
 
 const app = express()
 
+// Trust Render's proxy so rate limiting uses the real client IP
+app.set('trust proxy', 1)
+
 // ── Security headers (OWASP) ─────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: false,   // API-only; no HTML served
