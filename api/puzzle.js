@@ -680,7 +680,7 @@ async function fetchCurrentPlayerIds() {
     SELECT DISTINCT p.id, p.name
     FROM players p
     JOIN player_seasons ps ON ps.player_id = p.id
-    WHERE ps.season_year >= 2022
+    WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
   return res.rows
     .filter(r => lookupAwards(r.name).some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021))
