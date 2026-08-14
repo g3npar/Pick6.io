@@ -1,4 +1,4 @@
-st/**
+/**
  * Parses a plain-text fact sentence into structured display parts.
  * Returns { label, value, sublabel }
  *   label    — small category heading (e.g. "PRO BOWLS", "RUSHING YARDS")
