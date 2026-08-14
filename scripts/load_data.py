@@ -348,6 +348,7 @@ SB_WINNERS_PRE1999 = {
     1985: 'CHI', 1986: 'NYG', 1987: 'WAS', 1988: 'SF',  1989: 'SF',
     1990: 'NYG', 1991: 'WAS', 1992: 'DAL', 1993: 'DAL', 1994: 'SF',
     1995: 'DAL', 1996: 'GB',  1997: 'DEN', 1998: 'DEN',
+    2025: 'SEA',  # hardcoded fallback if import_schedules lacks 2025 data
 }
 schedules  = nfl.import_schedules(list(range(1999, 2026)))
 sb_games   = schedules[schedules["game_type"] == "SB"][
@@ -397,7 +398,6 @@ SB_PLAYER_OVERRIDES = [
     # (player_name, season_year, team)
     ("Deion Sanders",   1994, "SF"),   # SF 49ers, SB XXIX
     ("Deion Sanders",   1995, "DAL"),  # DAL Cowboys, SB XXX
-    ("Rashid Shaheed",  2025, "NO"),   # Saints, SB LX
 ]
 for name, yr, team in SB_PLAYER_OVERRIDES:
     cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (name,))
