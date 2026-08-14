@@ -35,14 +35,11 @@ function App() {
   const [puzzleStates, setPuzzleStates] = useState({})
 
   useEffect(() => {
-    if (screen !== 'daily') return
-    setPuzzles(null)
-    setPuzzleStates({})
     fetch(`${API}/puzzle/today/current`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
       .then(p => { const arr = [p]; setPuzzles(arr); preloadLogos(arr) })
       .catch(err => console.error('Failed to load puzzle:', err))
-  }, [screen])
+  }, [])
 
   const handleGenerate = () => {
     setGenerating(true)
