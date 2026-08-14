@@ -5,15 +5,17 @@ import { collegeLogo } from '../utils/collegeLogo'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// SVG-based wedge paths — perfect arcs, no polygon approximation
-const SVG_R  = 298  // outer radius in SVG units (viewBox 0 0 600 600)
+// SVG-based wedge paths — 6 wedges at 60° each
+const SVG_R  = 298
 const SVG_CX = 300
 const SVG_CY = 300
+const N_WEDGES = 6
+const DEG = 360 / N_WEDGES
 
 function getWedgePath(i) {
   const toRad = d => d * Math.PI / 180
-  const start = -90 + i * 72
-  const end   = start + 72
+  const start = -90 + i * DEG
+  const end   = start + DEG
   const x1 = SVG_CX + SVG_R * Math.cos(toRad(start))
   const y1 = SVG_CY + SVG_R * Math.sin(toRad(start))
   const x2 = SVG_CX + SVG_R * Math.cos(toRad(end))
@@ -23,21 +25,22 @@ function getWedgePath(i) {
 
 function getWedgeCentroid(i) {
   const cx = 50, cy = 50
-  const mid = (-90 + i * 72 + 36) * (Math.PI / 180)
+  const mid = (-90 + i * DEG + DEG / 2) * (Math.PI / 180)
   const r = 33
   return { x: cx + r * Math.cos(mid), y: cy + r * Math.sin(mid) }
 }
 
-const WEDGE_PATHS   = [0, 1, 2, 3, 4].map(getWedgePath)
-const WEDGE_CENTERS = [0, 1, 2, 3, 4].map(getWedgeCentroid)
+const WEDGE_PATHS   = Array.from({ length: N_WEDGES }, (_, i) => getWedgePath(i))
+const WEDGE_CENTERS = Array.from({ length: N_WEDGES }, (_, i) => getWedgeCentroid(i))
 
 
 function GameBoard({
-  puzzle, puzzleNumber, puzzleIndex, totalPuzzles, completedIndices, puzzleResults,
+  puzzle, totalPuzzles,
   selectedLieId, selectedPlayer,
+  lieFound, lieAttempts, confirmedTrueIds, liePhaseComplete,
   submitted,
   onSelectLie, onSelectPlayer,
-  onSubmit, onGiveUp, onNext, onPrev, onGoTo,
+  onGuessLie, onSubmit, onGiveUp,
   onGenerate, onPlayerPuzzle, generating,
   currentScore,
 }) {
@@ -148,73 +151,88 @@ function GameBoard({
   }
 
   const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
-  const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
-  const lieCorrect    = submitted && selectedLieId === puzzle.falseFactId
-  const canSubmit     = selectedLieId !== null && selectedPlayer.trim().length > 0 && !submitted
-  const score         = submitted ? (playerCorrect ? 1 : 0) + (lieCorrect ? 1 : 0) : null
-
-  const handleShare = () => {
-    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    navigator.clipboard?.writeText(
-      `🏈 NFL Lie Detector — ${dateStr}\n${playerCorrect ? '✅' : '❌'} Player  ${lieCorrect ? '✅' : '❌'} Lie`
-    ).catch(() => {})
-  }
+  const playerCorrect   = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
+  const canGuessLie     = selectedLieId !== null && !liePhaseComplete
+  const canSubmitPlayer = selectedPlayer.trim().length > 0 && liePhaseComplete && !submitted
 
   return (
     <div className="puzzle-game">
 
       <div className="puzzle-header">
-        <p className="puzzle-score"><span className="score-val">{displayScore}</span> / {totalPuzzles === 1 ? '10' : '30'} PTS</p>
+        {!liePhaseComplete && (
+          <div className="attempt-dots-wrap">
+            <span className="attempt-label">ATTEMPTS</span>
+            <div className="attempt-dots">
+              {[0, 1, 2].map(i => (
+                <span key={i} className={`attempt-dot${i < lieAttempts ? ' attempt-dot--wrong' : ''}`} />
+              ))}
+            </div>
+          </div>
+        )}
+        {liePhaseComplete && !submitted && (
+          <p className="phase-label">Now guess the player ↓</p>
+        )}
+        {submitted && (
+          <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 5 PTS</p>
+        )}
       </div>
 
-      {!submitted ? (
+      {!liePhaseComplete ? (
         <div className="submit-section">
-          <button className="submit-btn" onClick={onSubmit} disabled={!canSubmit}>
-            {canSubmit ? 'LOCK IN →' : 'Mark the lie and guess the player'}
+          <button className="submit-btn" onClick={onGuessLie} disabled={!canGuessLie}>
+            {canGuessLie ? 'GUESS LIE →' : 'Select a wedge'}
           </button>
-          <button className="give-up-btn" onClick={onGiveUp}>
-            Give Up
+          <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
+        </div>
+      ) : !submitted ? (
+        <div className="submit-section">
+          <button className="submit-btn" onClick={onSubmit} disabled={!canSubmitPlayer}>
+            {canSubmitPlayer ? 'LOCK IN →' : 'Enter player name'}
           </button>
+          <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
         </div>
       ) : (
         <div className="submit-result-row">
+          <div className={`submit-result-chip ${lieFound ? 'src-correct' : 'src-wrong'}`}>
+            <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
+            <span className="src-label">LIE</span>
+            <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
+          </div>
           <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
             <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
             <span className="src-label">PLAYER</span>
-            <span className="src-pts">{playerCorrect ? '+4' : '+0'}</span>
-          </div>
-          <div className={`submit-result-chip ${lieCorrect ? 'src-correct' : 'src-wrong'}`}>
-            <span className="src-icon">{lieCorrect ? '✓' : '✗'}</span>
-            <span className="src-label">LIE SPOTTED</span>
-            <span className="src-pts">{playerCorrect && lieCorrect ? '+6' : '+0'}</span>
+            <span className="src-pts">{playerCorrect ? '+2' : '+0'}</span>
           </div>
         </div>
       )}
 
       {/* ── Circle ───────────────────────────────────── */}
       <div className="circle-nav-row">
-        {totalPuzzles > 1 && <button className="circle-nav-btn" onClick={onPrev} aria-label="Previous puzzle">&#8592;</button>}
 
         <div className="circle-game">
 
-        {/* SVG wedges — proper arcs for perfectly even gaps */}
+        {/* SVG wedges */}
         <svg className="circle-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
           {puzzle.facts.map((fact, i) => {
-            const isSelected  = selectedLieId === fact.id
-            const isFalse     = fact.id === puzzle.falseFactId
-            const isWrongPick = submitted && isSelected && !isFalse
-            const isHov       = hoveredIdx === i
+            const isSelected     = selectedLieId === fact.id
+            const isFalse        = fact.id === puzzle.falseFactId
+            const isConfirmedTrue = confirmedTrueIds.includes(fact.id)
+            const isHov          = hoveredIdx === i
 
             let fill = '#161a2e'
             if (submitted) {
               fill = isFalse ? 'rgba(255,34,68,0.35)' : 'rgba(0,240,128,0.18)'
-              if (isWrongPick) fill = 'rgba(255,34,68,0.52)'
+            } else if (isConfirmedTrue) {
+              fill = 'rgba(0,240,128,0.18)'
+            } else if (lieFound && isFalse) {
+              fill = 'rgba(255,34,68,0.35)'
             } else if (isSelected) {
               fill = 'rgba(255,34,68,0.28)'
-            } else if (isHov) {
+            } else if (isHov && !isConfirmedTrue && !liePhaseComplete) {
               fill = '#20263e'
             }
 
+            const isInteractive = !liePhaseComplete && !isConfirmedTrue && !(lieFound && isFalse)
             return (
               <path
                 key={fact.id}
@@ -223,29 +241,31 @@ function GameBoard({
                 stroke="#0d0d0d"
                 strokeWidth="4"
                 strokeLinejoin="round"
-                style={{ cursor: submitted ? 'default' : 'pointer', transition: 'fill 0.18s' }}
-                onClick={() => !submitted && onSelectLie(isSelected ? null : fact.id)}
-                onMouseEnter={() => !submitted && setHoveredIdx(i)}
-                onMouseLeave={() => !submitted && setHoveredIdx(null)}
+                style={{ cursor: isInteractive ? 'pointer' : 'default', transition: 'fill 0.18s' }}
+                onClick={() => isInteractive && onSelectLie(isSelected ? null : fact.id)}
+                onMouseEnter={() => isInteractive && setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
               />
             )
           })}
-          {/* Outer ring border */}
           <circle cx="300" cy="300" r="298" fill="none" stroke="#2e2e2e" strokeWidth="2"/>
         </svg>
 
         {/* Text labels at wedge centroids (pointer-events: none) */}
         {puzzle.facts.map((fact, i) => {
           const { x, y } = WEDGE_CENTERS[i]
-          const isSelected = selectedLieId === fact.id
-          const isHovered  = hoveredIdx === i
-          const isFalse    = fact.id === puzzle.falseFactId
-          const display    = parseFact(fact.text)
+          const isSelected     = selectedLieId === fact.id
+          const isHovered      = hoveredIdx === i
+          const isFalse        = fact.id === puzzle.falseFactId
+          const isConfirmedTrue = confirmedTrueIds.includes(fact.id)
+          const display        = parseFact(fact.text)
 
           let cls = 'wedge-label'
-          if (submitted)       cls += isFalse ? ' wl-false' : ' wl-true'
-          else if (isSelected) cls += ' wl-selected'
-          else if (isHovered)  cls += ' wl-hovered'
+          if (submitted)            cls += isFalse ? ' wl-false' : ' wl-true'
+          else if (isConfirmedTrue) cls += ' wl-true'
+          else if (lieFound && isFalse) cls += ' wl-false'
+          else if (isSelected)      cls += ' wl-selected'
+          else if (isHovered)       cls += ' wl-hovered'
 
           return (
             <div
@@ -281,7 +301,8 @@ function GameBoard({
                   {isSelected ? '\u2717 MARKED AS LIE' : 'MARK AS LIE?'}
                 </span>
               )}
-              {submitted && (
+              {/* Show verdict during gameplay for confirmed/found facts */}
+              {(submitted || isConfirmedTrue || (lieFound && isFalse)) && (
                 <span className={`wl-verdict ${isFalse ? 'wlv-false' : 'wlv-true'}`}>
                   {isFalse ? '\u2717 LIE' : '\u2713 TRUE'}
                 </span>
@@ -290,10 +311,14 @@ function GameBoard({
           )
         })}
 
-        {/* Center: helmet + search/reveal */}
+        {/* Center: player search (only after lie phase) or hint */}
         <div className="circle-center">
 
-          {!submitted ? (
+          {!liePhaseComplete ? (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>
+              Pick the lie
+            </p>
+          ) : !submitted ? (
             <div className="search-wrap" ref={wrapRef}>
               <div className="search-input-container">
                 <span className="search-icon">⌕</span>
@@ -341,32 +366,7 @@ function GameBoard({
         </div>
 
         </div>{/* end circle-game */}
-
-        {totalPuzzles > 1 && <button className="circle-nav-btn" onClick={onNext} aria-label="Next puzzle">&#8594;</button>}
       </div>{/* end circle-nav-row */}
-
-      {/* ── Pagination dots ──────────────────────────── */}
-      {totalPuzzles > 1 && <div className="puzzle-dots">
-        {(() => {
-          const VISIBLE = 5
-          let start = Math.max(0, Math.min(puzzleIndex - 2, totalPuzzles - VISIBLE))
-          const end = Math.min(start + VISIBLE, totalPuzzles)
-          return Array.from({ length: end - start }, (_, i) => start + i).map(idx => {
-            const result = puzzleResults?.[idx]
-            const icon = result === 'perfect' ? '✓' : result === 'partial' ? '–' : result === 'wrong' ? '✗' : null
-            return (
-              <button
-                key={idx}
-                className={`puzzle-dot ${idx === puzzleIndex ? 'dot-active' : ''} ${result ? `dot-${result}` : ''}`}
-                onClick={() => onGoTo(idx)}
-                aria-label={`Puzzle ${idx + 1}`}
-              >
-                {icon && <span className="dot-check">{icon}</span>}
-              </button>
-            )
-          })
-        })()}
-      </div>}
 
       {/* ── Generate button ───────────────────────────── */}
       {onGenerate && (
@@ -377,7 +377,7 @@ function GameBoard({
             disabled={generating}
             style={{ opacity: generating ? 0.6 : 1, minWidth: '10rem' }}
           >
-            {generating ? 'Generating…' : '🎲 New Puzzles'}
+            {generating ? 'Generating…' : '🎲 New Puzzle'}
           </button>
         </div>
       )}

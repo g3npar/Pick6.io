@@ -64,48 +64,57 @@ function App() {
     )
   }
 
-  const puzzle       = puzzles[0]
-  const puzzleIndex  = 0
-  const curState     = puzzleStates[0] || {}
-  const selectedLieId  = curState.lieId  ?? null
-  const selectedPlayer = curState.player ?? ''
-  const submitted      = curState.submitted ?? false
+  const puzzle         = puzzles[0]
+  const curState       = puzzleStates[0] || {}
+  const selectedLieId  = curState.lieId         ?? null
+  const selectedPlayer = curState.player        ?? ''
+  const lieFound       = curState.lieFound      ?? false
+  const lieAttempts    = curState.lieAttempts   ?? 0
+  const confirmedTrueIds = curState.confirmedTrueIds ?? []
+  const submitted      = curState.submitted     ?? false   // player name submitted = game over
+  const liePhaseComplete = lieFound || lieAttempts >= 3
 
   const updateCurrent = updates =>
-    setPuzzleStates(prev => ({ ...prev, [puzzleIndex]: { ...(prev[puzzleIndex] || {}), ...updates } }))
+    setPuzzleStates(prev => ({ ...prev, 0: { ...(prev[0] || {}), ...updates } }))
 
+  // Lie guess: evaluate immediately
+  const handleGuessLie = () => {
+    if (!selectedLieId || liePhaseComplete) return
+    const correct = selectedLieId === puzzle.falseFactId
+    if (correct) {
+      updateCurrent({ lieFound: true })
+    } else {
+      const newAttempts = lieAttempts + 1
+      // Reveal one unconfirmed true fact (not the actual lie, not already confirmed, not the bad guess)
+      const candidates = puzzle.facts.filter(
+        f => f.id !== puzzle.falseFactId && !confirmedTrueIds.includes(f.id) && f.id !== selectedLieId
+      )
+      const toReveal = candidates[lieAttempts % Math.max(1, candidates.length)]
+      updateCurrent({
+        lieAttempts: newAttempts,
+        confirmedTrueIds: toReveal ? [...confirmedTrueIds, toReveal.id] : confirmedTrueIds,
+        lieId: null,
+      })
+    }
+  }
+
+  // Player name submit (only available after lie phase)
   const handleSubmit = () => {
-    if (!selectedLieId || !selectedPlayer) return
-    const next = { ...puzzleStates, [puzzleIndex]: { ...(puzzleStates[puzzleIndex] || {}), submitted: true } }
-    setPuzzleStates(next)
+    if (!selectedPlayer || !liePhaseComplete) return
+    updateCurrent({ submitted: true })
   }
 
   const handleGiveUp = () => {
-    const next = { ...puzzleStates, [puzzleIndex]: { ...(puzzleStates[puzzleIndex] || {}), submitted: true } }
-    setPuzzleStates(next)
+    updateCurrent({ lieAttempts: 3, submitted: true })
   }
 
-  const completedIndices = Object.entries(puzzleStates)
-    .filter(([, s]) => s.submitted)
-    .map(([idx]) => Number(idx))
+  const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
+  const lieScore   = submitted ? (lieFound ? Math.max(1, 3 - lieAttempts) : 0) : 0
+  const playerScore = submitted && playerCorrect ? 2 : 0
+  const currentScore = lieScore + playerScore
 
-  const finalResults = Array.from({ length: 1 }, (_, i) => {
-    const s = puzzleStates[i]
-    if (!s?.submitted) return null
-    return {
-      playerCorrect: normName(s.player) === normName(puzzles[i].playerName),
-      lieCorrect:    s.lieId === puzzles[i].falseFactId,
-    }
-  })
-
+  const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
-  finalResults.forEach((r, i) => {
-    if (!r) return
-    const pts = (r.playerCorrect ? 1 : 0) + (r.lieCorrect ? 1 : 0)
-    puzzleResults[i] = pts === 2 ? 'perfect' : pts === 1 ? 'partial' : 'wrong'
-  })
-
-  const currentScore = finalResults.reduce((sum, r) => sum + (r ? (r.playerCorrect ? 4 : 0) + (r.playerCorrect && r.lieCorrect ? 6 : 0) : 0), 0)
 
   const handlePlayerPuzzle = (name) => {
     setGenerating(true)
@@ -132,21 +141,19 @@ function App() {
         {screen === 'daily'       && (
         <GameBoard
           puzzle={puzzle}
-          puzzleNumber={1}
-          puzzleIndex={0}
           totalPuzzles={1}
-          completedIndices={completedIndices}
-          puzzleResults={puzzleResults}
           selectedLieId={selectedLieId}
           selectedPlayer={selectedPlayer}
+          lieFound={lieFound}
+          lieAttempts={lieAttempts}
+          confirmedTrueIds={confirmedTrueIds}
+          liePhaseComplete={liePhaseComplete}
           submitted={submitted}
-          onSelectLie={id => !submitted && updateCurrent({ lieId: id })}
+          onSelectLie={id => !liePhaseComplete && updateCurrent({ lieId: id })}
           onSelectPlayer={name => !submitted && updateCurrent({ player: name })}
+          onGuessLie={handleGuessLie}
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}
-          onNext={null}
-          onPrev={null}
-          onGoTo={null}
           onGenerate={handleGenerate}
           onPlayerPuzzle={handlePlayerPuzzle}
           generating={generating}

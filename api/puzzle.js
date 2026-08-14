@@ -545,19 +545,20 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
   const nonStatFacts = seededShuffle(pool.filter(f => !STAT_CATS.has(f.cat)), rng)
 
-  // At most 1 stat fact; fill remaining 4 slots from non-stat facts
+  // At most 1 stat fact; fill remaining slots from non-stat facts — target 6
   const chosen = [
     ...statFacts.slice(0, 1),
     ...nonStatFacts,
-  ].slice(0, 5)
+  ].slice(0, 6)
 
-  // Fall back to including more stat facts only if we can't reach 5 otherwise
-  if (chosen.length < 5) {
-    chosen.push(...statFacts.slice(1, 5 - chosen.length + 1))
+  // Fall back to more stat facts if we can't reach 6
+  if (chosen.length < 6) {
+    chosen.push(...statFacts.slice(1, 6 - chosen.length + 1))
   }
-
+  // Accept 5 if we can't get 6
   if (chosen.length < 5) return null
-  const lieIdx = Math.floor(rng() * 5)
+
+  const lieIdx = Math.floor(rng() * chosen.length)
   const lie    = chosen[lieIdx].makeLie(rng)
 
   const teams   = [...new Set(seasons.map(s => s.team).filter(Boolean))]
