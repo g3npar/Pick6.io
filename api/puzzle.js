@@ -690,8 +690,28 @@ async function fetchCurrentPlayerIds() {
     JOIN player_seasons ps ON ps.player_id = p.id
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
+
+  // Award-only gating excluded plenty of players with genuinely notable
+  // careers but no All-Pro/Pro Bowl selections
+  const statRes = await pool.query(`
+    SELECT DISTINCT player_id AS id
+    FROM player_seasons
+    WHERE player_id = ANY($1::int[])
+      AND (
+        passing_yards    >= 2000
+        OR passing_tds   >= 20
+        OR rush_yards    >= 500
+        OR receiving_yards >= 500
+        OR rec_tds       >= 4
+        OR sacks         >= 5
+        OR def_ints      >= 3
+      )
+  `, [res.rows.map(r => r.id)])
+  const statQualified = new Set(statRes.rows.map(r => r.id))
+
   return res.rows
     .filter(r => {
+      if (statQualified.has(r.id)) return true
       const awards = lookupAwards(r.name)
       return awards.some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021)
           || awards.some(a => a.award === 'PRO_BOWL')

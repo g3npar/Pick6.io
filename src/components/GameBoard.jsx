@@ -380,7 +380,7 @@ function GameBoard({
                   {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
                 </>
               )}
-              {!submitted && (isSelected || isHovered) && (
+              {!submitted && !liePhaseComplete && (isSelected || isHovered) && (
                 <span className="wl-tag">
                   {isSelected ? '\u2717 MARKED AS LIE' : 'MARK AS LIE?'}
                 </span>
