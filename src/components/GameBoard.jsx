@@ -198,8 +198,11 @@ function GameBoard({
         {liePhaseComplete && !submitted && (
           <p className="phase-label">Now guess the player ↓</p>
         )}
+        {submitted && !lieFound && !playerCorrect && (
+          <p className="pick-six-banner">🏈 PICK SIX</p>
+        )}
         {submitted && (
-          <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 5 PTS</p>
+          <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 6 PTS</p>
         )}
       </div>
 
@@ -227,7 +230,7 @@ function GameBoard({
           <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
             <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
             <span className="src-label">PLAYER</span>
-            <span className="src-pts">{playerCorrect ? '+2' : '+0'}</span>
+            <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
           </div>
         </div>
       )}
@@ -304,9 +307,14 @@ function GameBoard({
               <span className="wl-num">{display.label}</span>
               {trueDisplay ? (
                 <>
-                  <div className="wl-wrong-value"><FactValue display={display} /></div>
-                  <div className="wl-true-value"><FactValue display={trueDisplay} /></div>
-                  {trueDisplay.sublabel && <span className="wl-sublabel wl-sublabel--true">{trueDisplay.sublabel}</span>}
+                  <div className="wl-wrong-value">
+                    <FactValue display={display} />
+                    {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
+                  </div>
+                  <div className="wl-true-value">
+                    <FactValue display={trueDisplay} />
+                    {trueDisplay.sublabel && <span className="wl-sublabel wl-sublabel--true">{trueDisplay.sublabel}</span>}
+                  </div>
                 </>
               ) : (
                 <>

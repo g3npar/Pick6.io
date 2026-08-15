@@ -14,8 +14,8 @@ export default function HowToPlay() {
           <div className="htp-step">
             <div className="htp-step-num">1</div>
             <div className="htp-step-body">
-              <h3>Read the 5 wedge facts</h3>
-              <p>Each puzzle shows five facts about a mystery NFL player — college, draft, career stats, awards, and teams. <strong>One of the five is a lie.</strong></p>
+              <h3>Read the 6 wedge facts</h3>
+              <p>Each puzzle shows six facts about a mystery NFL player — college, draft, career stats, awards, and teams. <strong>One of the six is a lie.</strong></p>
             </div>
           </div>
 
@@ -39,7 +39,7 @@ export default function HowToPlay() {
             <div className="htp-step-num">4</div>
             <div className="htp-step-body">
               <h3>Lock in your answer</h3>
-              <p>Once you've marked a lie and entered a name, hit <strong>LOCK IN →</strong> to submit. All five wedges will reveal true/false, and your score is tallied.</p>
+              <p>Once you've marked a lie and entered a name, hit <strong>LOCK IN →</strong> to submit. All six wedges will reveal true/false, and your score is tallied.</p>
             </div>
           </div>
 
@@ -49,27 +49,27 @@ export default function HowToPlay() {
           <h2 className="htp-section-title">Scoring</h2>
           <div className="htp-score-grid">
             <div className="htp-score-chip htp-chip-player">
-              <span className="htp-chip-val">+4</span>
+              <span className="htp-chip-val">+3</span>
               <span className="htp-chip-lbl">Correct player</span>
             </div>
             <div className="htp-score-chip htp-chip-lie">
-              <span className="htp-chip-val">+6</span>
+              <span className="htp-chip-val">+3</span>
               <span className="htp-chip-lbl">Spotted the lie*</span>
             </div>
             <div className="htp-score-chip htp-chip-max">
-              <span className="htp-chip-val">10</span>
+              <span className="htp-chip-val">6</span>
               <span className="htp-chip-lbl">Max score per puzzle</span>
             </div>
           </div>
-          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Lie points only awarded when the player is also correct.</p>
+          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Full +3 on your first guess; it drops by 1 for each wrong attempt, down to a minimum of +1. Miss the lie and the player both, and it's a Pick Six.</p>
         </div>
 
         <div className="htp-tips">
           <h2 className="htp-section-title">Tips</h2>
           <ul className="htp-tip-list">
-            <li>Use arrow keys <kbd>←</kbd> <kbd>→</kbd> to navigate between puzzles.</li>
-            <li>Each puzzle set spans three eras: 1980–1995, 1996–2010, and 2011–present.</li>
-            <li>The lie is always plausible as it tweaks a real stat or award by a small amount.</li>
+            <li>You get 3 attempts to mark the lie — each wrong guess reveals that wedge is true.</li>
+            <li>A new puzzle is available every day, featuring a currently active NFL player.</li>
+            <li>The lie is always plausible — a stat lie keeps the real number and swaps the year instead.</li>
           </ul>
         </div>
 

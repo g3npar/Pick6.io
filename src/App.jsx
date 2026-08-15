@@ -108,7 +108,7 @@ function App() {
 
   const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
   const lieScore   = submitted ? (lieFound ? Math.max(1, 3 - lieAttempts) : 0) : 0
-  const playerScore = submitted && playerCorrect ? 2 : 0
+  const playerScore = submitted && playerCorrect ? 3 : 0
   const currentScore = lieScore + playerScore
 
   const completedIndices = submitted ? [0] : []

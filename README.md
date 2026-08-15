@@ -1,13 +1,13 @@
-# 🏈 NFL Gridlock
+# 🏈 Pick Six
 
-A daily NFL trivia puzzle game. Each puzzle shows five facts about a mystery player, however one of them is a lie. Spot the lie, name the player, and score points.
+A daily NFL trivia puzzle game. Each puzzle shows six facts about a mystery player, however one of them is a lie. Spot the lie, name the player, and score points. Whiff on both and it's a Pick Six.
 
 ## How it works
 
-- 3 puzzles per set, one from each era (1980–1995 · 1996–2010 · 2011–present)
+- One puzzle per day, featuring a currently active NFL player
 - Facts are drawn from career stats, awards, college, draft position, and teams
-- **+4 pts** for naming the correct player · **+6 pts** for spotting the lie (only awarded if the player is also correct)
-- Max score: **30 points** per set
+- **+3 pts** for naming the correct player · **+3 pts** for spotting the lie (drops by 1 per wrong attempt, min +1)
+- Max score: **6 points** · miss both and it's a Pick Six
 
 ## Tech stack
 

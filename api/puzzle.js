@@ -77,6 +77,14 @@ function fmt(n) {
   return Number(n).toLocaleString('en-US')
 }
 
+// Picks a nearby-but-wrong season year for a stat lie — keeps the real
+// number intact and makes the year the thing to catch instead.
+function fakeYear(year, rng) {
+  const delta = 1 + Math.floor(rng() * 3)
+  const sign  = (year + delta > 2025) ? -1 : (year - delta < 1970) ? 1 : (rng() < 0.5 ? 1 : -1)
+  return year + sign * delta
+}
+
 // ── College pool for generating false college facts ───────────────────────────
 const NFL_COLLEGES = [
   'Alabama', 'Ohio State', 'Michigan', 'USC', 'LSU', 'Florida', 'Texas',
@@ -242,12 +250,10 @@ function passingFact(p, season) {
     cat: 'passing',
     text: `Threw for ${fmt(season.passing_yards)} yards and ${season.passing_tds} touchdowns in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 200 + Math.floor(rng() * 600)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1000, season.passing_yards + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Threw for ${fmt(fake)} yards and ${season.passing_tds} touchdowns in the ${season.season_year} season`,
-        explanation: `${p.name} threw for ${fmt(season.passing_yards)} yards that season, not ${fmt(fake)}.`,
+        text: `Threw for ${fmt(season.passing_yards)} yards and ${season.passing_tds} touchdowns in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -259,12 +265,10 @@ function passingTdsFact(p, season) {
     cat: 'passing_tds',
     text: `Threw ${season.passing_tds} touchdown passes in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 3 + Math.floor(rng() * 7)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1, season.passing_tds + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Threw ${fake} touchdown passes in the ${season.season_year} season`,
-        explanation: `${p.name} threw ${season.passing_tds} touchdown passes that season, not ${fake}.`,
+        text: `Threw ${season.passing_tds} touchdown passes in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -276,12 +280,10 @@ function rushingFact(p, season) {
     cat: 'rushing',
     text: `Rushed for ${fmt(season.rush_yards)} yards in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 100 + Math.floor(rng() * 300)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(200, season.rush_yards + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Rushed for ${fmt(fake)} yards in the ${season.season_year} season`,
-        explanation: `${p.name} rushed for ${fmt(season.rush_yards)} yards that season, not ${fmt(fake)}.`,
+        text: `Rushed for ${fmt(season.rush_yards)} yards in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -293,12 +295,10 @@ function receivingFact(p, season) {
     cat: 'receiving',
     text: `Had ${fmt(season.receiving_yards)} receiving yards in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 100 + Math.floor(rng() * 350)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(200, season.receiving_yards + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Had ${fmt(fake)} receiving yards in the ${season.season_year} season`,
-        explanation: `${p.name} had ${fmt(season.receiving_yards)} receiving yards that season, not ${fmt(fake)}.`,
+        text: `Had ${fmt(season.receiving_yards)} receiving yards in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -310,12 +310,10 @@ function recTdFact(p, season) {
     cat: 'rec_tds',
     text: `Caught ${season.rec_tds} receiving touchdowns in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 2 + Math.floor(rng() * 4)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1, season.rec_tds + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Caught ${fake} receiving touchdowns in the ${season.season_year} season`,
-        explanation: `${p.name} caught ${season.rec_tds} receiving touchdowns that season, not ${fake}.`,
+        text: `Caught ${season.rec_tds} receiving touchdowns in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -332,12 +330,10 @@ function sacksFact(p, season) {
     cat: 'sacks',
     text: `Recorded ${season.sacks} sacks in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 2 + Math.floor(rng() * 4)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1, season.sacks + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Recorded ${fake} sacks in the ${season.season_year} season`,
-        explanation: `${p.name} recorded ${season.sacks} sacks that season, not ${fake}.`,
+        text: `Recorded ${season.sacks} sacks in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }
@@ -351,12 +347,10 @@ function intsFact(p, season) {
     cat: 'def_ints',
     text: `Recorded ${season.def_ints} interceptions in the ${season.season_year} season`,
     makeLie(rng) {
-      const delta = 1 + Math.floor(rng() * 3)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1, season.def_ints + sign * delta)
+      const fakeYr = fakeYear(season.season_year, rng)
       return {
-        text: `Recorded ${fake} interceptions in the ${season.season_year} season`,
-        explanation: `${p.name} recorded ${season.def_ints} interceptions that season, not ${fake}.`,
+        text: `Recorded ${season.def_ints} interceptions in the ${fakeYr} season`,
+        explanation: `${p.name} did that in ${season.season_year}, not ${fakeYr}.`,
       }
     },
   }

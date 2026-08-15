@@ -258,6 +258,14 @@ body {
   letter-spacing: 0.08em;
   margin-top: 2px;
 }
+.pick-six-banner {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--red);
+  margin-bottom: 2px;
+  text-shadow: 0 0 12px rgba(255, 34, 68, 0.5);
+}
 .score-val {
   font-size: 22px;
   font-weight: 900;

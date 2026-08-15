@@ -13,7 +13,7 @@ function Header({ screen, onNav }) {
         <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <span className="logo-icon">🏈</span>
           <span className="logo-text">
-            NFL<span className="logo-accent"> GRIDLOCK</span>
+            PICK<span className="logo-accent"> SIX</span>
           </span>
         </button>
 
