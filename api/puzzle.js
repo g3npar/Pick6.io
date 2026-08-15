@@ -612,11 +612,24 @@ async function fetchPlayerData(playerId) {
   return { player: pRes.rows[0], seasons: sRes.rows, awards: aRes.rows }
 }
 
-async function generatePlayerPuzzle(name) {
-  const res = await pool.query(
-    `SELECT id FROM players WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-    [name.trim()]
-  )
+// draftYear disambiguates same-named players (e.g. two real "Josh Allen"s —
+// a QB drafted 2018, an LB drafted 2019). Without it, a name shared by more
+// than one player resolves arbitrarily to whichever row the DB returns first.
+async function generatePlayerPuzzle(name, draftYear) {
+  const trimmed = name.trim()
+  let res
+  if (draftYear) {
+    res = await pool.query(
+      `SELECT id FROM players WHERE LOWER(name) = LOWER($1) AND draft_year = $2 LIMIT 1`,
+      [trimmed, draftYear]
+    )
+  }
+  if (!res || !res.rows.length) {
+    res = await pool.query(
+      `SELECT id FROM players WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+      [trimmed]
+    )
+  }
   if (!res.rows.length) throw new Error(`Player not found: ${name}`)
   const { player, seasons, awards } = await fetchPlayerData(res.rows[0].id)
   const puzzle = buildPuzzle(1, player, seasons, awards, Date.now())

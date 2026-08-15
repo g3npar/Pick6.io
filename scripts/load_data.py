@@ -406,10 +406,13 @@ SB_PLAYER_OVERRIDES = [
     ("Deion Sanders",   1995, "DAL"),  # DAL Cowboys, SB XXX
 ]
 for name, yr, team in SB_PLAYER_OVERRIDES:
-    cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (name,))
-    row = cur.fetchone()
-    if not row:
+    cur.execute("SELECT id FROM players WHERE name ILIKE %s", (name,))
+    rows = cur.fetchall()
+    if len(rows) != 1:
+        if len(rows) > 1:
+            print(f"  SKIPPED ambiguous override {name} ({yr}): candidate ids {[r[0] for r in rows]}")
         continue
+    row = rows[0]
     cur.execute("""
         INSERT INTO player_seasons (player_id, team, season_year, fpts, super_bowl_winner)
         VALUES (%s, %s, %s, 0, true)
@@ -576,11 +579,13 @@ try:
             db_id = id_map.get(str(row[player_col]))
         if not db_id and name_col and pd.notna(row.get(name_col)):
             # Exact full-name match — a last-name substring match would risk
-            # attributing this award to an unrelated same-surname player.
-            cur.execute("SELECT id FROM players WHERE name ILIKE %s LIMIT 1", (str(row[name_col]),))
-            r = cur.fetchone()
-            if r:
-                db_id = r[0]
+            # attributing this award to an unrelated same-surname player, and
+            # an ambiguous exact match (two real players, one full name) is
+            # skipped rather than guessed.
+            cur.execute("SELECT id FROM players WHERE name ILIKE %s", (str(row[name_col]),))
+            rs = cur.fetchall()
+            if len(rs) == 1:
+                db_id = rs[0][0]
         if not db_id:
             continue
 

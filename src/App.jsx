@@ -114,9 +114,10 @@ function App() {
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
 
-  const handlePlayerPuzzle = (name) => {
+  const handlePlayerPuzzle = ({ name, draftYear }) => {
     setGenerating(true)
-    fetch(`${API}/puzzle/player?${new URLSearchParams({ name })}`)
+    const params = { name, ...(draftYear ? { draftYear } : {}) }
+    fetch(`${API}/puzzle/player?${new URLSearchParams(params)}`)
       .then(r => {
         if (!r.ok) return r.text().then(t => {
           try { const d = JSON.parse(t); throw new Error(d.error || `Server error ${r.status}`) }

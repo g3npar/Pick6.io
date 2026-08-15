@@ -184,15 +184,17 @@ app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── GET /puzzle/player?name=Tom+Brady ─────────────────────────────────────────
+// ── GET /puzzle/player?name=Tom+Brady&draftYear=2000 ────────────────────────────
 app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
   const raw  = String(req.query.name || '').trim()
   if (!raw || raw.length > 80) return res.status(400).json({ error: 'Invalid name' })
   // Strip anything that isn't a letter, space, apostrophe, hyphen, or dot
   const name = raw.replace(/[^a-zA-Z .'\-]/g, '').trim()
   if (!name) return res.status(400).json({ error: 'Invalid name' })
+  // Disambiguates players who share an exact name (e.g. two different "Josh Allen"s)
+  const draftYear = /^\d{4}$/.test(req.query.draftYear) ? Number(req.query.draftYear) : undefined
   try {
-    const puzzle = await generatePlayerPuzzle(name)
+    const puzzle = await generatePlayerPuzzle(name, draftYear)
     res.json(puzzle)
   } catch (err) {
     console.error('Player puzzle failed:', err.message)
