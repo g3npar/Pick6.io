@@ -96,7 +96,10 @@ if "sacks" not in seasonal_2025.columns:
     seasonal_2025["sacks"] = None
 
 # Build a gsis_id → college/draft lookup from players_df
-META_COLS  = ['gsis_id', 'college_name', 'draft_year', 'draft_round', 'draft_number']
+# NB: nfl_data_py's import_players() calls the overall-pick column
+# "draft_pick", not "draft_number" — that mismatch meant draft_number was
+# silently never populated for anyone (all 6,644 players had it NULL).
+META_COLS  = ['gsis_id', 'college_name', 'draft_year', 'draft_round', 'draft_pick']
 meta_avail = [c for c in META_COLS if c in players_df.columns]
 player_meta = {}
 for _, r in players_df[meta_avail].dropna(subset=['gsis_id']).iterrows():
@@ -107,8 +110,8 @@ for _, r in players_df[meta_avail].dropna(subset=['gsis_id']).iterrows():
         entry['draft_year']   = int(r['draft_year'])
     if 'draft_round'   in meta_avail and pd.notna(r.get('draft_round')):
         entry['draft_round']  = int(r['draft_round'])
-    if 'draft_number'  in meta_avail and pd.notna(r.get('draft_number')):
-        entry['draft_number'] = int(r['draft_number'])
+    if 'draft_pick'    in meta_avail and pd.notna(r.get('draft_pick')):
+        entry['draft_number'] = int(r['draft_pick'])
     if entry:
         player_meta[str(r['gsis_id'])] = entry
 
