@@ -3,7 +3,7 @@ const { Pool } = require('pg')
 const fs   = require('fs')
 const path = require('path')
 
-// ── Awards CSV — loaded once at startup ──────────────────────────────────────
+// Awards CSV, loaded once at startup.
 const _awardsIdx = new Map()  // normalizedName → [{award, year, ...}]
 
 function _normName(n) {
@@ -16,7 +16,7 @@ function _normName(n) {
 
 ;(function loadAwardsCSV() {
   const csvPath = path.join(__dirname, '..', 'public', 'awards.csv')
-  if (!fs.existsSync(csvPath)) { console.warn('awards.csv not found — CSV facts disabled'); return }
+  if (!fs.existsSync(csvPath)) { console.warn('awards.csv not found, CSV facts disabled'); return }
   const lines = fs.readFileSync(csvPath, 'utf8').trim().split('\n')
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(',')
@@ -37,7 +37,7 @@ function _normName(n) {
 
 function lookupAwards(playerName) {
   const key = _normName(playerName)
-  // Exact match only — avoid cross-player contamination from last-name fallback
+  // Exact match only, to avoid contamination from a last-name fallback.
   return _awardsIdx.get(key) || []
 }
 
@@ -48,7 +48,7 @@ const pool = new Pool({
     : false,
 })
 
-// ── Seeded pseudo-random (xorshift32-based) ───────────────────────────────────
+// Seeded pseudo-random number generator, xorshift32-based.
 function seedRng(seed) {
   let s = (seed ^ 0xdeadbeef) >>> 0 || 1
   return () => {
@@ -66,7 +66,7 @@ function seededShuffle(arr, rng) {
   return a
 }
 
-// ── Formatting helpers ────────────────────────────────────────────────────────
+// Formatting helpers.
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd']
   const v = n % 100
@@ -77,15 +77,14 @@ function fmt(n) {
   return Number(n).toLocaleString('en-US')
 }
 
-// Picks a nearby-but-wrong season year for a stat lie — keeps the real
-// number intact and makes the year the thing to catch instead.
+// Picks a nearby but wrong season year for a stat lie, keeping the real number intact.
 function fakeYear(year, rng) {
   const delta = 1 + Math.floor(rng() * 3)
   const sign  = (year + delta > 2025) ? -1 : (year - delta < 1970) ? 1 : (rng() < 0.5 ? 1 : -1)
   return year + sign * delta
 }
 
-// ── College pool for generating false college facts ───────────────────────────
+// College pool for generating false college facts.
 const NFL_COLLEGES = [
   'Alabama', 'Ohio State', 'Michigan', 'USC', 'LSU', 'Florida', 'Texas',
   'Notre Dame', 'Penn State', 'Clemson', 'Georgia', 'Oklahoma', 'Stanford',
@@ -100,7 +99,7 @@ function otherCollege(real, rng) {
   return pool[Math.floor(rng() * pool.length)]
 }
 
-// ── Award display labels ──────────────────────────────────────────────────────
+// Award display labels.
 const AWARD_LABELS = {
   OPOY: 'AP Offensive Player of the Year',
   DPOY: 'AP Defensive Player of the Year',
@@ -109,11 +108,9 @@ const AWARD_LABELS = {
   CPOY: 'AP Comeback Player of the Year',
 }
 
-// ── Fact builders ─────────────────────────────────────────────────────────────
-// Each returns { cat, text, makeLie(rng) → { text, explanation } }
-// Returns null if the player lacks data for this category.
+// Fact builders, each returning { cat, text, makeLie(rng) } or null if the player lacks data for that category.
 
-// Extract the primary (first) college from nfl_data_py's semicolon-separated list
+// Extracts the primary college from nfl_data_py's semicolon-separated list.
 function primaryCollege(raw) {
   if (!raw) return null
   return raw.split(';')[0].trim()
@@ -135,18 +132,21 @@ function collegeFact(p) {
   }
 }
 
+// Derives the round from the pick number so a faked pick always shows a matching round.
+const roundForPick = pick => Math.min(7, Math.max(1, Math.ceil(pick / 32)))
+
 function draftFact(p) {
-  if (!p.draft_number || !p.draft_year) return null
+  if (!p.draft_number || !p.draft_year || !p.draft_round) return null
   return {
     cat: 'draft',
-    text: `Was the ${ordinal(p.draft_number)} overall pick in the ${p.draft_year} NFL Draft`,
+    text: `Was the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}) in the ${p.draft_year} NFL Draft`,
     makeLie(rng) {
       const delta = 3 + Math.floor(rng() * 12)
       const sign  = rng() < 0.5 ? 1 : -1
       const fake  = Math.max(1, p.draft_number + sign * delta)
       return {
-        text: `Was the ${ordinal(fake)} overall pick in the ${p.draft_year} NFL Draft`,
-        explanation: `${p.name} was actually the ${ordinal(p.draft_number)} overall pick.`,
+        text: `Was the ${ordinal(fake)} overall pick (Round ${roundForPick(fake)}) in the ${p.draft_year} NFL Draft`,
+        explanation: `${p.name} was actually the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}).`,
       }
     },
   }
@@ -320,9 +320,7 @@ function recTdFact(p, season) {
 }
 
 function sacksFact(p, season) {
-  // Only valid for defensive / pass-rush positions; the DB sacks column for
-  // offensive players records times sacked, which is not a useful puzzle fact.
-  // The DB also splits many of these into left/right variants (e.g. RDT, LILB).
+  // Only valid for defensive positions, since the sacks column means times sacked for offensive players.
   const defPositions = /^(DE|DT|LB|OLB|ILB|MLB|EDGE|NT|DL|LDE|RDE|LDT|RDT|LLB|RLB|LILB|RILB|LOLB|ROLB|LE|RE)$/i
   if (!defPositions.test(p.position || '')) return null
   if (!season || !season.sacks || season.sacks < 5) return null
@@ -432,7 +430,7 @@ function awardFact(p, award) {
   }
 }
 
-// ── CSV-backed fact builders ──────────────────────────────────────────────────
+// CSV-backed fact builders.
 
 function hofFact(p, csvAwards) {
   const entry = csvAwards.find(a => a.award === 'HOF' && a.year > 0)
@@ -486,7 +484,7 @@ function csvAwardFact(p, csvAwards) {
   return null
 }
 
-// ── Assemble the fact pool for a player ──────────────────────────────────────
+// Assembles the fact pool for a player.
 function buildFactPool(player, seasons, dbAwards, rng) {
   // CSV awards: Pro Bowl count, HOF, OPOY/DPOY/OROY/DROY/CPOY
   const csvAwards = lookupAwards(player.name)
@@ -532,7 +530,7 @@ function buildFactPool(player, seasons, dbAwards, rng) {
 
 const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 'rec_tds', 'sacks', 'def_ints'])
 
-// ── Build one puzzle from raw DB data ─────────────────────────────────────────
+// Builds one puzzle from raw DB data.
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
   const pool = buildFactPool(player, seasons, awards, rng)
@@ -541,7 +539,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
   const nonStatFacts = seededShuffle(pool.filter(f => !STAT_CATS.has(f.cat)), rng)
 
-  // At most 1 stat fact; fill remaining slots from non-stat facts — target 6
+  // Uses at most one stat fact and fills the rest with non-stat facts, aiming for six.
   const chosen = [
     ...statFacts.slice(0, 1),
     ...nonStatFacts,
@@ -551,7 +549,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   if (chosen.length < 6) {
     chosen.push(...statFacts.slice(1, 6 - chosen.length + 1))
   }
-  // Every wedge on the wheel needs a fact — never hand back a partial puzzle
+  // Every wedge needs a fact, so a partial puzzle is never returned.
   if (chosen.length < 6) return null
 
   const lieIdx = Math.floor(rng() * chosen.length)
@@ -572,7 +570,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   }
 }
 
-// ── DB helpers ────────────────────────────────────────────────────────────────
+// DB helpers.
 async function fetchEligibleIds() {
   const res = await pool.query(`
     SELECT p.id, p.name
@@ -585,13 +583,11 @@ async function fetchEligibleIds() {
 
   const era1 = [], era2 = [], era3 = []
   for (const r of res.rows) {
-    // awards.csv no longer carries PRO_BOWL rows (scrape_awards.py sources Pro
-    // Bowl from the DB's pro_bowl column instead, which is unpopulated) — use
-    // All-Pro selections to place a player in an era instead.
+    // awards.csv has no Pro Bowl rows, so All-Pro selections place a player in an era instead.
     const allPros = lookupAwards(r.name).filter(a => a.award === 'ALL_PRO_FIRST' && a.year > 0)
     if (allPros.length < 1) continue
 
-    // Use median All-Pro year to determine era — works even without historical DB seasons
+    // Uses the median All-Pro year to determine era.
     const years = allPros.map(a => a.year).sort((a, b) => a - b)
     const median = years[Math.floor(years.length / 2)]
 
@@ -612,9 +608,7 @@ async function fetchPlayerData(playerId) {
   return { player: pRes.rows[0], seasons: sRes.rows, awards: aRes.rows }
 }
 
-// draftYear disambiguates same-named players (e.g. two real "Josh Allen"s —
-// a QB drafted 2018, an LB drafted 2019). Without it, a name shared by more
-// than one player resolves arbitrarily to whichever row the DB returns first.
+// draftYear disambiguates players who share an exact name, like the two real Josh Allens.
 async function generatePlayerPuzzle(name, draftYear) {
   const trimmed = name.trim()
   let res
@@ -637,7 +631,7 @@ async function generatePlayerPuzzle(name, draftYear) {
   return puzzle
 }
 
-// ── Daily puzzle cache ────────────────────────────────────────────────────────
+// Daily puzzle cache.
 let _cache = null   // { date: 'YYYY-MM-DD', puzzles: [...] }
 
 const EPOCH = new Date('2026-01-01')
@@ -680,7 +674,7 @@ async function getDailyPuzzles() {
   return puzzles
 }
 
-// ── Current-player daily (single puzzle, active roster) ───────────────────────
+// Current-player daily puzzle, one puzzle from the active roster.
 let _currentCache = null  // { date: 'YYYY-MM-DD', puzzle: {...} }
 
 async function fetchCurrentPlayerIds() {
@@ -691,8 +685,7 @@ async function fetchCurrentPlayerIds() {
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
 
-  // Award-only gating excluded plenty of players with genuinely notable
-  // careers but no All-Pro/Pro Bowl selections
+  // Award-only gating excluded notable players with no All-Pro or Pro Bowl selections.
   const statRes = await pool.query(`
     SELECT DISTINCT player_id AS id
     FROM player_seasons
