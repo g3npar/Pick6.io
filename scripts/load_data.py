@@ -446,17 +446,30 @@ AP_MVP_EXTRA = {2003: "Steve McNair", 1997: "Brett Favre"}
 
 print("\n── 8. AP MVP ──")
 cur.execute("UPDATE player_seasons SET ap_mvp = false")
+mvp_ambiguous = []
 for season, name in {**AP_MVP, **AP_MVP_EXTRA}.items():
     # Exact full-name match — a last-name substring match (the old behavior)
     # would flag every player sharing that surname, not just the real winner.
+    # Two real players can still share an exact full name (e.g. two different
+    # "Josh Allen"s both had a 2024 season row), so check for that rather than
+    # blindly flagging every name match — that already mis-credited a 2024
+    # MVP to an unrelated Josh Allen.
     cur.execute("""
-        UPDATE player_seasons ps SET ap_mvp = true
-        FROM players p
-        WHERE ps.player_id = p.id
-          AND ps.season_year = %s AND p.name ILIKE %s
+        SELECT p.id FROM player_seasons ps
+        JOIN players p ON p.id = ps.player_id
+        WHERE ps.season_year = %s AND p.name ILIKE %s
     """, (season, name))
+    ids = [r[0] for r in cur.fetchall()]
+    if len(ids) == 1:
+        cur.execute("UPDATE player_seasons SET ap_mvp = true WHERE player_id = %s AND season_year = %s", (ids[0], season))
+    elif len(ids) > 1:
+        mvp_ambiguous.append((season, name, ids))
 conn.commit()
 print("  ap_mvp updated")
+if mvp_ambiguous:
+    print(f"  SKIPPED {len(mvp_ambiguous)} ambiguous name match(es) — resolve manually:")
+    for season, name, ids in mvp_ambiguous:
+        print(f"    {season} {name}: candidate player ids {ids}")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 9 — Heisman winners
@@ -479,19 +492,29 @@ HEISMAN = {
 
 print("\n── 9. Heisman winners ──")
 count = 0
+heisman_ambiguous = []
 for year, name in HEISMAN.items():
     # Exact full-name match — a last-name substring match (the old behavior)
     # stamped heisman_year onto every player sharing that surname (e.g. every
     # "Williams" got 1998 from Ricky Williams), and its heisman_year IS NULL
     # guard meant the true winner could get locked onto a false year by an
-    # earlier, wrongly-matching entry and never self-correct.
-    cur.execute(
-        "UPDATE players SET heisman_year = %s WHERE name ILIKE %s AND heisman_year IS NULL",
-        (year, name)
-    )
-    count += cur.rowcount
+    # earlier, wrongly-matching entry and never self-correct. Two real players
+    # can still share an exact full name (two different "Ricky Williams"es,
+    # two different "Lamar Jackson"s) — skip and flag those rather than
+    # guessing which one actually won.
+    cur.execute("SELECT id FROM players WHERE name ILIKE %s AND heisman_year IS NULL", (name,))
+    ids = [r[0] for r in cur.fetchall()]
+    if len(ids) == 1:
+        cur.execute("UPDATE players SET heisman_year = %s WHERE id = %s", (year, ids[0]))
+        count += 1
+    elif len(ids) > 1:
+        heisman_ambiguous.append((year, name, ids))
 conn.commit()
 print(f"  {count} players updated")
+if heisman_ambiguous:
+    print(f"  SKIPPED {len(heisman_ambiguous)} ambiguous name match(es) — resolve manually:")
+    for year, name, ids in heisman_ambiguous:
+        print(f"    {year} {name}: candidate player ids {ids}")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 10 — Awards from import_awards()
