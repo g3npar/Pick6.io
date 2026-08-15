@@ -23,7 +23,7 @@ export function parseFact(text) {
   if (/Never won a Super Bowl/.test(text)) return { label: 'WON', value: '0', sublabel: 'SUPER BOWLS' }
 
   m = text.match(/Was named AP First-Team All-Pro (\d+) time/)
-  if (m) return { label: 'WON', value: `${m[1]}\u00d7`, sublabel: 'AP ALL-PRO' }
+  if (m) return { label: 'WON', value: m[1], sublabel: 'AP ALL-PRO' }
 
   m = text.match(/Won the AP NFL MVP award in (\d{4})$/)
   if (m) return { label: 'WON', value: 'AP MVP', sublabel: m[1] }

@@ -492,6 +492,7 @@ body {
   line-height: 1.1;
   color: var(--red);
 }
+.wl-value--sm { font-size: 15px; }
 .wl-sublabel {
   font-size: 16px;
   font-weight: 700;
@@ -499,25 +500,36 @@ body {
   color: var(--text);
   margin-top: 1px;
 }
+.wl-sublabel--sm   { font-size: 10px; margin-top: 0; }
 .wl-sublabel--true { color: rgba(0,240,128,0.85); }
 
-/* Lie reveal: cross out the wrong value, show the true one beneath it */
-.wl-wrong-value {
-  position: relative;
-  opacity: 0.5;
-  transform: scale(0.8);
+/* Lie reveal: a small crossed-out line for the wrong value, the real one
+   shown prominently beneath it at normal size. */
+.wl-correction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
-.wl-wrong-value::after {
+.wl-wrong-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+.wl-wrong-line .wl-logo { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
+.wl-wrong-line::after {
   content: '';
   position: absolute;
-  left: -4px;
-  right: -4px;
+  left: -6px;
+  right: -6px;
   top: 50%;
   height: 2px;
   background: #ef4444;
-  transform: rotate(-8deg);
+  transform: rotate(-6deg);
 }
-.wl-true-value { margin-top: 2px; }
 .wl-true-value .wl-value { color: var(--green); }
 .wl-hovered .wl-sublabel,
 .wl-selected .wl-sublabel { color: rgba(255,255,255,0.5); }

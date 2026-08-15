@@ -35,10 +35,12 @@ const WEDGE_CENTERS = Array.from({ length: N_WEDGES }, (_, i) => getWedgeCentroi
 
 // Renders a parsed fact's value as logo(s) or text — shared by the normal
 // wedge display and the crossed-out/corrected display shown for a lie.
-function FactValue({ display }) {
+// `compact` shrinks it for the struck-through "wrong" line in a correction.
+function FactValue({ display, compact }) {
   if (display.isTeams) {
+    const many = display.value.split(', ').length >= 3
     return (
-      <div className={`wl-logos${display.value.split(', ').length >= 3 ? ' wl-logos--sm' : ''}`}>
+      <div className={`wl-logos${compact || many ? ' wl-logos--sm' : ''}`}>
         {display.value.split(', ').map(team => {
           const src = teamLogo(team)
           return src
@@ -51,14 +53,14 @@ function FactValue({ display }) {
   if (display.isCollege) {
     const src = collegeLogo(display.value)
     return (
-      <div className="wl-logos">
+      <div className={`wl-logos${compact ? ' wl-logos--sm' : ''}`}>
         {src
           ? <img src={src} alt={display.value} className="wl-logo wl-logo-college" title={display.value} />
           : <p className="wl-text wl-value">{display.value}</p>}
       </div>
     )
   }
-  return <p className="wl-text wl-value">{display.value}</p>
+  return <p className={`wl-text wl-value${compact ? ' wl-value--sm' : ''}`}>{display.value}</p>
 }
 
 
@@ -306,16 +308,16 @@ function GameBoard({
             >
               <span className="wl-num">{display.label}</span>
               {trueDisplay ? (
-                <>
-                  <div className="wl-wrong-value">
-                    <FactValue display={display} />
-                    {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
+                <div className="wl-correction">
+                  <div className="wl-wrong-line">
+                    <FactValue display={display} compact />
+                    {display.sublabel && <span className="wl-sublabel wl-sublabel--sm">{display.sublabel}</span>}
                   </div>
                   <div className="wl-true-value">
                     <FactValue display={trueDisplay} />
                     {trueDisplay.sublabel && <span className="wl-sublabel wl-sublabel--true">{trueDisplay.sublabel}</span>}
                   </div>
-                </>
+                </div>
               ) : (
                 <>
                   <FactValue display={display} />
