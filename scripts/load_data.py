@@ -1,7 +1,10 @@
 """
-Loads all NFL player and season data into RDS PostgreSQL.
-Handles schema migration, player data, season stats, and all award/metadata
-in a single pass — no separate helper scripts needed.
+Loads NFL player and season data into RDS PostgreSQL: schema migration,
+player/roster data, season stats, and Super Bowl/MVP/Heisman metadata.
+
+Award data (All-Pro, Pro Bowl, OPOY/DPOY/OROY/DROY/CPOY, HOF) comes from a
+separate script — see scripts/scrape_awards.py — since nfl_data_py has no
+working source for it (see the note near the bottom of this file).
 
 Run:
   python3 scripts/load_data.py
@@ -520,102 +523,16 @@ if heisman_ambiguous:
         print(f"    {year} {name}: candidate player ids {ids}")
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 10 — Awards from import_awards()
-#      Covers: All-Pro, OPOY, DPOY, OROY, DROY, CPOY, Pro Bowl
-#      ap_allpro_first and pro_bowl are written directly onto player_seasons;
-#      everything else goes into the player_awards table.
+# 10 — (removed) Awards from import_awards()
+#      nfl_data_py.import_awards() doesn't exist in the pinned version (0.3.2)
+#      and never has across any version checked — this always hit an
+#      AttributeError and silently no-opped, so player_seasons.ap_allpro_first
+#      and .pro_bowl are permanently stuck at their false default, and
+#      player_awards never gets OPOY/DPOY/OROY/DROY/CPOY rows either.
+#      All of that data now comes from public/awards.csv instead — see
+#      scripts/scrape_awards.py (footballdb.com for those awards, Wikipedia
+#      for Pro Bowl) and api/puzzle.js's lookupAwards().
 # ════════════════════════════════════════════════════════════════════════════════
-
-# award string → (action, value)
-#   action 'season_flag' → UPDATE player_seasons SET <value> = true
-#   action 'award_row'   → INSERT into player_awards with award_type = <value>
-AWARD_ACTIONS = {
-    'First-Team All-Pro':              ('season_flag', 'ap_allpro_first'),
-    'AP First-Team All-Pro':           ('season_flag', 'ap_allpro_first'),
-    'Pro Bowl':                        ('season_flag', 'pro_bowl'),
-    'AP Offensive Player of the Year': ('award_row',   'OPOY'),
-    'AP Defensive Player of the Year': ('award_row',   'DPOY'),
-    'AP Offensive Rookie of the Year': ('award_row',   'OROY'),
-    'AP Defensive Rookie of the Year': ('award_row',   'DROY'),
-    'AP Comeback Player of the Year':  ('award_row',   'CPOY'),
-    'Offensive Player of the Year':    ('award_row',   'OPOY'),
-    'Defensive Player of the Year':    ('award_row',   'DPOY'),
-    'Offensive Rookie of the Year':    ('award_row',   'OROY'),
-    'Defensive Rookie of the Year':    ('award_row',   'DROY'),
-    'Comeback Player of the Year':     ('award_row',   'CPOY'),
-}
-
-print("\n── 10. Awards (import_awards) ──")
-cur.execute("SELECT id, nfl_id FROM players")
-id_map = {nfl_id: db_id for db_id, nfl_id in cur.fetchall()}
-
-cur.execute("UPDATE player_seasons SET ap_allpro_first = false")
-if not has_pro_bowl:
-    cur.execute("UPDATE player_seasons SET pro_bowl = false")
-conn.commit()
-
-try:
-    awards_df  = nfl.import_awards(list(range(1980, 2025)))
-    award_col  = next((c for c in awards_df.columns if 'award' in c.lower()), None)
-    player_col = next((c for c in awards_df.columns if c in ('gsis_id', 'player_id')), None)
-    season_col = next((c for c in awards_df.columns if 'season' in c.lower()), None)
-    name_col   = next((c for c in awards_df.columns if 'name'   in c.lower()), None)
-    print(f"  Columns: {list(awards_df.columns)}")
-
-    award_rows   = []   # for player_awards table
-    flag_updates = 0
-
-    for _, row in awards_df.iterrows():
-        raw    = str(row.get(award_col, '')).strip()
-        action = AWARD_ACTIONS.get(raw)
-        if not action:
-            continue
-        season = int(row[season_col]) if season_col and pd.notna(row.get(season_col)) else None
-        if not season:
-            continue
-
-        db_id = None
-        if player_col and pd.notna(row.get(player_col)):
-            db_id = id_map.get(str(row[player_col]))
-        if not db_id and name_col and pd.notna(row.get(name_col)):
-            # Exact full-name match — a last-name substring match would risk
-            # attributing this award to an unrelated same-surname player, and
-            # an ambiguous exact match (two real players, one full name) is
-            # skipped rather than guessed.
-            cur.execute("SELECT id FROM players WHERE name ILIKE %s", (str(row[name_col]),))
-            rs = cur.fetchall()
-            if len(rs) == 1:
-                db_id = rs[0][0]
-        if not db_id:
-            continue
-
-        kind, value = action
-        if kind == 'season_flag':
-            cur.execute(f"""
-                UPDATE player_seasons SET {value} = true
-                WHERE player_id = %s AND season_year = %s
-            """, (db_id, season))
-            flag_updates += cur.rowcount
-        else:
-            award_rows.append((db_id, season, value))
-
-    conn.commit()
-    print(f"  {flag_updates} season flag rows updated (All-Pro / Pro Bowl)")
-
-    if award_rows:
-        execute_values(cur, """
-            INSERT INTO player_awards (player_id, season_year, award_type)
-            VALUES %s ON CONFLICT DO NOTHING
-        """, award_rows)
-        conn.commit()
-        print(f"  {len(award_rows)} award rows inserted (OPOY/DPOY/etc.)")
-    else:
-        print("  No OPOY/DPOY/etc. rows found")
-
-except AttributeError:
-    print("  import_awards() not available in this nfl_data_py version — skipping")
-except Exception as e:
-    print(f"  Awards load skipped: {e}")
 
 cur.close()
 conn.close()
