@@ -261,7 +261,7 @@ function GameBoard({
               fill = '#20263e'
             }
 
-            const isInteractive = !liePhaseComplete && !isConfirmedTrue && !isFalse
+            const isInteractive = !liePhaseComplete && !isConfirmedTrue
             return (
               <path
                 key={fact.id}
