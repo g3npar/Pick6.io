@@ -59,10 +59,10 @@ export function parseFact(text) {
   if (m) return { label: 'COLLEGE', value: m[1], sublabel: null, isCollege: true }
 
   m = text.match(/Was the (\w+) overall pick \(Round (\d+)\) in the (\d{4}) NFL Draft/)
-  if (m) return { label: 'NFL DRAFT', value: m[1] + ' pick', sublabel: `Rd ${m[2]} · ${m[3]}` }
+  if (m) return { label: 'NFL DRAFT', value: m[1], sublabel: `Rd ${m[2]} · ${m[3]}` }
 
   m = text.match(/Was the (\w+) overall pick in the (\d{4}) NFL Draft/)
-  if (m) return { label: 'NFL DRAFT', value: m[1] + ' pick', sublabel: `in ${m[2]}` }
+  if (m) return { label: 'NFL DRAFT', value: m[1], sublabel: `in ${m[2]}` }
 
   m = text.match(/Won the Heisman Trophy in (\d{4})/)
   if (m) return { label: 'WON', value: 'HEISMAN', sublabel: `in ${m[1]}` }

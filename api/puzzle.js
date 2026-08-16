@@ -48,7 +48,6 @@ const pool = new Pool({
     : false,
 })
 
-// Seeded pseudo-random number generator, xorshift32-based.
 function seedRng(seed) {
   let s = (seed ^ 0xdeadbeef) >>> 0 || 1
   return () => {
@@ -77,14 +76,12 @@ function fmt(n) {
   return Number(n).toLocaleString('en-US')
 }
 
-// Picks a nearby but wrong season year for a stat lie, keeping the real number intact.
 function fakeYear(year, rng) {
   const delta = 1 + Math.floor(rng() * 3)
   const sign  = (year + delta > 2025) ? -1 : (year - delta < 1970) ? 1 : (rng() < 0.5 ? 1 : -1)
   return year + sign * delta
 }
 
-// College pool for generating false college facts.
 const NFL_COLLEGES = [
   'Alabama', 'Ohio State', 'Michigan', 'USC', 'LSU', 'Florida', 'Texas',
   'Notre Dame', 'Penn State', 'Clemson', 'Georgia', 'Oklahoma', 'Stanford',
@@ -110,7 +107,6 @@ const AWARD_LABELS = {
 
 // Fact builders, each returning { cat, text, makeLie(rng) } or null if the player lacks data for that category.
 
-// Extracts the primary college from nfl_data_py's semicolon-separated list.
 function primaryCollege(raw) {
   if (!raw) return null
   return raw.split(';')[0].trim()
@@ -132,7 +128,6 @@ function collegeFact(p) {
   }
 }
 
-// Derives the round from the pick number so a faked pick always shows a matching round.
 const roundForPick = pick => Math.min(7, Math.max(1, Math.ceil(pick / 32)))
 
 function draftFact(p) {
@@ -370,7 +365,6 @@ function heismanFact(p) {
   }
 }
 
-// Abbreviation → full team name (used for "PLAYED FOR" display)
 const TEAM_FULL = {
   ARI:'Arizona Cardinals', ATL:'Atlanta Falcons', BAL:'Baltimore Ravens',
   BUF:'Buffalo Bills', CAR:'Carolina Panthers', CHI:'Chicago Bears',
@@ -608,7 +602,6 @@ async function fetchPlayerData(playerId) {
   return { player: pRes.rows[0], seasons: sRes.rows, awards: aRes.rows }
 }
 
-// draftYear disambiguates players who share an exact name, like the two real Josh Allens.
 async function generatePlayerPuzzle(name, draftYear) {
   const trimmed = name.trim()
   let res
