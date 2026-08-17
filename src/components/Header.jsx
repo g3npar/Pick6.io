@@ -6,6 +6,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
     { id: 'archive',     label: 'Archive' },
     { id: 'leaderboard', label: 'Leaderboard' },
     { id: 'how-to-play', label: 'How to Play' },
+    ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
   return (
     <header className="header">

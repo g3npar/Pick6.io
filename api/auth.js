@@ -9,6 +9,14 @@ const COOKIE_NAME = 'session'
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
 
+// Comma-separated allowlist of admin emails for the puzzle scheduler.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+
+function isAdminEmail(email) {
+  return ADMIN_EMAILS.includes(String(email || '').toLowerCase())
+}
+
 // Creates the users/user_results tables if they don't exist yet. Safe to call on every boot.
 async function ensureAuthSchema(pool) {
   await pool.query(`
@@ -37,9 +45,7 @@ async function ensureAuthSchema(pool) {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_user_results_user ON user_results (user_id)')
 }
 
-// Verifies a Google Identity Services credential (ID token) and returns the
-// caller's real, verified Google account details. Throws if the token is
-// invalid, expired, or wasn't issued for this app.
+// Verifies a Google ID token and returns the caller's verified account details.
 async function verifyGoogleCredential(credential) {
   if (!googleClient) throw new Error('Google sign-in is not configured on this server')
   const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID })
@@ -76,10 +82,7 @@ function verifySession(token) {
   }
 }
 
-// Frontend (pick-six.io) and API (api.pick-six.io) share a parent domain, so
-// the browser treats them as same-site — Lax works everywhere and avoids the
-// SameSite=None cross-site cookie flakiness (Safari, browsers with strict
-// third-party cookie rules) a split vercel.app/onrender.com setup would hit.
+// Frontend and API share a parent domain, so Lax works everywhere.
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -113,4 +116,5 @@ module.exports = {
   signSession,
   optionalAuth,
   requireAuth,
+  isAdminEmail,
 }

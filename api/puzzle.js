@@ -3,9 +3,7 @@ const { Pool, types } = require('pg')
 const fs   = require('fs')
 const path = require('path')
 
-// Returns DATE columns as plain "YYYY-MM-DD" strings instead of pg's default
-// (a JS Date at UTC midnight, which serializes with a timezone-shifted time
-// component and is never what a date-only column means).
+// Returns DATE columns as plain "YYYY-MM-DD" strings instead of a JS Date.
 types.setTypeParser(1082, val => val)
 
 // Awards CSV, loaded once at startup.
@@ -714,12 +712,7 @@ function todayDateStr() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 }
 
-// The daily_puzzles table is the durable source of truth for what a given
-// date's puzzle actually was — the in-memory cache above is lost on every
-// server restart (which Render does routinely on its free tier), and without
-// persistence a mid-day restart could silently swap "today's" puzzle out
-// from under players who hadn't finished it yet, or make an archived date
-// un-repeatable once the underlying player data changes.
+// Durable storage for daily puzzles, since the in-memory cache is lost on every server restart.
 async function ensurePuzzleSchema(dbPool) {
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS daily_puzzles (
@@ -746,6 +739,76 @@ async function buildAndStoreDailyPuzzle(dateStr) {
   return puzzle
 }
 
+// Admin puzzle scheduler
+
+// The same deterministic pick a future date would get by default, computed live.
+async function previewDailyPuzzle(dateStr) {
+  const seed      = Math.floor((new Date(dateStr) - EPOCH) / 86400000) + 9999
+  const ids       = await fetchCurrentPlayerIds()
+  if (!ids.length) throw new Error('No current eligible players found')
+  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+  if (!puzzle) throw new Error('Could not build a puzzle for that date')
+  return puzzle
+}
+
+// A different random candidate for the same date, for the admin to shuffle through.
+async function shuffleDailyPuzzle(dateStr) {
+  const seed = Date.now()
+  const ids  = await fetchCurrentPlayerIds()
+  if (!ids.length) throw new Error('No current eligible players found')
+  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+  if (!puzzle) throw new Error('Could not build a puzzle for that date')
+  return puzzle
+}
+
+// Locks in a puzzle for dateStr, replacing whatever was set before. Future dates only.
+async function setScheduledPuzzle(dateStr, puzzle) {
+  if (dateStr <= todayDateStr()) throw new Error('Can only schedule a date after today')
+  await pool.query(
+    `INSERT INTO daily_puzzles (puzzle_date, puzzle) VALUES ($1, $2)
+     ON CONFLICT (puzzle_date) DO UPDATE SET puzzle = EXCLUDED.puzzle`,
+    [dateStr, puzzle]
+  )
+}
+
+// Which of a list of dates already have a puzzle locked in.
+async function getScheduledDates(dates) {
+  const res = await pool.query(
+    'SELECT puzzle_date FROM daily_puzzles WHERE puzzle_date = ANY($1::date[])',
+    [dates]
+  )
+  return new Set(res.rows.map(r => r.puzzle_date))
+}
+
+// Fetches the eligible pool once and reuses it across every date, instead of re-querying per day.
+async function previewUpcomingDates(dates) {
+  const ids = await fetchCurrentPlayerIds()
+  if (!ids.length) throw new Error('No current eligible players found')
+
+  const scheduled = await getScheduledDates(dates)
+  const stored = scheduled.size
+    ? await pool.query('SELECT puzzle_date, puzzle FROM daily_puzzles WHERE puzzle_date = ANY($1::date[])', [dates])
+    : { rows: [] }
+  const storedByDate = new Map(stored.rows.map(r => [r.puzzle_date, r.puzzle]))
+
+  const results = []
+  for (const dateStr of dates) {
+    if (storedByDate.has(dateStr)) {
+      results.push({ date: dateStr, scheduled: true, puzzle: storedByDate.get(dateStr) })
+      continue
+    }
+    try {
+      const seed = Math.floor((new Date(dateStr) - EPOCH) / 86400000) + 9999
+      const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+      if (!puzzle) throw new Error('no candidate')
+      results.push({ date: dateStr, scheduled: false, puzzle })
+    } catch {
+      results.push({ date: dateStr, scheduled: false, puzzle: null })
+    }
+  }
+  return results
+}
+
 async function getDailyCurrentPuzzle(fresh = false) {
   const today = todayDateStr()
 
@@ -768,10 +831,7 @@ async function getDailyCurrentPuzzle(fresh = false) {
   return puzzle
 }
 
-// Serves a specific past date's puzzle for the Archive's "play a missed day"
-// flow. Only ever reads what was actually stored for that date — it never
-// regenerates a date that doesn't have a row, since that wouldn't be a
-// faithful replay of what was actually shown that day.
+// Serves a past date's puzzle for the Archive. Never regenerates a missing date.
 async function getPuzzleForDate(dateStr) {
   if (dateStr >= todayDateStr()) throw new Error('That date is not available yet')
   const res = await pool.query('SELECT puzzle FROM daily_puzzles WHERE puzzle_date = $1', [dateStr])
@@ -779,9 +839,7 @@ async function getPuzzleForDate(dateStr) {
   return res.rows[0].puzzle
 }
 
-// Lists every date with a stored daily puzzle, most recent first, without
-// revealing puzzle content — used by the Archive to show what's been
-// released and, per-user, what's already been completed.
+// Lists every date with a stored daily puzzle, most recent first, no puzzle content included.
 async function listArchiveDates(limit = 60) {
   const res = await pool.query('SELECT puzzle_date FROM daily_puzzles ORDER BY puzzle_date DESC LIMIT $1', [limit])
   return res.rows.map(r => r.puzzle_date)
@@ -810,4 +868,5 @@ async function generateFreshPuzzles() {  const seed = Date.now()
 module.exports = {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
+  previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
 }

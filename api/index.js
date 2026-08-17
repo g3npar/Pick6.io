@@ -8,10 +8,11 @@ const https        = require('https')
 const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
+  previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
-  upsertUser, signSession, optionalAuth, requireAuth,
+  upsertUser, signSession, optionalAuth, requireAuth, isAdminEmail,
 } = require('./auth')
 
 const app = express()
@@ -19,7 +20,7 @@ const app = express()
 // Trust Render's proxy so rate limiting uses the real client IP
 app.set('trust proxy', 1)
 
-// ── Security headers (OWASP) ─────────────────────────────────────────────────
+// Security headers (OWASP)
 app.use(helmet({
   contentSecurityPolicy: false,   // API-only; no HTML served
   crossOriginEmbedderPolicy: false,
@@ -28,7 +29,7 @@ app.use(helmet({
 app.use(cookieParser())
 app.use(express.json({ limit: '10kb' }))
 
-// ── CORS — restrict to known origins ─────────────────────────────────────────
+// CORS, restricted to known origins.
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
   .split(',').map(o => o.trim())
 
@@ -46,7 +47,7 @@ app.use(cors({
 ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
-// ── Rate limiting ─────────────────────────────────────────────────────────────
+// Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,          // 1 minute
   max: 60,                       // 60 requests/min per IP
@@ -75,15 +76,15 @@ const authLimiter = rateLimit({
 
 app.use(apiLimiter)
 
-// ── Disable information-leaking headers ──────────────────────────────────────
+// Disable information-leaking headers
 app.disable('x-powered-by')
 
-// ── In-memory player cache ────────────────────────────────────────────────────
+// In-memory player cache
 let players   = []
 let cacheTime = 0
 const CACHE_TTL = 24 * 60 * 60 * 1000  // 24 hours
 
-// nflverse public players CSV — no auth needed
+// nflverse public players CSV, no auth needed.
 const PLAYERS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/players/players.csv'
 
 function fetchURL(url, hops = 6) {
@@ -125,7 +126,7 @@ async function ensurePlayers() {
   const text = await fetchURL(PLAYERS_URL)
   const rows  = parseCSV(text)
 
-  // One row per player — dedupe by display_name + position
+  // One row per player, deduped by display_name + position.
   const seen = new Map()
   for (const r of rows) {
     const name = (r.display_name || '').trim()
@@ -151,7 +152,7 @@ async function ensurePlayers() {
 // Kick off the fetch immediately so the first search is fast
 ensurePlayers().catch(err => console.error('Player load failed:', err.message))
 
-// ── GET /players/search?q=mahomes ────────────────────────────────────────────
+// GET /players/search?q=mahomes
 app.get('/players/search', async (req, res) => {
   const raw = String(req.query.q || '').trim()
   // Reject overly long or suspicious input
@@ -174,7 +175,7 @@ app.get('/players/search', async (req, res) => {
   res.json(results)
 })
 
-// ── GET /puzzle/today ────────────────────────────────────────────────────────
+// GET /puzzle/today
 app.get('/puzzle/today', async (req, res) => {
   try {
     const puzzles = await getDailyPuzzles()
@@ -185,7 +186,7 @@ app.get('/puzzle/today', async (req, res) => {
   }
 })
 
-// ── GET /puzzle/today/current ─────────────────────────────────────────────────
+// GET /puzzle/today/current
 app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
   try {
     const fresh  = req.query.fresh !== undefined
@@ -197,7 +198,7 @@ app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── GET /puzzle/date/2026-08-10 (play a specific past archive date) ────────────
+// GET /puzzle/date/2026-08-10 (play a specific past archive date)
 app.get('/puzzle/date/:date', puzzleLimiter, async (req, res) => {
   const date = req.params.date
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
@@ -209,14 +210,10 @@ app.get('/puzzle/date/:date', puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── GET /puzzle/archive ─────────────────────────────────────────────────────────
-// Lists every date a daily puzzle has actually been released for, most recent
-// first, with per-user completion status — never the puzzle content itself,
-// so an unplayed date isn't spoiled before you open it.
+// GET /puzzle/archive: released dates with per-user completion status, never puzzle content.
 app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   try {
-    // Today's puzzle lives on the Daily tab, not here — the archive is only
-    // for past dates, since /puzzle/date/:date won't serve today's early.
+    // Today's puzzle lives on the Daily tab, not here.
     const dates = (await listArchiveDates()).filter(d => d < todayDateStr())
     if (!dates.length) return res.json([])
     const r = await pool.query(`
@@ -237,7 +234,7 @@ app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   }
 })
 
-// ── GET /puzzle/generate (fresh random set) ───────────────────────────────────
+// GET /puzzle/generate (fresh random set)
 app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
   try {
     const puzzles = await generateFreshPuzzles()
@@ -248,7 +245,7 @@ app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── GET /puzzle/player?name=Tom+Brady&draftYear=2000 ────────────────────────────
+// GET /puzzle/player?name=Tom+Brady&draftYear=2000
 app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
   const raw  = String(req.query.name || '').trim()
   if (!raw || raw.length > 80) return res.status(400).json({ error: 'Invalid name' })
@@ -266,7 +263,12 @@ app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── POST /auth/google { credential } ─────────────────────────────────────────
+const toUserJSON = u => ({
+  id: u.id, email: u.email, displayName: u.display_name, avatarUrl: u.avatar_url,
+  isAdmin: isAdminEmail(u.email),
+})
+
+// POST /auth/google { credential }
 app.post('/auth/google', authLimiter, async (req, res) => {
   const credential = req.body?.credential
   if (!credential || typeof credential !== 'string') return res.status(400).json({ error: 'Missing credential' })
@@ -275,33 +277,35 @@ app.post('/auth/google', authLimiter, async (req, res) => {
     const user = await upsertUser(pool, googleUser)
     const token = signSession(user.id)
     res.cookie(COOKIE_NAME, token, cookieOptions)
-    res.json({ user: { id: user.id, email: user.email, displayName: user.display_name, avatarUrl: user.avatar_url } })
+    res.json({ user: toUserJSON(user) })
   } catch (err) {
     console.error('Google sign-in failed:', err.message)
     res.status(401).json({ error: 'Sign-in failed' })
   }
 })
 
-// ── POST /auth/logout ─────────────────────────────────────────────────────────
+// POST /auth/logout
 app.post('/auth/logout', (_req, res) => {
   res.clearCookie(COOKIE_NAME, cookieOptions)
   res.json({ ok: true })
 })
 
-// ── GET /auth/me ───────────────────────────────────────────────────────────────
+// GET /auth/me
 app.get('/auth/me', optionalAuth, async (req, res) => {
   if (!req.userId) return res.json({ user: null })
   const r = await pool.query('SELECT id, email, display_name, avatar_url FROM users WHERE id = $1', [req.userId])
   if (!r.rows.length) return res.json({ user: null })
-  const u = r.rows[0]
-  res.json({ user: { id: u.id, email: u.email, displayName: u.display_name, avatarUrl: u.avatar_url } })
+  res.json({ user: toUserJSON(r.rows[0]) })
 })
 
-// ── POST /puzzle/result { puzzleDate, selectedLieId, lieAttempts, playerGuess } ─
-// Recomputes lieFound/playerCorrect/score from the actual stored puzzle for that
-// date server-side rather than trusting client-submitted values, so the
-// leaderboard can't be gamed by just POSTing a fabricated score. puzzleDate
-// defaults to today, but can be a past archive date the player is catching up on.
+// requireAdmin (chain after requireAuth)
+async function requireAdmin(req, res, next) {
+  const r = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId])
+  if (!r.rows.length || !isAdminEmail(r.rows[0].email)) return res.status(403).json({ error: 'Admin access required' })
+  next()
+}
+
+// POST /puzzle/result: recomputes the score server-side so it can't be faked.
 app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
   const { selectedLieId, lieAttempts, playerGuess } = req.body || {}
   const puzzleDate = req.body?.puzzleDate || todayDateStr()
@@ -334,7 +338,7 @@ app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
   }
 })
 
-// ── GET /leaderboard ─────────────────────────────────────────────────────────────
+// GET /leaderboard
 app.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`
@@ -355,10 +359,73 @@ app.get('/leaderboard', async (_req, res) => {
   }
 })
 
-// ── 404 for any unmatched route ───────────────────────────────────────────────
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many admin requests, please slow down.' },
+})
+
+function upcomingDates(days) {
+  const dates = []
+  const [y, m, d] = todayDateStr().split('-').map(Number)
+  for (let i = 1; i <= days; i++) {
+    const dt = new Date(y, m - 1, d + i)
+    dates.push(dt.toLocaleDateString('en-CA'))
+  }
+  return dates
+}
+
+// GET /admin/puzzles?days=14: preview/status for each upcoming date.
+app.get('/admin/puzzles', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const days = Math.min(30, Math.max(1, Number(req.query.days) || 14))
+  try {
+    const results = await previewUpcomingDates(upcomingDates(days))
+    res.json(results)
+  } catch (err) {
+    console.error('Admin puzzle list failed:', err.message)
+    res.status(500).json({ error: 'Could not load upcoming puzzles' })
+  }
+})
+
+// POST /admin/preview { date, mode, name?, draftYear? }: candidate puzzle, not saved.
+app.post('/admin/preview', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { date, mode, name, draftYear } = req.body || {}
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= todayDateStr()) {
+    return res.status(400).json({ error: 'Invalid date' })
+  }
+  try {
+    let puzzle
+    if (mode === 'shuffle') puzzle = await shuffleDailyPuzzle(date)
+    else if (mode === 'player') {
+      if (!name) return res.status(400).json({ error: 'Missing player name' })
+      puzzle = await generatePlayerPuzzle(name, /^\d{4}$/.test(draftYear) ? Number(draftYear) : undefined)
+    } else puzzle = await previewDailyPuzzle(date)
+    res.json({ date, puzzle })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /admin/set { date, puzzle }: locks in a puzzle, replacing any prior one for that date.
+app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { date, puzzle } = req.body || {}
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !puzzle?.facts) {
+    return res.status(400).json({ error: 'Invalid date or puzzle' })
+  }
+  try {
+    await setScheduledPuzzle(date, puzzle)
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+// 404 for any unmatched route
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 
-// ── Global error handler (never leak stack traces) ────────────────────────────
+// Global error handler (never leak stack traces)
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err.message)
   res.status(500).json({ error: 'Internal server error' })

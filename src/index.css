@@ -1,7 +1,4 @@
-/* ════════════════════════════════════════════════════════════════
-   GRIDIRON PUZZLE — Global Styles
-   Dark NFL-themed UI
-   ════════════════════════════════════════════════════════════════ */
+/* Pick Six global styles, dark NFL-themed UI. */
 
 /* ── Design tokens ──────────────────────────────────────────────── */
 :root {
@@ -1256,6 +1253,45 @@ kbd {
   background: var(--bg-card);
   color: var(--text);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   ADMIN
+   ════════════════════════════════════════════════════════════════ */
+.admin-row { cursor: pointer; }
+.admin-row:hover { border-color: var(--border-bright); }
+.admin-row--active { border-color: var(--red); }
+.admin-detail {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.admin-player-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.admin-fact-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.admin-fact-list li {
+  font-size: 12px;
+  color: var(--text-sec);
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.admin-fact--lie { color: var(--red); border-color: var(--red) !important; }
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.admin-search { position: relative; }
 
 /* ════════════════════════════════════════════════════════════════
    COMING SOON

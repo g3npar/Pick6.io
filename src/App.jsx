@@ -7,6 +7,7 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import Leaderboard from './components/Leaderboard'
 import Archive from './components/Archive'
+import Admin from './components/Admin'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
@@ -38,9 +39,7 @@ function App() {
   const [generating,   setGenerating]   = useState(false)
   const [puzzleStates, setPuzzleStates] = useState({})
   const [user,         setUser]         = useState(null)
-  // The date of the real, released daily puzzle currently loaded (today's or
-  // a past one from the Archive) — only these count toward saved results.
-  // null means practice mode ("New Puzzle" / player search), which never saves.
+  // Date of the real released daily puzzle currently loaded, only these save. Null means practice mode.
   const [playingDate, setPlayingDate]   = useState(null)
   const [resultSaved, setResultSaved]   = useState(false)
 
@@ -99,6 +98,7 @@ function App() {
           {screen === 'leaderboard' && <Leaderboard />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
+          {screen === 'admin'       && <Admin />}
         </main>
         <Footer onNav={setScreen} />
       </div>
@@ -157,9 +157,7 @@ function App() {
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
 
-  // Only fires for a real released daily puzzle (today's or an archived
-  // date), and only once — practice replays ("New Puzzle" / player search)
-  // never touch the leaderboard.
+  // Only fires once for a real released daily puzzle, practice replays never touch the leaderboard.
   const saveResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
     if (!user || !playingDate || resultSaved) return
     setResultSaved(true)
@@ -201,6 +199,7 @@ function App() {
         {screen === 'leaderboard' && <Leaderboard />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
+        {screen === 'admin'       && <Admin />}
         {screen === 'daily'       && (
         <GameBoard
           puzzle={puzzle}

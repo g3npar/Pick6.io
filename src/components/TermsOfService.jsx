@@ -22,7 +22,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Accounts</h2>
-          <p>If account creation is available, you're responsible for keeping your login credentials secure and for anything that happens under your account. One account per person, please &mdash; and choose a display name that isn't impersonating someone else, isn't abusive, and isn't offensive. We can rename or suspend an account that violates this.</p>
+          <p>If account creation is available, you're responsible for keeping your login credentials secure and for anything that happens under your account. One account per person, please, and choose a display name that isn't impersonating someone else, isn't abusive, and isn't offensive. We can rename or suspend an account that violates this.</p>
         </div>
 
         <div className="legal-section">
@@ -43,7 +43,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">No warranty</h2>
-          <p>Pick Six is provided "as is," free of charge, with no guarantee of uptime, accuracy, or availability. We do our best to keep player facts correct, but this is a hobby project maintained by one person &mdash; if you spot an error, we'd genuinely like to hear about it, but we can't promise it'll never happen.</p>
+          <p>Pick Six is provided "as is," free of charge, with no guarantee of uptime, accuracy, or availability. We do our best to keep player facts correct, but this is a hobby project maintained by one person. If you spot an error, we'd genuinely like to hear about it, but we can't promise it'll never happen.</p>
         </div>
 
         <div className="legal-section">
@@ -53,7 +53,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Termination</h2>
-          <p>You can stop using Pick Six, or delete your account, at any time. We can suspend or discontinue the service, or any account, at our discretion &mdash; most likely only in response to abuse.</p>
+          <p>You can stop using Pick Six, or delete your account, at any time. We can suspend or discontinue the service, or any account, at our discretion, most likely only in response to abuse.</p>
         </div>
 
         <div className="legal-section">

@@ -12,12 +12,12 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Overview</h2>
-          <p>Pick Six is a small, independently-run NFL trivia game. This policy explains what data we collect when you use it, why, and what say you have over it. We keep this short on purpose &mdash; if a section doesn't apply to how you use the site (for example, you haven't created an account), it simply doesn't apply to you.</p>
+          <p>Pick Six is a small, independently-run NFL trivia game. This policy explains what data we collect when you use it, why, and what say you have over it. We keep this short on purpose. If a section doesn't apply to how you use the site (for example, you haven't created an account), it simply doesn't apply to you.</p>
         </div>
 
         <div className="legal-section">
           <h2 className="htp-section-title">Playing without an account</h2>
-          <p>You can play the daily puzzle without signing up for anything. Your in-progress guesses are kept in your browser only and are never sent to our servers. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention &mdash; we don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
+          <p>You can play the daily puzzle without signing up for anything. Your in-progress guesses are kept in your browser only and are never sent to our servers. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention. We don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
         </div>
 
         <div className="legal-section">
@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
           <p>When account creation is available, signing in will let you save your streak and results across devices. Creating an account means we store:</p>
           <ul>
             <li>Your email address and a display name.</li>
-            <li>If you sign in with Google, the account identifier Google gives us &mdash; not your Google password, which we never see.</li>
+            <li>If you sign in with Google, the account identifier Google gives us, not your Google password, which we never see.</li>
             <li>Your daily puzzle results: whether you found the lie, how many attempts it took, whether you guessed the player, and your score.</li>
             <li>A session cookie that keeps you signed in.</li>
           </ul>
@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Who else sees it</h2>
-          <p>Our infrastructure providers process data on our behalf to keep the site running &mdash; currently a hosting provider for the site itself, a hosting provider for the API, and a database provider. If you sign in with Google, Google processes the authentication itself under its own privacy policy. None of these providers use your data for their own purposes.</p>
+          <p>Our infrastructure providers process data on our behalf to keep the site running: currently a hosting provider for the site itself, a hosting provider for the API, and a database provider. If you sign in with Google, Google processes the authentication itself under its own privacy policy. None of these providers use your data for their own purposes.</p>
         </div>
 
         <div className="legal-section">
