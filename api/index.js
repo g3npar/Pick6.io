@@ -3,8 +3,16 @@ const express      = require('express')
 const cors         = require('cors')
 const helmet       = require('helmet')
 const rateLimit    = require('express-rate-limit')
+const cookieParser = require('cookie-parser')
 const https        = require('https')
-const { getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle } = require('./puzzle')
+const {
+  getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
+  getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
+} = require('./puzzle')
+const {
+  cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
+  upsertUser, signSession, optionalAuth, requireAuth,
+} = require('./auth')
 
 const app = express()
 
@@ -17,6 +25,9 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }))
 
+app.use(cookieParser())
+app.use(express.json({ limit: '10kb' }))
+
 // ── CORS — restrict to known origins ─────────────────────────────────────────
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
   .split(',').map(o => o.trim())
@@ -27,9 +38,13 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
     cb(new Error('CORS: origin not allowed'))
   },
-  methods: ['GET'],
+  credentials: true,   // required so the browser sends/accepts the session cookie
+  methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }))
+
+ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
+ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const apiLimiter = rateLimit({
@@ -47,6 +62,15 @@ const puzzleLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many puzzle requests, please wait a moment.' },
+})
+
+// Tighter still for auth, since it's a common abuse/brute-force target
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth requests, please slow down.' },
 })
 
 app.use(apiLimiter)
@@ -166,10 +190,50 @@ app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
   try {
     const fresh  = req.query.fresh !== undefined
     const puzzle = await getDailyCurrentPuzzle(fresh)
-    res.json(puzzle)
+    res.json(fresh ? puzzle : { ...puzzle, date: todayDateStr() })
   } catch (err) {
     console.error('Current puzzle failed:', err.message)
     res.status(500).json({ error: 'Could not generate current puzzle' })
+  }
+})
+
+// ── GET /puzzle/date/2026-08-10 (play a specific past archive date) ────────────
+app.get('/puzzle/date/:date', puzzleLimiter, async (req, res) => {
+  const date = req.params.date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
+  try {
+    const puzzle = await getPuzzleForDate(date)
+    res.json({ ...puzzle, date })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// ── GET /puzzle/archive ─────────────────────────────────────────────────────────
+// Lists every date a daily puzzle has actually been released for, most recent
+// first, with per-user completion status — never the puzzle content itself,
+// so an unplayed date isn't spoiled before you open it.
+app.get('/puzzle/archive', optionalAuth, async (req, res) => {
+  try {
+    // Today's puzzle lives on the Daily tab, not here — the archive is only
+    // for past dates, since /puzzle/date/:date won't serve today's early.
+    const dates = (await listArchiveDates()).filter(d => d < todayDateStr())
+    if (!dates.length) return res.json([])
+    const r = await pool.query(`
+      SELECT dp.puzzle_date, ur.score
+      FROM daily_puzzles dp
+      LEFT JOIN user_results ur ON ur.puzzle_date = dp.puzzle_date AND ur.user_id = $1
+      WHERE dp.puzzle_date = ANY($2::date[])
+      ORDER BY dp.puzzle_date DESC
+    `, [req.userId || null, dates])
+    res.json(r.rows.map(row => ({
+      date: row.puzzle_date,
+      completed: row.score !== null,
+      score: row.score,
+    })))
+  } catch (err) {
+    console.error('Archive fetch failed:', err.message)
+    res.status(500).json({ error: 'Could not load archive' })
   }
 })
 
@@ -199,6 +263,95 @@ app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
   } catch (err) {
     console.error('Player puzzle failed:', err.message)
     res.status(404).json({ error: err.message })
+  }
+})
+
+// ── POST /auth/google { credential } ─────────────────────────────────────────
+app.post('/auth/google', authLimiter, async (req, res) => {
+  const credential = req.body?.credential
+  if (!credential || typeof credential !== 'string') return res.status(400).json({ error: 'Missing credential' })
+  try {
+    const googleUser = await verifyGoogleCredential(credential)
+    const user = await upsertUser(pool, googleUser)
+    const token = signSession(user.id)
+    res.cookie(COOKIE_NAME, token, cookieOptions)
+    res.json({ user: { id: user.id, email: user.email, displayName: user.display_name, avatarUrl: user.avatar_url } })
+  } catch (err) {
+    console.error('Google sign-in failed:', err.message)
+    res.status(401).json({ error: 'Sign-in failed' })
+  }
+})
+
+// ── POST /auth/logout ─────────────────────────────────────────────────────────
+app.post('/auth/logout', (_req, res) => {
+  res.clearCookie(COOKIE_NAME, cookieOptions)
+  res.json({ ok: true })
+})
+
+// ── GET /auth/me ───────────────────────────────────────────────────────────────
+app.get('/auth/me', optionalAuth, async (req, res) => {
+  if (!req.userId) return res.json({ user: null })
+  const r = await pool.query('SELECT id, email, display_name, avatar_url FROM users WHERE id = $1', [req.userId])
+  if (!r.rows.length) return res.json({ user: null })
+  const u = r.rows[0]
+  res.json({ user: { id: u.id, email: u.email, displayName: u.display_name, avatarUrl: u.avatar_url } })
+})
+
+// ── POST /puzzle/result { puzzleDate, selectedLieId, lieAttempts, playerGuess } ─
+// Recomputes lieFound/playerCorrect/score from the actual stored puzzle for that
+// date server-side rather than trusting client-submitted values, so the
+// leaderboard can't be gamed by just POSTing a fabricated score. puzzleDate
+// defaults to today, but can be a past archive date the player is catching up on.
+app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
+  const { selectedLieId, lieAttempts, playerGuess } = req.body || {}
+  const puzzleDate = req.body?.puzzleDate || todayDateStr()
+  const attempts = Number(lieAttempts)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate) || !Number.isInteger(attempts) || attempts < 0 || attempts > 3) {
+    return res.status(400).json({ error: 'Invalid result' })
+  }
+  try {
+    const today = todayDateStr()
+    if (puzzleDate > today) return res.status(400).json({ error: 'Invalid puzzle date' })
+    const puzzle = puzzleDate === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(puzzleDate)
+
+    const lieFound = Number.isInteger(selectedLieId) && selectedLieId === puzzle.falseFactId
+    const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
+    const playerCorrect = normName(playerGuess) === normName(puzzle.playerName)
+    const score = (lieFound ? Math.max(1, 3 - attempts) : 0) + (playerCorrect ? 3 : 0)
+
+    const r = await pool.query(`
+      INSERT INTO user_results (user_id, puzzle_date, lie_found, lie_attempts, player_correct, score)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (user_id, puzzle_date) DO NOTHING
+      RETURNING id
+    `, [req.userId, puzzleDate, lieFound, attempts, playerCorrect, score])
+
+    if (!r.rows.length) return res.status(409).json({ error: "Already recorded that day's result" })
+    res.json({ lieFound, playerCorrect, score })
+  } catch (err) {
+    console.error('Save result failed:', err.message)
+    res.status(500).json({ error: 'Could not save result' })
+  }
+})
+
+// ── GET /leaderboard ─────────────────────────────────────────────────────────────
+app.get('/leaderboard', async (_req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT u.display_name, u.avatar_url,
+             COUNT(*)::int AS puzzles_played,
+             SUM(ur.score)::int AS total_score,
+             ROUND(AVG(ur.score), 2)::float AS avg_score
+      FROM user_results ur
+      JOIN users u ON u.id = ur.user_id
+      GROUP BY u.id, u.display_name, u.avatar_url
+      ORDER BY total_score DESC
+      LIMIT 50
+    `)
+    res.json(r.rows)
+  } catch (err) {
+    console.error('Leaderboard fetch failed:', err.message)
+    res.status(500).json({ error: 'Could not load leaderboard' })
   }
 })
 

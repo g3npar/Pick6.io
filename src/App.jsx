@@ -5,7 +5,8 @@ import GameBoard from './components/GameBoard'
 import HowToPlay from './components/HowToPlay'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
-import ComingSoon from './components/ComingSoon'
+import Leaderboard from './components/Leaderboard'
+import Archive from './components/Archive'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
@@ -36,32 +37,66 @@ function App() {
   const [puzzles,      setPuzzles]      = useState(null)
   const [generating,   setGenerating]   = useState(false)
   const [puzzleStates, setPuzzleStates] = useState({})
+  const [user,         setUser]         = useState(null)
+  // The date of the real, released daily puzzle currently loaded (today's or
+  // a past one from the Archive) — only these count toward saved results.
+  // null means practice mode ("New Puzzle" / player search), which never saves.
+  const [playingDate, setPlayingDate]   = useState(null)
+  const [resultSaved, setResultSaved]   = useState(false)
 
   useEffect(() => {
     fetch(`${API}/puzzle/today/current`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { const arr = [p]; setPuzzles(arr); preloadLogos(arr) })
+      .then(p => { const arr = [p]; setPuzzles(arr); setPlayingDate(p.date); preloadLogos(arr) })
       .catch(err => console.error('Failed to load puzzle:', err))
+
+    fetch(`${API}/auth/me`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(({ user }) => setUser(user))
+      .catch(() => {})
   }, [])
+
+  const handleSignedIn = u => setUser(u)
+  const handleSignOut = () => {
+    fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
+      .catch(() => {})
+      .finally(() => setUser(null))
+  }
 
   const handleGenerate = () => {
     setGenerating(true)
     fetch(`${API}/puzzle/today/current?fresh=${Date.now()}`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); preloadLogos([p]) })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(null); setResultSaved(false); preloadLogos([p]) })
       .catch(() => {})
+      .finally(() => setGenerating(false))
+  }
+
+  // Loads a past date from the Archive so it can actually be played.
+  const handlePlayArchiveDate = date => {
+    setGenerating(true)
+    fetch(`${API}/puzzle/date/${date}`)
+      .then(r => {
+        if (!r.ok) return r.text().then(t => {
+          try { const d = JSON.parse(t); throw new Error(d.error || `Server error ${r.status}`) }
+          catch { throw new Error(`Could not load ${date} (${r.status})`) }
+        })
+        return r.json()
+      })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(p.date); setResultSaved(false); preloadLogos([p]); setScreen('daily') })
+      .catch(err => alert(`Could not load puzzle: ${err.message}`))
       .finally(() => setGenerating(false))
   }
 
   if (!puzzles) {
     return (
       <div className="app">
-        <Header screen={screen} onNav={setScreen} />
+        <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
           {screen === 'daily'       && <p style={{ opacity: 0.5 }}>Loading puzzles…</p>}
           {screen === 'how-to-play' && <HowToPlay />}
-          {screen === 'archive'     && <ComingSoon title="Archive" />}
-          {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
+          {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
+          {screen === 'leaderboard' && <Leaderboard />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
         </main>
@@ -106,10 +141,12 @@ function App() {
   const handleSubmit = () => {
     if (!selectedPlayer || !liePhaseComplete) return
     updateCurrent({ submitted: true })
+    saveResult({ finalLieId: selectedLieId, finalAttempts: lieAttempts, finalPlayerGuess: selectedPlayer })
   }
 
   const handleGiveUp = () => {
     updateCurrent({ lieAttempts: 3, submitted: true })
+    saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
   }
 
   const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
@@ -119,6 +156,25 @@ function App() {
 
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
+
+  // Only fires for a real released daily puzzle (today's or an archived
+  // date), and only once — practice replays ("New Puzzle" / player search)
+  // never touch the leaderboard.
+  const saveResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
+    if (!user || !playingDate || resultSaved) return
+    setResultSaved(true)
+    fetch(`${API}/puzzle/result`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        puzzleDate: playingDate,
+        selectedLieId: finalLieId,
+        lieAttempts: finalAttempts,
+        playerGuess: finalPlayerGuess,
+      }),
+    }).catch(() => {})
+  }
 
   const handlePlayerPuzzle = ({ name, draftYear }) => {
     setGenerating(true)
@@ -131,18 +187,18 @@ function App() {
         })
         return r.json()
       })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); preloadLogos([p]) })
+      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(null); setResultSaved(false); preloadLogos([p]) })
       .catch(err => alert(`Could not build puzzle: ${err.message}`))
       .finally(() => setGenerating(false))
   }
 
   return (
     <div className="app">
-      <Header screen={screen} onNav={setScreen} />
+      <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
       <main className="main-content">
         {screen === 'how-to-play' && <HowToPlay />}
-        {screen === 'archive'     && <ComingSoon title="Archive" />}
-        {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
+        {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
+        {screen === 'leaderboard' && <Leaderboard />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'daily'       && (

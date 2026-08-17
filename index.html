@@ -7,11 +7,12 @@
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self';
+      script-src 'self' https://accounts.google.com/gsi/client;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' https://a.espncdn.com data:;
-      connect-src 'self' http://localhost:3001 https://*.onrender.com https://*.amazonaws.com https://github.com https://objects.githubusercontent.com;
+      img-src 'self' https://a.espncdn.com https://*.googleusercontent.com data:;
+      connect-src 'self' http://localhost:3001 https://*.onrender.com https://*.amazonaws.com https://github.com https://objects.githubusercontent.com https://accounts.google.com;
+      frame-src https://accounts.google.com;
       frame-ancestors 'none';
     " />
     <title>Pick Six — an NFL guessing game</title>
@@ -20,6 +21,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>

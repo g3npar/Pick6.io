@@ -129,6 +129,19 @@ body {
 }
 .header-icon-btn:hover { border-color: var(--border-bright); color: var(--text); }
 
+.header-right { margin-left: auto; }
+.user-chip { display: flex; align-items: center; gap: 8px; }
+.user-avatar { width: 24px; height: 24px; border-radius: 50%; }
+.user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sec);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 
 /* ════════════════════════════════════════════════════════════════
    LAYOUT
@@ -1179,6 +1192,59 @@ body {
 }
 .legal-section strong { color: var(--text); }
 .legal-section a { color: var(--red); text-decoration: underline; }
+
+/* ════════════════════════════════════════════════════════════════
+   LEADERBOARD / ARCHIVE
+   ════════════════════════════════════════════════════════════════ */
+.board-empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 24px 0;
+}
+.board-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+}
+.board-rank {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  width: 20px;
+  flex-shrink: 0;
+}
+.board-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+.board-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.board-meta {
+  font-size: 11px;
+  color: var(--text-sec);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.board-meta--done { color: var(--green); font-weight: 700; }
+.board-score {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--red);
+  flex-shrink: 0;
+}
 
 kbd {
   display: inline-block;

@@ -1,4 +1,6 @@
-function Header({ screen, onNav }) {
+import SignInButton from './SignInButton'
+
+function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   const links = [
     { id: 'daily',       label: 'Daily' },
     { id: 'archive',     label: 'Archive' },
@@ -29,6 +31,19 @@ function Header({ screen, onNav }) {
             </button>
           ))}
         </nav>
+
+        {/* Account */}
+        <div className="header-right">
+          {user ? (
+            <div className="user-chip">
+              {user.avatarUrl && <img src={user.avatarUrl} alt="" className="user-avatar" referrerPolicy="no-referrer" />}
+              <span className="user-name">{user.displayName}</span>
+              <button className="header-icon-btn" onClick={onSignOut}>Sign out</button>
+            </div>
+          ) : (
+            <SignInButton onSignedIn={onSignedIn} />
+          )}
+        </div>
 
       </div>
     </header>
