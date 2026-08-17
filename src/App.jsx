@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
+import Footer from './components/Footer'
 import GameBoard from './components/GameBoard'
 import HowToPlay from './components/HowToPlay'
+import PrivacyPolicy from './components/PrivacyPolicy'
+import TermsOfService from './components/TermsOfService'
 import ComingSoon from './components/ComingSoon'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
@@ -59,7 +62,10 @@ function App() {
           {screen === 'how-to-play' && <HowToPlay />}
           {screen === 'archive'     && <ComingSoon title="Archive" />}
           {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
+          {screen === 'privacy'     && <PrivacyPolicy />}
+          {screen === 'terms'       && <TermsOfService />}
         </main>
+        <Footer onNav={setScreen} />
       </div>
     )
   }
@@ -137,6 +143,8 @@ function App() {
         {screen === 'how-to-play' && <HowToPlay />}
         {screen === 'archive'     && <ComingSoon title="Archive" />}
         {screen === 'leaderboard' && <ComingSoon title="Leaderboard" />}
+        {screen === 'privacy'     && <PrivacyPolicy />}
+        {screen === 'terms'       && <TermsOfService />}
         {screen === 'daily'       && (
         <GameBoard
           puzzle={puzzle}
@@ -160,6 +168,7 @@ function App() {
         />
         )}
       </main>
+      <Footer onNav={setScreen} />
     </div>
   )
 }
