@@ -12,7 +12,7 @@ const {
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
-  upsertUser, signSession, optionalAuth, requireAuth, isAdminEmail,
+  upsertUser, setUsername, signSession, optionalAuth, requireAuth, isAdminEmail,
 } = require('./auth')
 
 const app = express()
@@ -40,7 +40,7 @@ app.use(cors({
     cb(new Error('CORS: origin not allowed'))
   },
   credentials: true,   // required so the browser sends/accepts the session cookie
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT'],
   allowedHeaders: ['Content-Type'],
 }))
 
@@ -186,12 +186,27 @@ app.get('/puzzle/today', async (req, res) => {
   }
 })
 
+// A signed-in user's already-saved result for a puzzle date, or null.
+async function fetchSavedResult(userId, date) {
+  if (!userId) return null
+  const r = await pool.query(
+    'SELECT lie_found, lie_attempts, player_correct, player_guess, score FROM user_results WHERE user_id = $1 AND puzzle_date = $2',
+    [userId, date]
+  )
+  if (!r.rows.length) return null
+  const row = r.rows[0]
+  return { lieFound: row.lie_found, lieAttempts: row.lie_attempts, playerGuess: row.player_guess, score: row.score }
+}
+
 // GET /puzzle/today/current
-app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
+app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) => {
   try {
     const fresh  = req.query.fresh !== undefined
     const puzzle = await getDailyCurrentPuzzle(fresh)
-    res.json(fresh ? puzzle : { ...puzzle, date: todayDateStr() })
+    if (fresh) return res.json(puzzle)
+    const date   = todayDateStr()
+    const result = await fetchSavedResult(req.userId, date)
+    res.json({ ...puzzle, date, result })
   } catch (err) {
     console.error('Current puzzle failed:', err.message)
     res.status(500).json({ error: 'Could not generate current puzzle' })
@@ -199,12 +214,13 @@ app.get('/puzzle/today/current', puzzleLimiter, async (req, res) => {
 })
 
 // GET /puzzle/date/2026-08-10 (play a specific past archive date)
-app.get('/puzzle/date/:date', puzzleLimiter, async (req, res) => {
+app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
   const date = req.params.date
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
   try {
     const puzzle = await getPuzzleForDate(date)
-    res.json({ ...puzzle, date })
+    const result = await fetchSavedResult(req.userId, date)
+    res.json({ ...puzzle, date, result })
   } catch (err) {
     res.status(404).json({ error: err.message })
   }
@@ -264,7 +280,7 @@ app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
 })
 
 const toUserJSON = u => ({
-  id: u.id, email: u.email, displayName: u.display_name, avatarUrl: u.avatar_url,
+  id: u.id, email: u.email, displayName: u.username || u.display_name, avatarUrl: u.avatar_url,
   isAdmin: isAdminEmail(u.email),
 })
 
@@ -293,9 +309,23 @@ app.post('/auth/logout', (_req, res) => {
 // GET /auth/me
 app.get('/auth/me', optionalAuth, async (req, res) => {
   if (!req.userId) return res.json({ user: null })
-  const r = await pool.query('SELECT id, email, display_name, avatar_url FROM users WHERE id = $1', [req.userId])
+  const r = await pool.query('SELECT id, email, display_name, username, avatar_url FROM users WHERE id = $1', [req.userId])
   if (!r.rows.length) return res.json({ user: null })
   res.json({ user: toUserJSON(r.rows[0]) })
+})
+
+// PUT /auth/username { username }
+app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
+  const raw = String(req.body?.username || '').trim()
+  if (!/^[a-zA-Z0-9 _\-]{2,20}$/.test(raw)) {
+    return res.status(400).json({ error: 'Username must be 2-20 letters, numbers, spaces, - or _' })
+  }
+  try {
+    const user = await setUsername(pool, req.userId, raw)
+    res.json({ user: toUserJSON(user) })
+  } catch (err) {
+    res.status(409).json({ error: err.message })
+  }
 })
 
 // requireAdmin (chain after requireAuth)
@@ -324,11 +354,11 @@ app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
     const score = (lieFound ? Math.max(1, 3 - attempts) : 0) + (playerCorrect ? 3 : 0)
 
     const r = await pool.query(`
-      INSERT INTO user_results (user_id, puzzle_date, lie_found, lie_attempts, player_correct, score)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO user_results (user_id, puzzle_date, lie_found, lie_attempts, player_correct, player_guess, score)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (user_id, puzzle_date) DO NOTHING
       RETURNING id
-    `, [req.userId, puzzleDate, lieFound, attempts, playerCorrect, score])
+    `, [req.userId, puzzleDate, lieFound, attempts, playerCorrect, String(playerGuess ?? '').slice(0, 80), score])
 
     if (!r.rows.length) return res.status(409).json({ error: "Already recorded that day's result" })
     res.json({ lieFound, playerCorrect, score })
@@ -342,13 +372,13 @@ app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
 app.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`
-      SELECT u.display_name, u.avatar_url,
+      SELECT COALESCE(u.username, u.display_name) AS display_name, u.avatar_url,
              COUNT(*)::int AS puzzles_played,
              SUM(ur.score)::int AS total_score,
              ROUND(AVG(ur.score), 2)::float AS avg_score
       FROM user_results ur
       JOIN users u ON u.id = ur.user_id
-      GROUP BY u.id, u.display_name, u.avatar_url
+      GROUP BY u.id, u.display_name, u.username, u.avatar_url
       ORDER BY total_score DESC
       LIMIT 50
     `)

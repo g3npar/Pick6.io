@@ -8,6 +8,7 @@ import TermsOfService from './components/TermsOfService'
 import Leaderboard from './components/Leaderboard'
 import Archive from './components/Archive'
 import Admin from './components/Admin'
+import SignInPrompt from './components/SignInPrompt'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
@@ -36,17 +37,26 @@ const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-
 function App() {
   const [screen,       setScreen]       = useState('daily')
   const [puzzles,      setPuzzles]      = useState(null)
-  const [generating,   setGenerating]   = useState(false)
   const [puzzleStates, setPuzzleStates] = useState({})
   const [user,         setUser]         = useState(null)
-  // Date of the real released daily puzzle currently loaded, only these save. Null means practice mode.
   const [playingDate, setPlayingDate]   = useState(null)
   const [resultSaved, setResultSaved]   = useState(false)
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
+  const [pendingResult, setPendingResult] = useState(null)
+
+  // Rebuilds the finished-board state from a server-saved result, so a refresh doesn't lose it.
+  const restoredState = result => result
+    ? { player: result.playerGuess || '', lieFound: result.lieFound, lieAttempts: result.lieAttempts, submitted: true }
+    : {}
 
   useEffect(() => {
-    fetch(`${API}/puzzle/today/current`)
+    fetch(`${API}/puzzle/today/current`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { const arr = [p]; setPuzzles(arr); setPlayingDate(p.date); preloadLogos(arr) })
+      .then(p => {
+        setPuzzles([p]); setPlayingDate(p.date)
+        setResultSaved(!!p.result); setPuzzleStates({ 0: restoredState(p.result) })
+        preloadLogos([p])
+      })
       .catch(err => console.error('Failed to load puzzle:', err))
 
     fetch(`${API}/auth/me`, { credentials: 'include' })
@@ -55,26 +65,44 @@ function App() {
       .catch(() => {})
   }, [])
 
-  const handleSignedIn = u => setUser(u)
+  // Sends a finished result to the server, called directly or after a sign-in prompt.
+  const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
+    setResultSaved(true)
+    fetch(`${API}/puzzle/result`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        puzzleDate: playingDate,
+        selectedLieId: finalLieId,
+        lieAttempts: finalAttempts,
+        playerGuess: finalPlayerGuess,
+      }),
+    }).catch(() => {})
+  }
+
+  // Saves a finished puzzle's result, prompting sign-in first if the player isn't logged in.
+  const saveResult = payload => {
+    if (!playingDate || resultSaved) return
+    if (!user) { setPendingResult(payload); setShowSignInPrompt(true); return }
+    postResult(payload)
+  }
+
+  const handleSignedIn = u => {
+    setUser(u)
+    setShowSignInPrompt(false)
+    if (pendingResult) { postResult(pendingResult); setPendingResult(null) }
+  }
   const handleSignOut = () => {
     fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
       .catch(() => {})
       .finally(() => setUser(null))
   }
-
-  const handleGenerate = () => {
-    setGenerating(true)
-    fetch(`${API}/puzzle/today/current?fresh=${Date.now()}`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(null); setResultSaved(false); preloadLogos([p]) })
-      .catch(() => {})
-      .finally(() => setGenerating(false))
-  }
+  const handleUserUpdated = u => setUser(u)
 
   // Loads a past date from the Archive so it can actually be played.
   const handlePlayArchiveDate = date => {
-    setGenerating(true)
-    fetch(`${API}/puzzle/date/${date}`)
+    fetch(`${API}/puzzle/date/${date}`, { credentials: 'include' })
       .then(r => {
         if (!r.ok) return r.text().then(t => {
           try { const d = JSON.parse(t); throw new Error(d.error || `Server error ${r.status}`) }
@@ -82,15 +110,18 @@ function App() {
         })
         return r.json()
       })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(p.date); setResultSaved(false); preloadLogos([p]); setScreen('daily') })
+      .then(p => {
+        setPuzzles([p]); setPlayingDate(p.date)
+        setResultSaved(!!p.result); setPuzzleStates({ 0: restoredState(p.result) })
+        preloadLogos([p]); setScreen('daily')
+      })
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
-      .finally(() => setGenerating(false))
   }
 
   if (!puzzles) {
     return (
       <div className="app">
-        <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
+        <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
           {screen === 'daily'       && <p style={{ opacity: 0.5 }}>Loading puzzles…</p>}
           {screen === 'how-to-play' && <HowToPlay />}
@@ -157,42 +188,9 @@ function App() {
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
 
-  // Only fires once for a real released daily puzzle, practice replays never touch the leaderboard.
-  const saveResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
-    if (!user || !playingDate || resultSaved) return
-    setResultSaved(true)
-    fetch(`${API}/puzzle/result`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        puzzleDate: playingDate,
-        selectedLieId: finalLieId,
-        lieAttempts: finalAttempts,
-        playerGuess: finalPlayerGuess,
-      }),
-    }).catch(() => {})
-  }
-
-  const handlePlayerPuzzle = ({ name, draftYear }) => {
-    setGenerating(true)
-    const params = { name, ...(draftYear ? { draftYear } : {}) }
-    fetch(`${API}/puzzle/player?${new URLSearchParams(params)}`)
-      .then(r => {
-        if (!r.ok) return r.text().then(t => {
-          try { const d = JSON.parse(t); throw new Error(d.error || `Server error ${r.status}`) }
-          catch { throw new Error(`Player not found or server error (${r.status})`) }
-        })
-        return r.json()
-      })
-      .then(p => { setPuzzles([p]); setPuzzleStates({}); setPlayingDate(null); setResultSaved(false); preloadLogos([p]) })
-      .catch(err => alert(`Could not build puzzle: ${err.message}`))
-      .finally(() => setGenerating(false))
-  }
-
   return (
     <div className="app">
-      <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
+      <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
       <main className="main-content">
         {screen === 'how-to-play' && <HowToPlay />}
         {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
@@ -216,14 +214,14 @@ function App() {
           onGuessLie={handleGuessLie}
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}
-          onGenerate={handleGenerate}
-          onPlayerPuzzle={handlePlayerPuzzle}
-          generating={generating}
           currentScore={currentScore}
         />
         )}
       </main>
       <Footer onNav={setScreen} />
+      {showSignInPrompt && (
+        <SignInPrompt onSignedIn={handleSignedIn} onDismiss={() => setShowSignInPrompt(false)} />
+      )}
     </div>
   )
 }

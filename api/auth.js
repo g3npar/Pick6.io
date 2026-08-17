@@ -43,6 +43,10 @@ async function ensureAuthSchema(pool) {
     )
   `)
   await pool.query('CREATE INDEX IF NOT EXISTS idx_user_results_user ON user_results (user_id)')
+  // Custom display name a user can set, separate from their Google name.
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE')
+  // The player name a user actually typed, so a refresh can restore their finished board.
+  await pool.query('ALTER TABLE user_results ADD COLUMN IF NOT EXISTS player_guess TEXT')
 }
 
 // Verifies a Google ID token and returns the caller's verified account details.
@@ -65,9 +69,23 @@ async function upsertUser(pool, { googleId, email, name, picture }) {
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (google_id) DO UPDATE
       SET email = EXCLUDED.email, avatar_url = EXCLUDED.avatar_url
-    RETURNING id, email, display_name, avatar_url
+    RETURNING id, email, display_name, username, avatar_url
   `, [googleId, email, name, picture])
   return res.rows[0]
+}
+
+// Sets a user's custom display name. Throws a friendly error if it's taken.
+async function setUsername(pool, userId, username) {
+  try {
+    const res = await pool.query(
+      'UPDATE users SET username = $1 WHERE id = $2 RETURNING id, email, display_name, username, avatar_url',
+      [username, userId]
+    )
+    return res.rows[0]
+  } catch (err) {
+    if (err.code === '23505') throw new Error('That username is taken')
+    throw err
+  }
 }
 
 function signSession(userId) {
@@ -113,6 +131,7 @@ module.exports = {
   ensureAuthSchema,
   verifyGoogleCredential,
   upsertUser,
+  setUsername,
   signSession,
   optionalAuth,
   requireAuth,

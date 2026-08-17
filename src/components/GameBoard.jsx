@@ -71,7 +71,6 @@ function GameBoard({
   submitted,
   onSelectLie, onSelectPlayer,
   onGuessLie, onSubmit, onGiveUp,
-  onGenerate, onPlayerPuzzle, generating,
   currentScore,
 }) {
   const [query,        setQuery]        = useState('')
@@ -85,17 +84,6 @@ function GameBoard({
   const inputRef      = useRef(null)
   const debounceRef   = useRef(null)
   const scoreRef      = useRef(currentScore)
-
-  // "Enter a player name…" box (bottom of page, starts a puzzle about a
-  // specific player) — separate autocomplete state from the in-game answer
-  // search above, since it's shown independent of puzzle phase.
-  const [cQuery,        setCQuery]        = useState('')
-  const [cDropdownOpen, setCDropdown]     = useState(false)
-  const [cResults,      setCResults]      = useState([])
-  const [cSearching,    setCSearching]    = useState(false)
-  const [cTabIdx,       setCTabIdx]       = useState(-1)
-  const cWrapRef      = useRef(null)
-  const cDebounceRef  = useRef(null)
 
   useEffect(() => {
     const target = currentScore
@@ -116,7 +104,6 @@ function GameBoard({
 
   useEffect(() => {
     setQuery(''); setDropdown(false); setResults([]); setHoveredIdx(null); setTabIdx(-1)
-    setCQuery(''); setCDropdown(false); setCResults([]); setCTabIdx(-1)
   }, [puzzle.id])
 
   useEffect(() => {
@@ -134,7 +121,6 @@ function GameBoard({
   useEffect(() => {
     const handler = e => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setDropdown(false)
-      if (cWrapRef.current && !cWrapRef.current.contains(e.target)) setCDropdown(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -188,49 +174,6 @@ function GameBoard({
         ? results[tabIdx]
         : dropdownOpen && results.length > 0 ? results[0] : null
       if (target) handleSelect(target)
-    }
-  }
-
-  const searchCustomPlayers = useCallback((q) => {
-    clearTimeout(cDebounceRef.current)
-    if (q.length < 2) { setCResults([]); setCDropdown(false); return }
-    cDebounceRef.current = setTimeout(async () => {
-      setCSearching(true)
-      try {
-        const res  = await fetch(`${API}/players/search?${new URLSearchParams({ q })}`)
-        const data = await res.json()
-        setCResults(data)
-        setCDropdown(data.length > 0)
-      } catch (e) {
-        console.error('Search error', e)
-      } finally {
-        setCSearching(false)
-      }
-    }, 250)
-  }, [])
-
-  const handleCustomQueryChange = e => {
-    const val = e.target.value
-    setCQuery(val); setCTabIdx(-1)
-    if (!val) { setCResults([]); setCDropdown(false); return }
-    searchCustomPlayers(val)
-  }
-
-  const handleCustomSelect = item => {
-    setCQuery(''); setCDropdown(false); setCResults([]); setCTabIdx(-1)
-    onPlayerPuzzle({ name: item.name, draftYear: item.draft_year })
-  }
-
-  const handleCustomInputKeyDown = e => {
-    if (e.key === 'Tab' && cDropdownOpen && cResults.length > 0) {
-      e.preventDefault()
-      const next = (cTabIdx + 1) % cResults.length
-      setCTabIdx(next)
-      setCQuery(cResults[next].name)
-    } else if (e.key === 'Enter' && cDropdownOpen && cResults.length > 0) {
-      e.preventDefault()
-      const target = cTabIdx >= 0 && cResults[cTabIdx] ? cResults[cTabIdx] : cResults[0]
-      handleCustomSelect(target)
     }
   }
 
@@ -451,62 +394,6 @@ function GameBoard({
 
         </div>{/* end circle-game */}
       </div>{/* end circle-nav-row */}
-
-      {/* ── Generate button ───────────────────────────── */}
-      {onGenerate && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-          <button
-              className="submit-btn submit-btn--green"
-            onClick={onGenerate}
-            disabled={generating}
-            style={{ opacity: generating ? 0.6 : 1, minWidth: '10rem' }}
-          >
-            {generating ? 'Generating…' : '🎲 New Puzzle'}
-          </button>
-        </div>
-      )}
-
-      {/* ── Custom player puzzle ──────────────────────── */}
-      {onPlayerPuzzle && (
-        <form
-          className="custom-player-form"
-          onSubmit={e => { e.preventDefault(); const v = cQuery.trim(); if (v) onPlayerPuzzle({ name: v }) }}
-        >
-          <div className="search-wrap custom-search-wrap" ref={cWrapRef}>
-            <input
-              name="pname"
-              className="custom-player-input"
-              placeholder="Enter a player name…"
-              autoComplete="off"
-              spellCheck="false"
-              value={cQuery}
-              onChange={handleCustomQueryChange}
-              onKeyDown={handleCustomInputKeyDown}
-              onFocus={() => cResults.length > 0 && setCDropdown(true)}
-            />
-            {cDropdownOpen && (
-              <ul className="player-dropdown">
-                {cSearching && <li className="dropdown-item no-results">Searching…</li>}
-                {!cSearching && cResults.map((item, i) => (
-                  <li
-                    key={item.id}
-                    className={`dropdown-item${i === cTabIdx ? ' dropdown-item-active' : ''}`}
-                    onMouseDown={() => handleCustomSelect(item)}
-                  >
-                    <span className="dropdown-player-name">{item.name}</span>
-                    <span className="dropdown-player-meta">
-                      {item.position}{item.draft_year ? ` · ${item.draft_year}` : ''}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <button type="submit" className="custom-player-btn" disabled={generating}>
-            {generating ? '…' : 'Go'}
-          </button>
-        </form>
-      )}
 
     </div>
   )

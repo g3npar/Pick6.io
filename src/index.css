@@ -138,6 +138,16 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.username-edit-input {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  width: 100px;
+}
 
 
 /* ════════════════════════════════════════════════════════════════

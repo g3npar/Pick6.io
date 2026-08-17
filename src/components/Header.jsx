@@ -1,6 +1,13 @@
+import { useState } from 'react'
 import SignInButton from './SignInButton'
 
-function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
+  const [editing, setEditing] = useState(false)
+  const [name,    setName]    = useState('')
+  const [saving,  setSaving]  = useState(false)
+
   const links = [
     { id: 'daily',       label: 'Daily' },
     { id: 'archive',     label: 'Archive' },
@@ -8,6 +15,29 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
     { id: 'how-to-play', label: 'How to Play' },
     ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
+
+  const startEditing = () => { setName(user.displayName); setEditing(true) }
+
+  const saveUsername = () => {
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === user.displayName) { setEditing(false); return }
+    setSaving(true)
+    fetch(`${API}/auth/username`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username: trimmed }),
+    })
+      .then(async r => {
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.error || 'Could not save username')
+        onUserUpdated(data.user)
+        setEditing(false)
+      })
+      .catch(err => alert(err.message))
+      .finally(() => setSaving(false))
+  }
+
   return (
     <header className="header">
       <div className="header-inner">
@@ -38,8 +68,26 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
           {user ? (
             <div className="user-chip">
               {user.avatarUrl && <img src={user.avatarUrl} alt="" className="user-avatar" referrerPolicy="no-referrer" />}
-              <span className="user-name">{user.displayName}</span>
-              <button className="header-icon-btn" onClick={onSignOut}>Sign out</button>
+              {editing ? (
+                <>
+                  <input
+                    className="username-edit-input"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveUsername()}
+                    autoFocus
+                    maxLength={20}
+                  />
+                  <button className="header-icon-btn" disabled={saving} onClick={saveUsername}>Save</button>
+                  <button className="header-icon-btn" onClick={() => setEditing(false)}>✕</button>
+                </>
+              ) : (
+                <>
+                  <span className="user-name">{user.displayName}</span>
+                  <button className="header-icon-btn" onClick={startEditing} aria-label="Edit username">✎</button>
+                  <button className="header-icon-btn" onClick={onSignOut}>Sign out</button>
+                </>
+              )}
             </div>
           ) : (
             <SignInButton onSignedIn={onSignedIn} />
