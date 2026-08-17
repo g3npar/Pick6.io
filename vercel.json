@@ -18,7 +18,8 @@
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options",        "value": "DENY" },
-        { "key": "Referrer-Policy",        "value": "no-referrer" }
+        { "key": "Referrer-Policy",        "value": "no-referrer" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://a.espncdn.com https://*.googleusercontent.com data:; connect-src 'self' https://api.pick-six.io https://*.amazonaws.com https://github.com https://objects.githubusercontent.com https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none';" }
       ]
     }
   ]
