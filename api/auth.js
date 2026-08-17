@@ -76,10 +76,14 @@ function verifySession(token) {
   }
 }
 
+// Frontend (pick-six.io) and API (api.pick-six.io) share a parent domain, so
+// the browser treats them as same-site — Lax works everywhere and avoids the
+// SameSite=None cross-site cookie flakiness (Safari, browsers with strict
+// third-party cookie rules) a split vercel.app/onrender.com setup would hit.
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  sameSite: 'lax',
   maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000,
   path: '/',
 }
