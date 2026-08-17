@@ -68,7 +68,7 @@ function GameBoard({
   puzzle, totalPuzzles,
   selectedLieId, selectedPlayer,
   lieFound, lieAttempts, confirmedTrueIds, liePhaseComplete,
-  submitted,
+  submitted, playerCorrect,
   onSelectLie, onSelectPlayer,
   onGuessLie, onSubmit, onGiveUp,
   currentScore,
@@ -177,8 +177,6 @@ function GameBoard({
     }
   }
 
-  const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
-  const playerCorrect   = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
   const canGuessLie     = selectedLieId !== null && !liePhaseComplete
   const canSubmitPlayer = selectedPlayer.trim().length > 0 && liePhaseComplete && !submitted
 

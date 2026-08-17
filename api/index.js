@@ -195,7 +195,10 @@ async function fetchSavedResult(userId, date) {
   )
   if (!r.rows.length) return null
   const row = r.rows[0]
-  return { lieFound: row.lie_found, lieAttempts: row.lie_attempts, playerGuess: row.player_guess, score: row.score }
+  return {
+    lieFound: row.lie_found, lieAttempts: row.lie_attempts,
+    playerGuess: row.player_guess, playerCorrect: row.player_correct, score: row.score,
+  }
 }
 
 // GET /puzzle/today/current

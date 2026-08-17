@@ -45,8 +45,13 @@ function App() {
   const [pendingResult, setPendingResult] = useState(null)
 
   // Rebuilds the finished-board state from a server-saved result, so a refresh doesn't lose it.
+  // Trusts the server's stored playerCorrect rather than re-comparing text, since older saved
+  // results predate the playerGuess column and would otherwise show as wrong on restore.
   const restoredState = result => result
-    ? { player: result.playerGuess || '', lieFound: result.lieFound, lieAttempts: result.lieAttempts, submitted: true }
+    ? {
+        player: result.playerGuess || '', playerCorrect: result.playerCorrect,
+        lieFound: result.lieFound, lieAttempts: result.lieAttempts, submitted: true,
+      }
     : {}
 
   useEffect(() => {
@@ -144,6 +149,7 @@ function App() {
   const lieAttempts    = curState.lieAttempts   ?? 0
   const confirmedTrueIds = curState.confirmedTrueIds ?? []
   const submitted      = curState.submitted     ?? false   // player name submitted = game over
+  const playerCorrect  = submitted && (curState.playerCorrect ?? false)
   const liePhaseComplete = lieFound || lieAttempts >= 3
 
   const updateCurrent = updates =>
@@ -171,16 +177,15 @@ function App() {
   // Player name submit (only available after lie phase)
   const handleSubmit = () => {
     if (!selectedPlayer || !liePhaseComplete) return
-    updateCurrent({ submitted: true })
+    updateCurrent({ submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: lieAttempts, finalPlayerGuess: selectedPlayer })
   }
 
   const handleGiveUp = () => {
-    updateCurrent({ lieAttempts: 3, submitted: true })
+    updateCurrent({ lieAttempts: 3, submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
   }
 
-  const playerCorrect = submitted && normName(selectedPlayer) === normName(puzzle.playerName)
   const lieScore   = submitted ? (lieFound ? Math.max(1, 3 - lieAttempts) : 0) : 0
   const playerScore = submitted && playerCorrect ? 3 : 0
   const currentScore = lieScore + playerScore
@@ -209,6 +214,7 @@ function App() {
           confirmedTrueIds={confirmedTrueIds}
           liePhaseComplete={liePhaseComplete}
           submitted={submitted}
+          playerCorrect={playerCorrect}
           onSelectLie={id => !liePhaseComplete && updateCurrent({ lieId: id })}
           onSelectPlayer={name => !submitted && updateCurrent({ player: name })}
           onGuessLie={handleGuessLie}
