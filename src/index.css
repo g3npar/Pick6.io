@@ -57,7 +57,6 @@ body {
   position: sticky;
   top: 0;
   z-index: 200;
-  height: 46px;
   background: rgba(14, 16, 28, 0.94);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-bright);
@@ -67,24 +66,36 @@ body {
 .header-inner {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 0 16px;
-  height: 100%;
-  display: flex;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
+  gap: 12px;
+}
+
+.header-spacer { min-width: 0; }
+
+.header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Logo */
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 10px;
 }
-.logo-icon  { height: 26px; width: auto; }
-.logo-text  { font-size: 15px; font-weight: 900; letter-spacing: 0.07em; color: #fff; }
-.logo-accent { color: var(--red); }
+.logo-word {
+  font-family: 'Anton', sans-serif;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.logo-icon { height: 58px; width: auto; }
 
 /* Nav */
 .nav {
@@ -93,9 +104,9 @@ body {
   gap: 2px;
 }
 .nav-link {
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-sec);
   transition: color 0.15s, background 0.15s;
@@ -108,10 +119,10 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
+  justify-self: end;
 }
 .header-date {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-sec);
   letter-spacing: 0.02em;
@@ -120,13 +131,12 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-sec);
-  padding: 5px 8px;
-  font-size: 14px;
+  padding: 7px 11px;
+  font-size: 15px;
   transition: border-color 0.15s, color 0.15s;
 }
 .header-icon-btn:hover { border-color: var(--border-bright); color: var(--text); }
 
-.header-right { margin-left: auto; }
 .user-chip { display: flex; align-items: center; gap: 8px; }
 .user-avatar { width: 24px; height: 24px; border-radius: 50%; }
 .user-name {
@@ -543,12 +553,12 @@ body {
 .wl-jersey {
   font-family: 'Anton', sans-serif;
   font-weight: 400;
-  font-size: 40px;
+  font-size: 62px;
   letter-spacing: 0.01em;
-  -webkit-text-stroke: 1.5px #0d0d0d;
+  -webkit-text-stroke: 2.5px var(--text);
   paint-order: stroke fill;
 }
-.wl-jersey.wl-value--sm { font-size: 22px; -webkit-text-stroke: 1px #0d0d0d; }
+.wl-jersey.wl-value--sm { font-size: 36px; -webkit-text-stroke: 1.5px var(--text); }
 .wl-sublabel {
   font-size: 16px;
   font-weight: 700;
@@ -1239,7 +1249,6 @@ body {
   width: 20px;
   flex-shrink: 0;
 }
-.board-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
 .board-name {
   font-size: 13px;
   font-weight: 700;

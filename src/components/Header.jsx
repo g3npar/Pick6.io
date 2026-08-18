@@ -42,26 +42,28 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
     <header className="header">
       <div className="header-inner">
 
-        {/* Logo */}
-        <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <img src="/pick-six-logo.svg" alt="" className="logo-icon" />
-          <span className="logo-text">
-            PICK<span className="logo-accent"> SIX</span>
-          </span>
-        </button>
+        <div className="header-spacer" aria-hidden="true" />
 
-        {/* Nav */}
-        <nav className="nav">
-          {links.map(l => (
-            <button
-              key={l.id}
-              className={`nav-link${screen === l.id ? ' active' : ''}`}
-              onClick={() => onNav(l.id)}
-            >
-              {l.label}
-            </button>
-          ))}
-        </nav>
+        <div className="header-center">
+          {/* Logo */}
+          <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <span className="logo-word">PICK</span>
+            <img src="/pick-six-logo.svg" alt="Pick Six" className="logo-icon" />
+          </button>
+
+          {/* Nav */}
+          <nav className="nav">
+            {links.map(l => (
+              <button
+                key={l.id}
+                className={`nav-link${screen === l.id ? ' active' : ''}`}
+                onClick={() => onNav(l.id)}
+              >
+                {l.label}
+              </button>
+            ))}
+          </nav>
+        </div>
 
         {/* Account */}
         <div className="header-right">

@@ -31,7 +31,6 @@ export default function Leaderboard() {
             {rows.map((r, i) => (
               <li key={i} className="board-row">
                 <span className="board-rank">{i + 1}</span>
-                {r.avatar_url && <img src={r.avatar_url} alt="" className="board-avatar" referrerPolicy="no-referrer" />}
                 <span className="board-name">{r.display_name}</span>
                 <span className="board-meta">{r.puzzles_played} played · {r.avg_score} avg</span>
                 <span className="board-score">{r.total_score}</span>

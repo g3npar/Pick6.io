@@ -319,13 +319,13 @@ app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
 app.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`
-      SELECT COALESCE(u.username, u.display_name) AS display_name, u.avatar_url,
+      SELECT COALESCE(u.username, u.display_name) AS display_name,
              COUNT(*)::int AS puzzles_played,
              SUM(ur.score)::int AS total_score,
              ROUND(AVG(ur.score), 2)::float AS avg_score
       FROM user_results ur
       JOIN users u ON u.id = ur.user_id
-      GROUP BY u.id, u.display_name, u.username, u.avatar_url
+      GROUP BY u.id, u.display_name, u.username
       ORDER BY total_score DESC
       LIMIT 50
     `)
