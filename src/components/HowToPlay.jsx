@@ -4,7 +4,6 @@ export default function HowToPlay() {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">🏈</span>
           <h1 className="htp-title">How to Play</h1>
           <p className="htp-subtitle">Spot the lie. Name the player. Score big.</p>
         </div>

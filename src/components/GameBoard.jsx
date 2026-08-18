@@ -201,7 +201,7 @@ function GameBoard({
           <p className="phase-label">Now guess the player ↓</p>
         )}
         {submitted && !lieFound && !playerCorrect && (
-          <p className="pick-six-banner">🏈 PICK SIX</p>
+          <p className="pick-six-banner">PICK SIX</p>
         )}
         {submitted && (
           <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 6 PTS</p>

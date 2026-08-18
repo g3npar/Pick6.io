@@ -82,7 +82,7 @@ body {
   gap: 8px;
   flex-shrink: 0;
 }
-.logo-icon  { font-size: 20px; line-height: 1; }
+.logo-icon  { height: 26px; width: auto; }
 .logo-text  { font-size: 15px; font-weight: 900; letter-spacing: 0.07em; color: #fff; }
 .logo-accent { color: var(--red); }
 

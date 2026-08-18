@@ -25,7 +25,6 @@ export default function Archive({ user, onPlayDate }) {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">📅</span>
           <h1 className="htp-title">Archive</h1>
           <p className="htp-subtitle">Every daily puzzle released so far, catch up on any you missed.</p>
         </div>

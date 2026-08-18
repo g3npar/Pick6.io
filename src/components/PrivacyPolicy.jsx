@@ -4,7 +4,6 @@ export default function PrivacyPolicy() {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">🔒</span>
           <h1 className="htp-title">Privacy Policy</h1>
           <p className="htp-subtitle">What Pick Six collects, and what it doesn't.</p>
         </div>

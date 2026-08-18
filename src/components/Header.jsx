@@ -44,7 +44,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
 
         {/* Logo */}
         <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <span className="logo-icon">🏈</span>
+          <img src="/pick-six-logo.svg" alt="" className="logo-icon" />
           <span className="logo-text">
             PICK<span className="logo-accent"> SIX</span>
           </span>

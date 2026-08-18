@@ -81,7 +81,6 @@ export default function Admin() {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">🛠️</span>
           <h1 className="htp-title">Puzzle Scheduler</h1>
           <p className="htp-subtitle">Preview and lock in upcoming daily puzzles.</p>
         </div>
@@ -118,9 +117,9 @@ export default function Admin() {
             </ul>
 
             <div className="admin-actions">
-              <button className="header-icon-btn" disabled={busy} onClick={shuffle}>🎲 Shuffle</button>
+              <button className="header-icon-btn" disabled={busy} onClick={shuffle}>Shuffle</button>
               <button className="submit-btn submit-btn--green" disabled={busy} onClick={setPuzzle} style={{ flex: 1 }}>
-                ✅ Set This Puzzle
+                Set This Puzzle
               </button>
             </div>
 

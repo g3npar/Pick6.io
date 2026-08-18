@@ -18,7 +18,6 @@ export default function Leaderboard() {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">🏆</span>
           <h1 className="htp-title">Leaderboard</h1>
           <p className="htp-subtitle">Ranked by total score across every daily puzzle played.</p>
         </div>

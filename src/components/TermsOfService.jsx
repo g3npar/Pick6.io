@@ -4,7 +4,6 @@ export default function TermsOfService() {
       <div className="htp-card">
 
         <div className="htp-hero">
-          <span className="htp-icon">📜</span>
           <h1 className="htp-title">Terms of Service</h1>
           <p className="htp-subtitle">The short version: play fair, and we'll keep the lights on.</p>
         </div>
