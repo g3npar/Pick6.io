@@ -35,17 +35,34 @@ function preloadLogos(puzzles) {
 const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
 
 function App() {
-  const [screen,       setScreen]       = useState('daily')
-  const [puzzles,      setPuzzles]      = useState(null)
-  const [puzzleStates, setPuzzleStates] = useState({})
-  const [user,         setUser]         = useState(null)
-  const [playingDate, setPlayingDate]   = useState(null)
-  const [resultSaved, setResultSaved]   = useState(false)
-  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
-  const [pendingResult, setPendingResult] = useState(null)
+  const [screen, setScreen] = useState('daily')
+  const [user,   setUser]   = useState(null)
+
+  // Today's daily puzzle lives in its own slot, separate from whatever the user
+  // opens from the Archive, so switching back to Daily can't show stale content.
+  const [todayPuzzle,      setTodayPuzzle]      = useState(null)
+  const [todayState,       setTodayState]       = useState({})
+  const [todayResultSaved, setTodayResultSaved] = useState(false)
+
+  const [archivePuzzle,      setArchivePuzzle]      = useState(null)
+  const [archiveState,       setArchiveState]       = useState({})
+  const [archiveResultSaved, setArchiveResultSaved] = useState(false)
+
   // True while showing a puzzle opened from the Archive tab, so the board replaces
   // the archive list in place instead of jumping the nav over to Daily.
   const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(false)
+
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
+  const [pendingResult, setPendingResult] = useState(null)
+
+  // Whichever puzzle is actually on screen right now, today's or an archived one.
+  const viewingArchive     = screen === 'archive' && viewingArchivePuzzle
+  const activePuzzle       = viewingArchive ? archivePuzzle : todayPuzzle
+  const activeState        = viewingArchive ? archiveState : todayState
+  const setActiveState     = viewingArchive ? setArchiveState : setTodayState
+  const activeResultSaved  = viewingArchive ? archiveResultSaved : todayResultSaved
+  const setActiveResultSaved = viewingArchive ? setArchiveResultSaved : setTodayResultSaved
+  const activePlayingDate  = activePuzzle?.date ?? null
 
   // Any real navigation (nav link, logo, footer) leaves archive-viewing mode.
   const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false) }
@@ -64,8 +81,8 @@ function App() {
     fetch(`${API}/puzzle/today/current`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
       .then(p => {
-        setPuzzles([p]); setPlayingDate(p.date)
-        setResultSaved(!!p.result); setPuzzleStates({ 0: restoredState(p.result) })
+        setTodayPuzzle(p)
+        setTodayResultSaved(!!p.result); setTodayState(restoredState(p.result))
         preloadLogos([p])
       })
       .catch(err => console.error('Failed to load puzzle:', err))
@@ -78,13 +95,13 @@ function App() {
 
   // Sends a finished result to the server, called directly or after a sign-in prompt.
   const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
-    setResultSaved(true)
+    setActiveResultSaved(true)
     fetch(`${API}/puzzle/result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        puzzleDate: playingDate,
+        puzzleDate: activePlayingDate,
         selectedLieId: finalLieId,
         lieAttempts: finalAttempts,
         playerGuess: finalPlayerGuess,
@@ -94,7 +111,7 @@ function App() {
 
   // Saves a finished puzzle's result, prompting sign-in first if the player isn't logged in.
   const saveResult = payload => {
-    if (!playingDate || resultSaved) return
+    if (!activePlayingDate || activeResultSaved) return
     if (!user) { setPendingResult(payload); setShowSignInPrompt(true); return }
     postResult(payload)
   }
@@ -122,14 +139,14 @@ function App() {
         return r.json()
       })
       .then(p => {
-        setPuzzles([p]); setPlayingDate(p.date)
-        setResultSaved(!!p.result); setPuzzleStates({ 0: restoredState(p.result) })
+        setArchivePuzzle(p)
+        setArchiveResultSaved(!!p.result); setArchiveState(restoredState(p.result))
         preloadLogos([p]); setViewingArchivePuzzle(true)
       })
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
   }
 
-  if (!puzzles) {
+  if (!todayPuzzle) {
     return (
       <div className="app">
         <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
@@ -147,8 +164,10 @@ function App() {
     )
   }
 
-  const puzzle         = puzzles[0]
-  const curState       = puzzleStates[0] || {}
+  const showBoard = (screen === 'daily' && todayPuzzle) || (viewingArchive && archivePuzzle)
+  const puzzle    = activePuzzle
+
+  const curState       = activeState
   const selectedLieId  = curState.lieId         ?? null
   const selectedPlayer = curState.player        ?? ''
   const lieFound       = curState.lieFound      ?? false
@@ -158,12 +177,11 @@ function App() {
   const playerCorrect  = submitted && (curState.playerCorrect ?? false)
   const liePhaseComplete = lieFound || lieAttempts >= 3
 
-  const updateCurrent = updates =>
-    setPuzzleStates(prev => ({ ...prev, 0: { ...(prev[0] || {}), ...updates } }))
+  const updateCurrent = updates => setActiveState(prev => ({ ...prev, ...updates }))
 
   // Lie guess: evaluate immediately
   const handleGuessLie = () => {
-    if (!selectedLieId || liePhaseComplete) return
+    if (!selectedLieId || liePhaseComplete || !puzzle) return
     const correct = selectedLieId === puzzle.falseFactId
     if (correct) {
       updateCurrent({ lieFound: true })
@@ -182,12 +200,13 @@ function App() {
 
   // Player name submit (only available after lie phase)
   const handleSubmit = () => {
-    if (!selectedPlayer || !liePhaseComplete) return
+    if (!selectedPlayer || !liePhaseComplete || !puzzle) return
     updateCurrent({ submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: lieAttempts, finalPlayerGuess: selectedPlayer })
   }
 
   const handleGiveUp = () => {
+    if (!puzzle) return
     updateCurrent({ lieAttempts: 3, submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
   }
@@ -199,8 +218,6 @@ function App() {
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
 
-  const showBoard = screen === 'daily' || (screen === 'archive' && viewingArchivePuzzle)
-
   return (
     <div className="app">
       <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
@@ -211,7 +228,7 @@ function App() {
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'admin'       && <Admin />}
-        {showBoard && (
+        {showBoard && puzzle && (
         <GameBoard
           puzzle={puzzle}
           totalPuzzles={1}
@@ -241,4 +258,3 @@ function App() {
 }
 
 export default App
-

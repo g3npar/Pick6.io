@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+// Survives remounts (leaving and returning to the tab), so switching nav screens
+// shows the last result instantly instead of a loading flash every time.
+let cachedRows = null
+
 export default function Leaderboard() {
-  const [rows,    setRows]    = useState(null)
+  const [rows,    setRows]    = useState(cachedRows)
   const [error,   setError]   = useState(false)
 
   useEffect(() => {
     fetch(`${API}/leaderboard`)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(setRows)
+      .then(data => { cachedRows = data; setRows(data) })
       .catch(() => setError(true))
   }, [])
 

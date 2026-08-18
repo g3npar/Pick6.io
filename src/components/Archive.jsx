@@ -9,14 +9,18 @@ const formatDate = d => {
   return new Date(y, m - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+// Survives remounts (leaving and returning to the tab), so switching nav screens
+// shows the last result instantly instead of a loading flash every time.
+let cachedRows = null
+
 export default function Archive({ user, onPlayDate }) {
-  const [rows,  setRows]  = useState(null)
+  const [rows,  setRows]  = useState(cachedRows)
   const [error, setError] = useState(false)
 
   useEffect(() => {
     fetch(`${API}/puzzle/archive`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(setRows)
+      .then(data => { cachedRows = data; setRows(data) })
       .catch(() => setError(true))
   }, [user])
 
