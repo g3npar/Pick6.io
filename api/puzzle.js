@@ -563,7 +563,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   if (chosen.length < 6) {
     chosen.push(...statFacts.slice(1, 6 - chosen.length + 1))
   }
-  // Every wedge needs a fact, so a partial puzzle is never returned.
+  // Every one of the six needs a fact, so a partial puzzle is never returned.
   if (chosen.length < 6) return null
 
   const lieIdx = Math.floor(rng() * chosen.length)

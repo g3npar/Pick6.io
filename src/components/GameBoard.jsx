@@ -5,14 +5,14 @@ import { collegeLogo } from '../utils/collegeLogo'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// SVG-based wedge paths, 6 wedges at 60 degrees each
+// SVG-based fact paths, 6 facts at 60 degrees each
 const SVG_R  = 298
 const SVG_CX = 300
 const SVG_CY = 300
-const N_WEDGES = 6
-const DEG = 360 / N_WEDGES
+const N_FACTS = 6
+const DEG = 360 / N_FACTS
 
-function getWedgePath(i) {
+function getFactPath(i) {
   const toRad = d => d * Math.PI / 180
   const start = -90 + i * DEG
   const end   = start + DEG
@@ -23,29 +23,29 @@ function getWedgePath(i) {
   return `M ${SVG_CX} ${SVG_CY} L ${x1.toFixed(3)} ${y1.toFixed(3)} A ${SVG_R} ${SVG_R} 0 0 1 ${x2.toFixed(3)} ${y2.toFixed(3)} Z`
 }
 
-function getWedgeCentroid(i) {
+function getFactCentroid(i) {
   const cx = 50, cy = 50
   const mid = (-90 + i * DEG + DEG / 2) * (Math.PI / 180)
   const r = 33
   return { x: cx + r * Math.cos(mid), y: cy + r * Math.sin(mid) }
 }
 
-const WEDGE_PATHS   = Array.from({ length: N_WEDGES }, (_, i) => getWedgePath(i))
-const WEDGE_CENTERS = Array.from({ length: N_WEDGES }, (_, i) => getWedgeCentroid(i))
+const FACT_PATHS   = Array.from({ length: N_FACTS }, (_, i) => getFactPath(i))
+const FACT_CENTERS = Array.from({ length: N_FACTS }, (_, i) => getFactCentroid(i))
 
 // Renders a parsed fact's value as logo(s) or text, shared by the normal
-// wedge display and the crossed-out/corrected display shown for a lie.
+// fact display and the crossed-out/corrected display shown for a lie.
 // `compact` shrinks it for the struck-through "wrong" line in a correction.
 function FactValue({ display, compact }) {
   if (display.isTeams) {
     const many = display.value.split(', ').length >= 3
     return (
-      <div className={`wl-logos${compact || many ? ' wl-logos--sm' : ''}`}>
+      <div className={`fl-logos${compact || many ? ' fl-logos--sm' : ''}`}>
         {display.value.split(', ').map(team => {
           const src = teamLogo(team)
           return src
-            ? <img key={team} src={src} alt={team} className="wl-logo" title={team} />
-            : <span key={team} className="wl-text wl-value">{team}</span>
+            ? <img key={team} src={src} alt={team} className="fl-logo" title={team} />
+            : <span key={team} className="fl-text fl-value">{team}</span>
         })}
       </div>
     )
@@ -53,17 +53,17 @@ function FactValue({ display, compact }) {
   if (display.isCollege) {
     const src = collegeLogo(display.value)
     return (
-      <div className={`wl-logos${compact ? ' wl-logos--sm' : ''}`}>
+      <div className={`fl-logos${compact ? ' fl-logos--sm' : ''}`}>
         {src
-          ? <img src={src} alt={display.value} className="wl-logo wl-logo-college" title={display.value} />
-          : <p className="wl-text wl-value">{display.value}</p>}
+          ? <img src={src} alt={display.value} className="fl-logo fl-logo-college" title={display.value} />
+          : <p className="fl-text fl-value">{display.value}</p>}
       </div>
     )
   }
   if (display.isJersey) {
-    return <p className={`wl-text wl-value wl-jersey${compact ? ' wl-value--sm' : ''}`}>{display.value}</p>
+    return <p className={`fl-text fl-value fl-jersey${compact ? ' fl-value--sm' : ''}`}>{display.value}</p>
   }
-  return <p className={`wl-text wl-value${compact ? ' wl-value--sm' : ''}`}>{display.value}</p>
+  return <p className={`fl-text fl-value${compact ? ' fl-value--sm' : ''}`}>{display.value}</p>
 }
 
 
@@ -211,7 +211,7 @@ function GameBoard({
       {!liePhaseComplete ? (
         <div className="submit-section">
           <button className="submit-btn" onClick={onGuessLie} disabled={!canGuessLie}>
-            {canGuessLie ? 'GUESS LIE →' : 'Select a wedge'}
+            {canGuessLie ? 'GUESS LIE →' : 'Select a fact'}
           </button>
           <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
         </div>
@@ -225,14 +225,19 @@ function GameBoard({
       ) : (
         <div className="submit-result-row">
           <div className={`submit-result-chip ${lieFound ? 'src-correct' : 'src-wrong'}`}>
-            <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
-            <span className="src-label">LIE</span>
-            <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
+            <div className="src-main">
+              <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
+              <span className="src-label">LIE</span>
+              <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
+            </div>
+            <span className="src-sub">({lieAttempts} out of 3 attempts used)</span>
           </div>
           <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
-            <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
-            <span className="src-label">PLAYER</span>
-            <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
+            <div className="src-main">
+              <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
+              <span className="src-label">PLAYER</span>
+              <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
+            </div>
           </div>
         </div>
       )}
@@ -242,7 +247,7 @@ function GameBoard({
 
         <div className="circle-game">
 
-        {/* SVG wedges */}
+        {/* SVG facts */}
         <svg className="circle-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
           {puzzle.facts.map((fact, i) => {
             const isSelected     = selectedLieId === fact.id
@@ -267,7 +272,7 @@ function GameBoard({
             return (
               <path
                 key={fact.id}
-                d={WEDGE_PATHS[i]}
+                d={FACT_PATHS[i]}
                 fill={fill}
                 stroke="#0d0d0d"
                 strokeWidth="4"
@@ -282,9 +287,9 @@ function GameBoard({
           <circle cx="300" cy="300" r="298" fill="none" stroke="#2e2e2e" strokeWidth="2"/>
         </svg>
 
-        {/* Text labels at wedge centroids (pointer-events: none) */}
+        {/* Text labels at fact centroids (pointer-events: none) */}
         {puzzle.facts.map((fact, i) => {
-          const { x, y } = WEDGE_CENTERS[i]
+          const { x, y } = FACT_CENTERS[i]
           const isSelected     = selectedLieId === fact.id
           const isHovered      = hoveredIdx === i
           const isFalse        = fact.id === puzzle.falseFactId
@@ -293,12 +298,12 @@ function GameBoard({
           const isRevealedLie   = isFalse && (submitted || liePhaseComplete)
           const trueDisplay     = isRevealedLie && puzzle.trueText ? parseFact(puzzle.trueText) : null
 
-          let cls = 'wedge-label'
-          if (submitted)            cls += isFalse ? ' wl-false' : ' wl-true'
-          else if (isConfirmedTrue) cls += ' wl-true'
-          else if (liePhaseComplete && isFalse) cls += ' wl-false'
-          else if (isSelected)      cls += ' wl-selected'
-          else if (isHovered)       cls += ' wl-hovered'
+          let cls = 'fact-label'
+          if (submitted)            cls += isFalse ? ' fl-false' : ' fl-true'
+          else if (isConfirmedTrue) cls += ' fl-true'
+          else if (liePhaseComplete && isFalse) cls += ' fl-false'
+          else if (isSelected)      cls += ' fl-selected'
+          else if (isHovered)       cls += ' fl-hovered'
 
           return (
             <div
@@ -306,32 +311,32 @@ function GameBoard({
               className={cls}
               style={{ left: `${x.toFixed(1)}%`, top: `${y.toFixed(1)}%` }}
             >
-              <span className="wl-num">{display.label}</span>
+              <span className="fl-num">{display.label}</span>
               {trueDisplay ? (
-                <div className="wl-correction">
-                  <div className="wl-wrong-line">
+                <div className="fl-correction">
+                  <div className="fl-wrong-line">
                     <FactValue display={display} compact />
-                    {display.sublabel && <span className="wl-sublabel wl-sublabel--sm">{display.sublabel}</span>}
+                    {display.sublabel && <span className="fl-sublabel fl-sublabel--sm">{display.sublabel}</span>}
                   </div>
-                  <div className="wl-true-value">
+                  <div className="fl-true-value">
                     <FactValue display={trueDisplay} />
-                    {trueDisplay.sublabel && <span className="wl-sublabel wl-sublabel--true">{trueDisplay.sublabel}</span>}
+                    {trueDisplay.sublabel && <span className="fl-sublabel fl-sublabel--true">{trueDisplay.sublabel}</span>}
                   </div>
                 </div>
               ) : (
                 <>
                   <FactValue display={display} />
-                  {display.sublabel && <span className="wl-sublabel">{display.sublabel}</span>}
+                  {display.sublabel && <span className="fl-sublabel">{display.sublabel}</span>}
                 </>
               )}
               {!submitted && !liePhaseComplete && (isSelected || isHovered) && (
-                <span className="wl-tag">
+                <span className="fl-tag">
                   {isSelected ? '\u2717 MARKED AS LIE' : 'MARK AS LIE?'}
                 </span>
               )}
               {/* Show verdict during gameplay for confirmed/found facts */}
               {(submitted || isConfirmedTrue || (liePhaseComplete && isFalse)) && (
-                <span className={`wl-verdict ${isFalse ? 'wlv-false' : 'wlv-true'}`}>
+                <span className={`fl-verdict ${isFalse ? 'flv-false' : 'flv-true'}`}>
                   {isFalse ? '\u2717 LIE' : '\u2713 TRUE'}
                 </span>
               )}

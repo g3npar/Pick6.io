@@ -43,6 +43,12 @@ function App() {
   const [resultSaved, setResultSaved]   = useState(false)
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [pendingResult, setPendingResult] = useState(null)
+  // True while showing a puzzle opened from the Archive tab, so the board replaces
+  // the archive list in place instead of jumping the nav over to Daily.
+  const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(false)
+
+  // Any real navigation (nav link, logo, footer) leaves archive-viewing mode.
+  const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false) }
 
   // Rebuilds the finished-board state from a server-saved result, so a refresh doesn't lose it.
   // Trusts the server's stored playerCorrect rather than re-comparing text, since older saved
@@ -118,7 +124,7 @@ function App() {
       .then(p => {
         setPuzzles([p]); setPlayingDate(p.date)
         setResultSaved(!!p.result); setPuzzleStates({ 0: restoredState(p.result) })
-        preloadLogos([p]); setScreen('daily')
+        preloadLogos([p]); setViewingArchivePuzzle(true)
       })
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
   }
@@ -126,7 +132,7 @@ function App() {
   if (!puzzles) {
     return (
       <div className="app">
-        <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
+        <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
           {screen === 'daily'       && <p style={{ opacity: 0.5 }}>Loading puzzles…</p>}
           {screen === 'how-to-play' && <HowToPlay />}
@@ -136,7 +142,7 @@ function App() {
           {screen === 'terms'       && <TermsOfService />}
           {screen === 'admin'       && <Admin />}
         </main>
-        <Footer onNav={setScreen} />
+        <Footer onNav={handleNav} />
       </div>
     )
   }
@@ -163,7 +169,7 @@ function App() {
       updateCurrent({ lieFound: true })
     } else {
       const newAttempts = lieAttempts + 1
-      // Reveal the wedge the player actually guessed as true (they were wrong to call it a lie)
+      // Reveal the fact the player actually guessed as true (they were wrong to call it a lie)
       updateCurrent({
         lieAttempts: newAttempts,
         confirmedTrueIds: confirmedTrueIds.includes(selectedLieId)
@@ -193,17 +199,19 @@ function App() {
   const completedIndices = submitted ? [0] : []
   const puzzleResults = {}
 
+  const showBoard = screen === 'daily' || (screen === 'archive' && viewingArchivePuzzle)
+
   return (
     <div className="app">
-      <Header screen={screen} onNav={setScreen} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
+      <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
       <main className="main-content">
         {screen === 'how-to-play' && <HowToPlay />}
-        {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
+        {screen === 'archive' && !viewingArchivePuzzle && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
         {screen === 'leaderboard' && <Leaderboard />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'admin'       && <Admin />}
-        {screen === 'daily'       && (
+        {showBoard && (
         <GameBoard
           puzzle={puzzle}
           totalPuzzles={1}
@@ -224,7 +232,7 @@ function App() {
         />
         )}
       </main>
-      <Footer onNav={setScreen} />
+      <Footer onNav={handleNav} />
       {showSignInPrompt && (
         <SignInPrompt onSignedIn={handleSignedIn} onDismiss={() => setShowSignInPrompt(false)} />
       )}

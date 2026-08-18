@@ -113,6 +113,7 @@ body {
 }
 .nav-link:hover  { color: var(--text); background: var(--bg-hover); }
 .nav-link.active { color: #fff; background: var(--red); font-weight: 700; border-left: 3px solid #fff; }
+.nav-divider { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
 
 /* Header right */
 .header-right {
@@ -138,7 +139,6 @@ body {
 .header-icon-btn:hover { border-color: var(--border-bright); color: var(--text); }
 
 .user-chip { display: flex; align-items: center; gap: 8px; }
-.user-avatar { width: 24px; height: 24px; border-radius: 50%; }
 .user-name {
   font-size: 12px;
   font-weight: 600;
@@ -486,7 +486,7 @@ body {
 }
 
 /* Text labels */
-.wedge-label {
+.fact-label {
   position: absolute;
   transform: translate(-50%, -50%);
   width: 128px;
@@ -499,18 +499,18 @@ body {
   gap: 5px;
 }
 
-.wl-num {
+.fl-num {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
   color: var(--text-muted);
 }
-.wl-hovered .wl-num,
-.wl-selected .wl-num { color: var(--red); }
-.wl-true  .wl-num    { color: var(--green); }
-.wl-false .wl-num    { color: #ef4444; }
+.fl-hovered .fl-num,
+.fl-selected .fl-num { color: var(--red); }
+.fl-true  .fl-num    { color: var(--green); }
+.fl-false .fl-num    { color: #ef4444; }
 
-.wl-text {
+.fl-text {
   font-size: 11.5px;
   font-weight: 500;
   line-height: 1.4;
@@ -518,15 +518,15 @@ body {
   margin: 0;
   transition: color 0.15s;
 }
-.wl-logos {
+.fl-logos {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 4px;
 }
-.wl-logo,
-.wl-logo-college {
+.fl-logo,
+.fl-logo-college {
   width: 55px;
   height: 55px;
   min-width: 55px;
@@ -535,22 +535,22 @@ body {
   object-fit: contain;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
 }
-.wl-logos--sm .wl-logo {
+.fl-logos--sm .fl-logo {
   width: 40px;
   height: 40px;
   min-width: 40px;
   min-height: 40px;
 }
 
-.wl-value {
+.fl-value {
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
   color: var(--red);
 }
-.wl-value--sm { font-size: 15px; }
-.wl-jersey {
+.fl-value--sm { font-size: 15px; }
+.fl-jersey {
   font-family: 'Anton', sans-serif;
   font-weight: 400;
   font-size: 62px;
@@ -558,26 +558,26 @@ body {
   -webkit-text-stroke: 2.5px var(--text);
   paint-order: stroke fill;
 }
-.wl-jersey.wl-value--sm { font-size: 36px; -webkit-text-stroke: 1.5px var(--text); }
-.wl-sublabel {
+.fl-jersey.fl-value--sm { font-size: 36px; -webkit-text-stroke: 1.5px var(--text); }
+.fl-sublabel {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text);
   margin-top: 1px;
 }
-.wl-sublabel--sm   { font-size: 10px; margin-top: 0; }
-.wl-sublabel--true { color: rgba(0,240,128,0.85); }
+.fl-sublabel--sm   { font-size: 10px; margin-top: 0; }
+.fl-sublabel--true { color: rgba(0,240,128,0.85); }
 
 /* Lie reveal: a small crossed-out line for the wrong value, the real one
    shown prominently beneath it at normal size. */
-.wl-correction {
+.fl-correction {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
 }
-.wl-wrong-line {
+.fl-wrong-line {
   position: relative;
   display: flex;
   align-items: center;
@@ -585,8 +585,8 @@ body {
   opacity: 0.55;
   filter: grayscale(0.4);
 }
-.wl-wrong-line .wl-logo { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
-.wl-wrong-line::after {
+.fl-wrong-line .fl-logo { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
+.fl-wrong-line::after {
   content: '';
   position: absolute;
   left: -6px;
@@ -596,34 +596,34 @@ body {
   background: #ef4444;
   transform: rotate(-6deg);
 }
-.wl-true-value .wl-value { color: var(--green); }
-.wl-hovered .wl-sublabel,
-.wl-selected .wl-sublabel { color: rgba(255,255,255,0.5); }
-.wl-true  .wl-sublabel { color: rgba(0,240,128,0.6); }
-.wl-false .wl-sublabel { color: rgba(239,68,68,0.6); }
-.wl-hovered .wl-text,
-.wl-selected .wl-text,
-.wl-true  .wl-text,
-.wl-false .wl-text { color: var(--text); }
+.fl-true-value .fl-value { color: var(--green); }
+.fl-hovered .fl-sublabel,
+.fl-selected .fl-sublabel { color: rgba(255,255,255,0.5); }
+.fl-true  .fl-sublabel { color: rgba(0,240,128,0.6); }
+.fl-false .fl-sublabel { color: rgba(239,68,68,0.6); }
+.fl-hovered .fl-text,
+.fl-selected .fl-text,
+.fl-true  .fl-text,
+.fl-false .fl-text { color: var(--text); }
 
-.wl-tag {
+.fl-tag {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
   white-space: nowrap;
 }
-.wl-hovered  .wl-tag { color: rgba(200, 16, 46, 0.75); }
-.wl-selected .wl-tag { color: var(--red); }
+.fl-hovered  .fl-tag { color: rgba(200, 16, 46, 0.75); }
+.fl-selected .fl-tag { color: var(--red); }
 
-.wl-verdict {
+.fl-verdict {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
   padding: 2px 6px;
   border: 1px solid;
 }
-.wlv-true  { color: var(--green); border-color: var(--green); }
-.wlv-false { color: #ef4444;      border-color: #ef4444; }
+.flv-true  { color: var(--green); border-color: var(--green); }
+.flv-false { color: #ef4444;      border-color: #ef4444; }
 
 /* Center circle */
 .circle-center {
@@ -817,8 +817,9 @@ body {
 
 .submit-result-chip {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 10px 28px;
   border: 2px solid;
   font-weight: 700;
@@ -829,9 +830,11 @@ body {
 .src-correct { border-color: var(--green); background: rgba(0, 240, 128, 0.09); color: var(--green); }
 .src-wrong   { border-color: var(--red);   background: rgba(255, 34, 68, 0.09);  color: var(--red); }
 
+.src-main  { display: flex; align-items: center; gap: 8px; justify-content: center; }
 .src-icon  { font-size: 16px; font-weight: 900; }
 .src-label { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; }
 .src-pts   { font-size: 12px; font-weight: 700; opacity: 0.75; margin-left: 2px; }
+.src-sub   { font-size: 10px; font-weight: 600; opacity: 0.65; letter-spacing: 0.02em; }
 
 /* ── Submit ──────────────────────────────────────────────────────── */
 .submit-section {
@@ -1351,11 +1354,12 @@ kbd {
   .main-content  { padding: 8px 12px 40px; }
   .header-date   { display: none; }
   .nav .nav-link:not(.active) { display: none; }
+  .nav .nav-divider { display: none; }
 
   .circle-game        { max-width: 340px; }
-  .wedge-label        { width: 80px; }
-  .wl-text            { font-size: 9.5px; }
-  .wl-num             { font-size: 8px; }
+  .fact-label        { width: 80px; }
+  .fl-text            { font-size: 9.5px; }
+  .fl-num             { font-size: 8px; }
   .circle-center      { padding: 8px; gap: 5px; }
   .helmet-silhouette  { width: 28px; }
 }

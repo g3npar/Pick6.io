@@ -13,7 +13,7 @@ export default function HowToPlay() {
           <div className="htp-step">
             <div className="htp-step-num">1</div>
             <div className="htp-step-body">
-              <h3>Read the 6 wedge facts</h3>
+              <h3>Read the 6 facts</h3>
               <p>Each puzzle shows six facts about a mystery NFL player: college, draft, career stats, awards, and teams. <strong>One of the six is a lie.</strong></p>
             </div>
           </div>
@@ -22,7 +22,7 @@ export default function HowToPlay() {
             <div className="htp-step-num">2</div>
             <div className="htp-step-body">
               <h3>Mark the lie</h3>
-              <p>Tap the wedge you think contains the false fact. It will be highlighted in red. Tap again to deselect.</p>
+              <p>Tap the fact you think is false. It will be highlighted in red. Tap again to deselect.</p>
             </div>
           </div>
 
@@ -38,7 +38,7 @@ export default function HowToPlay() {
             <div className="htp-step-num">4</div>
             <div className="htp-step-body">
               <h3>Lock in your answer</h3>
-              <p>Once you've marked a lie and entered a name, hit <strong>LOCK IN →</strong> to submit. All six wedges will reveal true/false, and your score is tallied.</p>
+              <p>Once you've marked a lie and entered a name, hit <strong>LOCK IN →</strong> to submit. All six facts will reveal true/false, and your score is tallied.</p>
             </div>
           </div>
 
@@ -66,7 +66,7 @@ export default function HowToPlay() {
         <div className="htp-tips">
           <h2 className="htp-section-title">Tips</h2>
           <ul className="htp-tip-list">
-            <li>You get 3 attempts to mark the lie, each wrong guess reveals that wedge is true.</li>
+            <li>You get 3 attempts to mark the lie, each wrong guess reveals that fact is true.</li>
             <li>A new puzzle is available every day, featuring a currently active NFL player.</li>
             <li>The lie is always plausible, a stat lie keeps the real number and swaps the year instead.</li>
           </ul>

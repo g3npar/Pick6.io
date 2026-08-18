@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import SignInButton from './SignInButton'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -53,14 +53,16 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
 
           {/* Nav */}
           <nav className="nav">
-            {links.map(l => (
-              <button
-                key={l.id}
-                className={`nav-link${screen === l.id ? ' active' : ''}`}
-                onClick={() => onNav(l.id)}
-              >
-                {l.label}
-              </button>
+            {links.map((l, i) => (
+              <Fragment key={l.id}>
+                {i > 0 && <span className="nav-divider" aria-hidden="true" />}
+                <button
+                  className={`nav-link${screen === l.id ? ' active' : ''}`}
+                  onClick={() => onNav(l.id)}
+                >
+                  {l.label}
+                </button>
+              </Fragment>
             ))}
           </nav>
         </div>
@@ -69,7 +71,6 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
         <div className="header-right">
           {user ? (
             <div className="user-chip">
-              {user.avatarUrl && <img src={user.avatarUrl} alt="" className="user-avatar" referrerPolicy="no-referrer" />}
               {editing ? (
                 <>
                   <input
