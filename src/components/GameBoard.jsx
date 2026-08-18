@@ -5,7 +5,7 @@ import { collegeLogo } from '../utils/collegeLogo'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// SVG-based wedge paths — 6 wedges at 60° each
+// SVG-based wedge paths, 6 wedges at 60 degrees each
 const SVG_R  = 298
 const SVG_CX = 300
 const SVG_CY = 300
@@ -33,7 +33,7 @@ function getWedgeCentroid(i) {
 const WEDGE_PATHS   = Array.from({ length: N_WEDGES }, (_, i) => getWedgePath(i))
 const WEDGE_CENTERS = Array.from({ length: N_WEDGES }, (_, i) => getWedgeCentroid(i))
 
-// Renders a parsed fact's value as logo(s) or text — shared by the normal
+// Renders a parsed fact's value as logo(s) or text, shared by the normal
 // wedge display and the crossed-out/corrected display shown for a lie.
 // `compact` shrinks it for the struck-through "wrong" line in a correction.
 function FactValue({ display, compact }) {
@@ -59,6 +59,9 @@ function FactValue({ display, compact }) {
           : <p className="wl-text wl-value">{display.value}</p>}
       </div>
     )
+  }
+  if (display.isJersey) {
+    return <p className={`wl-text wl-value wl-jersey${compact ? ' wl-value--sm' : ''}`}>{display.value}</p>
   }
   return <p className={`wl-text wl-value${compact ? ' wl-value--sm' : ''}`}>{display.value}</p>
 }

@@ -38,6 +38,7 @@ for stmt in [
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS draft_round  SMALLINT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS draft_number SMALLINT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS heisman_year SMALLINT",
+    "ALTER TABLE players ADD COLUMN IF NOT EXISTS jersey_number SMALLINT",
     # player_seasons (existing cols are harmless to retry)
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS sacks             SMALLINT",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS def_ints          SMALLINT",
@@ -526,7 +527,27 @@ if heisman_ambiguous:
         print(f"    {year} {name}: candidate player ids {ids}")
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 10 — (removed) Awards from import_awards()
+# 10. Jersey numbers (most recent season on record)
+# ════════════════════════════════════════════════════════════════════════════════
+print("\n── 10. Jersey numbers ──")
+current_roster = nfl.import_seasonal_rosters([2025])
+jersey_rows = (
+    current_roster[["player_id", "jersey_number"]]
+    .dropna()
+    .drop_duplicates("player_id")
+)
+jersey_count = 0
+for _, row in jersey_rows.iterrows():
+    db_id = player_id_map.get(row["player_id"])
+    if not db_id:
+        continue
+    cur.execute("UPDATE players SET jersey_number = %s WHERE id = %s", (int(row["jersey_number"]), db_id))
+    jersey_count += 1
+conn.commit()
+print(f"  {jersey_count} players updated")
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 11 — (removed) Awards from import_awards()
 #      nfl_data_py.import_awards() doesn't exist in the pinned version (0.3.2)
 #      and never has across any version checked — this always hit an
 #      AttributeError and silently no-opped, so player_seasons.ap_allpro_first

@@ -1,9 +1,9 @@
 /**
  * Parses a plain-text fact sentence into structured display parts.
  * Returns { label, value, sublabel }
- *   label    — small category heading (e.g. "PRO BOWLS", "RUSHING YARDS")
- *   value    — the prominent display value (e.g. "5", "2,097", "Ohio State")
- *   sublabel — optional context (e.g. "in 2012", null)
+ *   label:    small category heading (e.g. "PRO BOWLS", "RUSHING YARDS")
+ *   value:    the prominent display value (e.g. "5", "2,097", "Ohio State")
+ *   sublabel: optional context (e.g. "in 2012", null)
  */
 
 // Compacts "2018, 2020 and 2022" → "2018, 2020 & 2022" for tight sublabel space
@@ -54,6 +54,9 @@ export function parseFact(text) {
 
   m = text.match(/Played for the (.+) during their career/)
   if (m) return { label: 'PLAYED FOR', value: m[1], sublabel: null, isTeams: true }
+
+  m = text.match(/Wears jersey number (\d+)/)
+  if (m) return { label: 'JERSEY NO.', value: m[1], sublabel: null, isJersey: true }
 
   m = text.match(/Played college football at (.+)/)
   if (m) return { label: 'COLLEGE', value: m[1], sublabel: null, isCollege: true }

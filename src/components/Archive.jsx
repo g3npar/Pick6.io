@@ -27,13 +27,13 @@ export default function Archive({ user, onPlayDate }) {
         <div className="htp-hero">
           <span className="htp-icon">📅</span>
           <h1 className="htp-title">Archive</h1>
-          <p className="htp-subtitle">Every daily puzzle released so far — catch up on any you missed.</p>
+          <p className="htp-subtitle">Every daily puzzle released so far, catch up on any you missed.</p>
         </div>
 
         {!user && <p className="board-empty">Sign in to track which ones you've completed.</p>}
         {error && <p className="board-empty">Couldn't load the archive right now.</p>}
         {!error && !rows && <p className="board-empty">Loading…</p>}
-        {rows && rows.length === 0 && <p className="board-empty">No puzzles archived yet — check back after today's.</p>}
+        {rows && rows.length === 0 && <p className="board-empty">No puzzles archived yet, check back after today's.</p>}
 
         {rows && rows.length > 0 && (
           <ul className="board-list">

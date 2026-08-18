@@ -15,7 +15,7 @@ export default function HowToPlay() {
             <div className="htp-step-num">1</div>
             <div className="htp-step-body">
               <h3>Read the 6 wedge facts</h3>
-              <p>Each puzzle shows six facts about a mystery NFL player — college, draft, career stats, awards, and teams. <strong>One of the six is a lie.</strong></p>
+              <p>Each puzzle shows six facts about a mystery NFL player: college, draft, career stats, awards, and teams. <strong>One of the six is a lie.</strong></p>
             </div>
           </div>
 
@@ -67,9 +67,9 @@ export default function HowToPlay() {
         <div className="htp-tips">
           <h2 className="htp-section-title">Tips</h2>
           <ul className="htp-tip-list">
-            <li>You get 3 attempts to mark the lie — each wrong guess reveals that wedge is true.</li>
+            <li>You get 3 attempts to mark the lie, each wrong guess reveals that wedge is true.</li>
             <li>A new puzzle is available every day, featuring a currently active NFL player.</li>
-            <li>The lie is always plausible — a stat lie keeps the real number and swaps the year instead.</li>
+            <li>The lie is always plausible, a stat lie keeps the real number and swaps the year instead.</li>
           </ul>
         </div>
 

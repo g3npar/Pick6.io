@@ -25,7 +25,7 @@ export default function Leaderboard() {
 
         {error && <p className="board-empty">Couldn't load the leaderboard right now.</p>}
         {!error && !rows && <p className="board-empty">Loading…</p>}
-        {rows && rows.length === 0 && <p className="board-empty">No results yet — be the first to finish a daily puzzle.</p>}
+        {rows && rows.length === 0 && <p className="board-empty">No results yet, be the first to finish a daily puzzle.</p>}
 
         {rows && rows.length > 0 && (
           <ul className="board-list">

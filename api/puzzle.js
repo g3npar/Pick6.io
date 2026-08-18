@@ -131,6 +131,22 @@ function collegeFact(p) {
   }
 }
 
+function jerseyFact(p) {
+  if (p.jersey_number === null || p.jersey_number === undefined) return null
+  return {
+    cat: 'jersey',
+    text: `Wears jersey number ${p.jersey_number}`,
+    makeLie(rng) {
+      let fake
+      do { fake = Math.floor(rng() * 100) } while (fake === p.jersey_number)
+      return {
+        text: `Wears jersey number ${fake}`,
+        explanation: `${p.name} actually wears number ${p.jersey_number}, not ${fake}.`,
+      }
+    },
+  }
+}
+
 const roundForPick = pick => Math.min(7, Math.max(1, Math.ceil(pick / 32)))
 
 function draftFact(p) {
@@ -506,6 +522,7 @@ function buildFactPool(player, seasons, dbAwards, rng) {
   return [
     collegeFact(player),
     draftFact(player),
+    jerseyFact(player),
     allPro  > 0 ? allProFact(player, allPro)     : null,
     proBowl > 0 ? proBowlFact(player, proBowl)   : null,
     superBowlFact(player, sbWins),

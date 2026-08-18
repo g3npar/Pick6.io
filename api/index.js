@@ -4,7 +4,6 @@ const cors         = require('cors')
 const helmet       = require('helmet')
 const rateLimit    = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
-const https        = require('https')
 const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
@@ -79,78 +78,23 @@ app.use(apiLimiter)
 // Disable information-leaking headers
 app.disable('x-powered-by')
 
-// In-memory player cache
-let players   = []
-let cacheTime = 0
-const CACHE_TTL = 24 * 60 * 60 * 1000  // 24 hours
+// In-memory cache of current players, sourced from our own DB, so search never
+// surfaces a retired player who happens to share a name.
+let currentPlayers    = []
+let playersCacheTime  = 0
+const PLAYERS_CACHE_TTL = 60 * 60 * 1000  // 1 hour
 
-// nflverse public players CSV, no auth needed.
-const PLAYERS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/players/players.csv'
-
-function fetchURL(url, hops = 6) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'nfl-puzzle/1.0' } }, res => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && hops > 0) {
-        return fetchURL(res.headers.location, hops - 1).then(resolve).catch(reject)
-      }
-      const chunks = []
-      res.on('data', c => chunks.push(c))
-      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      res.on('error', reject)
-    })
-    req.on('error', reject)
-  })
+async function ensureCurrentPlayers() {
+  if (currentPlayers.length && Date.now() - playersCacheTime < PLAYERS_CACHE_TTL) return
+  const r = await pool.query(`
+    SELECT DISTINCT p.id, p.name, p.position, p.draft_year
+    FROM players p
+    JOIN player_seasons ps ON ps.player_id = p.id
+    WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
+  `)
+  currentPlayers   = r.rows
+  playersCacheTime = Date.now()
 }
-
-function parseCSV(text) {
-  const lines = text.split(/\r?\n/)
-  if (lines.length < 2) return []
-  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim())
-  return lines.slice(1).filter(l => l.trim()).map(line => {
-    const vals = []
-    let cur = '', inQ = false
-    for (const ch of line) {
-      if (ch === '"') { inQ = !inQ }
-      else if (ch === ',' && !inQ) { vals.push(cur); cur = '' }
-      else cur += ch
-    }
-    vals.push(cur)
-    return Object.fromEntries(headers.map((h, i) => [h, (vals[i] ?? '').replace(/"/g, '').trim()]))
-  })
-}
-
-async function ensurePlayers() {
-  if (players.length && Date.now() - cacheTime < CACHE_TTL) return
-
-  console.log('Fetching players from nflverse…')
-  const text = await fetchURL(PLAYERS_URL)
-  const rows  = parseCSV(text)
-
-  // One row per player, deduped by display_name + position.
-  const seen = new Map()
-  for (const r of rows) {
-    const name = (r.display_name || '').trim()
-    const pos  = (r.position     || '').trim()
-    if (!name || !pos) continue
-    const key = `${name}|${pos}`
-    if (!seen.has(key)) {
-      seen.set(key, {
-        id:         r.gsis_id || key,
-        name,
-        position:   pos,
-        teams:      r.latest_team ? [r.latest_team] : [],
-        draft_year: r.draft_year || r.rookie_season || null,
-      })
-    }
-  }
-
-  players   = [...seen.values()]
-  cacheTime = Date.now()
-  console.log(`Cached ${players.length} players.`)
-}
-
-// Kick off the fetch immediately so the first search is fast
-ensurePlayers().catch(err => console.error('Player load failed:', err.message))
 
 // GET /players/search?q=mahomes
 app.get('/players/search', async (req, res) => {
@@ -162,13 +106,13 @@ app.get('/players/search', async (req, res) => {
   if (!q) return res.json([])
 
   try {
-    await ensurePlayers()
+    await ensureCurrentPlayers()
   } catch {
     return res.status(503).json({ error: 'Player data unavailable' })
   }
 
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
-  const results = players
+  const results = currentPlayers
     .filter(p => norm(p.name).includes(q))
     .slice(0, 10)
 
