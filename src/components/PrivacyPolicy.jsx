@@ -5,13 +5,13 @@ export default function PrivacyPolicy() {
 
         <div className="htp-hero">
           <h1 className="htp-title">Privacy Policy</h1>
-          <p className="htp-subtitle">What Pick Six collects, and what it doesn't.</p>
+          <p className="htp-subtitle">What Pick6.io collects, and what it doesn't.</p>
         </div>
-        <p className="legal-meta">Last updated: August 16, 2026</p>
+        <p className="legal-meta">Last updated: August 18, 2026</p>
 
         <div className="legal-section">
           <h2 className="htp-section-title">Overview</h2>
-          <p>Pick Six is a small, independently-run NFL trivia game. This policy explains what data we collect when you use it, why, and what say you have over it. We keep this short on purpose. If a section doesn't apply to how you use the site (for example, you haven't created an account), it simply doesn't apply to you.</p>
+          <p>Pick6.io is a small, independently-run NFL trivia game. This policy explains what data we collect when you use it, why, and what say you have over it. We keep this short on purpose. If a section doesn't apply to how you use the site (for example, you haven't created an account), it simply doesn't apply to you.</p>
         </div>
 
         <div className="legal-section">
@@ -33,7 +33,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">How we use it</h2>
-          <p>Solely to run the features you'd expect: signing you in, saving your results, showing your streak, and displaying your chosen name on the leaderboard if you opt into one. We don't sell data, share it with advertisers, or use it for anything beyond operating Pick Six.</p>
+          <p>Solely to run the features you'd expect: signing you in, saving your results, showing your streak, and displaying your chosen name on the leaderboard if you opt into one. We don't sell data, share it with advertisers, or use it for anything beyond operating Pick6.io.</p>
         </div>
 
         <div className="legal-section">
@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Children's privacy</h2>
-          <p>Pick Six isn't directed at children under 13, and we don't knowingly collect data from anyone under that age.</p>
+          <p>Pick6.io isn't directed at children under 13, and we don't knowingly collect data from anyone under that age.</p>
         </div>
 
         <div className="legal-section">

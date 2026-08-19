@@ -48,7 +48,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
           {/* Logo */}
           <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <span className="logo-word">PICK</span>
-            <img src="/pick-six-logo.svg" alt="Pick Six" className="logo-icon" />
+            <img src="/pick-six-logo.svg" alt="Pick6.io" className="logo-icon" />
             <span className="logo-suffix">.io</span>
           </button>
 
