@@ -54,7 +54,6 @@ function App() {
 
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [pendingResult, setPendingResult] = useState(null)
-  const [totalScore, setTotalScore] = useState(null)
 
   // Whichever puzzle is actually on screen right now, today's or an archived one.
   const viewingArchive     = screen === 'archive' && viewingArchivePuzzle
@@ -90,16 +89,9 @@ function App() {
 
     fetch(`${API}/auth/me`, { credentials: 'include' })
       .then(r => r.json())
-      .then(({ user }) => { setUser(user); if (user) fetchTotalScore() })
+      .then(({ user }) => setUser(user))
       .catch(() => {})
   }, [])
-
-  const fetchTotalScore = () => {
-    fetch(`${API}/user/total-score`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setTotalScore(d.totalScore))
-      .catch(() => {})
-  }
 
   // Sends a finished result to the server, called directly or after a sign-in prompt.
   const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
@@ -114,7 +106,7 @@ function App() {
         lieAttempts: finalAttempts,
         playerGuess: finalPlayerGuess,
       }),
-    }).then(r => { if (r.ok) fetchTotalScore() }).catch(() => {})
+    }).catch(() => {})
   }
 
   // Saves a finished puzzle's result, prompting sign-in first if the player isn't logged in.
@@ -127,7 +119,6 @@ function App() {
   const handleSignedIn = u => {
     setUser(u)
     setShowSignInPrompt(false)
-    fetchTotalScore()
     if (pendingResult) { postResult(pendingResult); setPendingResult(null) }
   }
   const handleSignOut = () => {
@@ -255,7 +246,6 @@ function App() {
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}
           currentScore={currentScore}
-          totalScore={totalScore}
         />
         )}
       </main>

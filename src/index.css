@@ -307,10 +307,10 @@ body {
 .puzzle-subtitle strong { color: var(--text); }
 
 .puzzle-score {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.06em;
   margin-top: 2px;
 }
 .pick-six-banner {
@@ -322,16 +322,10 @@ body {
   text-shadow: 0 0 12px rgba(255, 34, 68, 0.5);
 }
 .score-val {
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 900;
-  color: var(--text);
-}
-.total-score {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-top: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 14px rgba(252, 211, 77, 0.45);
 }
 
 /* ── Circle nav row ──────────────────────────────────────────────── */

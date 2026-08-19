@@ -74,7 +74,7 @@ function GameBoard({
   submitted, playerCorrect,
   onSelectLie, onSelectPlayer,
   onGuessLie, onSubmit, onGiveUp,
-  currentScore, totalScore,
+  currentScore,
 }) {
   const [query,        setQuery]        = useState('')
   const [dropdownOpen, setDropdown]     = useState(false)
@@ -204,10 +204,7 @@ function GameBoard({
           <p className="pick-six-banner">PICK SIX</p>
         )}
         {submitted && (
-          <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 6 PTS</p>
-        )}
-        {submitted && totalScore != null && (
-          <p className="total-score">{totalScore} total points</p>
+          <p className="puzzle-score">Total Score: <span className="score-val">{displayScore}</span>/6 PTS</p>
         )}
       </div>
 
@@ -225,25 +222,7 @@ function GameBoard({
           </button>
           <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
         </div>
-      ) : (
-        <div className="submit-result-row">
-          <div className={`submit-result-chip ${lieFound ? 'src-correct' : 'src-wrong'}`}>
-            <div className="src-main">
-              <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
-              <span className="src-label">LIE</span>
-              <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
-            </div>
-            <span className="src-sub">({lieAttempts} out of 3 attempts used)</span>
-          </div>
-          <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
-            <div className="src-main">
-              <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
-              <span className="src-label">PLAYER</span>
-              <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {/* ── Circle ───────────────────────────────────── */}
       <div className="circle-nav-row">
@@ -403,6 +382,26 @@ function GameBoard({
 
         </div>{/* end circle-game */}
       </div>{/* end circle-nav-row */}
+
+      {submitted && (
+        <div className="submit-result-row">
+          <div className={`submit-result-chip ${lieFound ? 'src-correct' : 'src-wrong'}`}>
+            <div className="src-main">
+              <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
+              <span className="src-label">LIE</span>
+              <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
+            </div>
+            <span className="src-sub">({lieAttempts} out of 3 attempts used)</span>
+          </div>
+          <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
+            <div className="src-main">
+              <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
+              <span className="src-label">PLAYER</span>
+              <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
