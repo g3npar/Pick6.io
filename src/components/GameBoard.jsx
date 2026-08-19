@@ -204,7 +204,10 @@ function GameBoard({
           <p className="pick-six-banner">PICK SIX</p>
         )}
         {submitted && (
-          <p className="puzzle-score">Total Score: <span className="score-val">{displayScore}</span>/6 PTS</p>
+          <>
+            <p className="score-label">Total Score</p>
+            <p className="puzzle-score"><span className="score-val">{displayScore}</span>/6 PTS</p>
+          </>
         )}
       </div>
 

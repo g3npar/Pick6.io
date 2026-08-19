@@ -30,6 +30,11 @@
 button { cursor: pointer; font: inherit; border: none; background: none; }
 a      { text-decoration: none; color: inherit; }
 
+/* Zoom lives here, at the true root, not on an element that also uses vh
+   units (like .app/body's min-height: 100vh), mixing zoom with vh on the
+   same element inflates that element's box past one real screen. */
+html { zoom: 0.9025; }
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
@@ -161,7 +166,7 @@ body {
 /* ════════════════════════════════════════════════════════════════
    LAYOUT
    ════════════════════════════════════════════════════════════════ */
-.app { display: flex; flex-direction: column; min-height: 100vh; zoom: 0.9025; }
+.app { display: flex; flex-direction: column; min-height: 100vh; }
 
 .main-content {
   max-width: 1000px;
@@ -306,6 +311,13 @@ body {
 }
 .puzzle-subtitle strong { color: var(--text); }
 
+.score-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 .puzzle-score {
   font-size: 15px;
   font-weight: 800;
