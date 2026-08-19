@@ -16,10 +16,8 @@ const {
 
 const app = express()
 
-// Trust Render's proxy so rate limiting uses the real client IP
 app.set('trust proxy', 1)
 
-// Security headers (OWASP)
 app.use(helmet({
   contentSecurityPolicy: false,   // API-only; no HTML served
   crossOriginEmbedderPolicy: false,
@@ -28,7 +26,6 @@ app.use(helmet({
 app.use(cookieParser())
 app.use(express.json({ limit: '10kb' }))
 
-// CORS, restricted to known origins.
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
   .split(',').map(o => o.trim())
 
@@ -46,7 +43,6 @@ app.use(cors({
 ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
-// Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,          // 1 minute
   max: 60,                       // 60 requests/min per IP
@@ -78,8 +74,7 @@ app.use(apiLimiter)
 // Disable information-leaking headers
 app.disable('x-powered-by')
 
-// In-memory cache of current players, sourced from our own DB, so search never
-// surfaces a retired player who happens to share a name.
+// In-memory cache of current players
 let currentPlayers    = []
 let playersCacheTime  = 0
 const PLAYERS_CACHE_TTL = 60 * 60 * 1000  // 1 hour
@@ -130,7 +125,7 @@ app.get('/puzzle/today', async (req, res) => {
   }
 })
 
-// A signed-in user's already-saved result for a puzzle date, or null.
+// A signed-in user's already-saved result for a puzzle date, or null
 async function fetchSavedResult(userId, date) {
   if (!userId) return null
   const r = await pool.query(
@@ -173,7 +168,7 @@ app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
   }
 })
 
-// GET /puzzle/archive: released dates with per-user completion status, never puzzle content.
+// GET /puzzle/archive: released dates with per-user completion status
 app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   try {
     // Today's puzzle lives on the Daily tab, not here.

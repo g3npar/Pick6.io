@@ -98,7 +98,6 @@ export default function Admin() {
               >
                 <span className="board-name">{formatDate(r.date)}</span>
                 <span className="board-meta">{r.puzzle ? r.puzzle.playerName : 'No eligible players'}</span>
-                {r.scheduled && <span className="board-meta board-meta--done">✓ Set</span>}
               </li>
             ))}
           </ul>
