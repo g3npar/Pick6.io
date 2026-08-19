@@ -219,7 +219,7 @@ function App() {
   const puzzleResults = {}
 
   return (
-    <div className={`app${showBoard ? ' app--game' : ''}`}>
+    <div className="app">
       <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
       <main className="main-content">
         {screen === 'how-to-play' && <HowToPlay />}
