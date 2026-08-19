@@ -96,6 +96,14 @@ body {
   color: #fff;
 }
 .logo-icon { height: 58px; width: auto; }
+.logo-suffix {
+  font-family: 'Anton', sans-serif;
+  font-size: 15px;
+  color: var(--text-sec);
+  align-self: flex-end;
+  margin-left: -4px;
+  margin-bottom: 6px;
+}
 
 /* Nav */
 .nav {
