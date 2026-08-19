@@ -206,7 +206,11 @@ function GameBoard({
         {submitted && (
           <>
             <p className="score-label">Total Score</p>
-            <p className="puzzle-score"><span className="score-val">{displayScore}</span> OUT OF 6 PTS</p>
+            <p className="puzzle-score">
+              <span className="score-val">{displayScore}</span>
+              <span className="score-frac">/6</span>
+              <span className="score-unit">PTS</span>
+            </p>
           </>
         )}
       </div>
