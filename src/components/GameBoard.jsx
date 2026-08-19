@@ -74,7 +74,7 @@ function GameBoard({
   submitted, playerCorrect,
   onSelectLie, onSelectPlayer,
   onGuessLie, onSubmit, onGiveUp,
-  currentScore,
+  currentScore, totalScore,
 }) {
   const [query,        setQuery]        = useState('')
   const [dropdownOpen, setDropdown]     = useState(false)
@@ -205,6 +205,9 @@ function GameBoard({
         )}
         {submitted && (
           <p className="puzzle-score"><span className="score-val">{displayScore}</span> / 6 PTS</p>
+        )}
+        {submitted && totalScore != null && (
+          <p className="total-score">{totalScore} total points</p>
         )}
       </div>
 

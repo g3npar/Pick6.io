@@ -315,6 +315,17 @@ app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
   }
 })
 
+// GET /user/total-score
+app.get('/user/total-score', requireAuth, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT COALESCE(SUM(score), 0)::int AS total FROM user_results WHERE user_id = $1', [req.userId])
+    res.json({ totalScore: r.rows[0].total })
+  } catch (err) {
+    console.error('Total score fetch failed:', err.message)
+    res.status(500).json({ error: 'Could not load total score' })
+  }
+})
+
 // GET /leaderboard
 app.get('/leaderboard', async (_req, res) => {
   try {
