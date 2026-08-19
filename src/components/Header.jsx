@@ -42,31 +42,27 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
     <header className="header">
       <div className="header-inner">
 
-        <div className="header-spacer" aria-hidden="true" />
+        {/* Logo */}
+        <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <span className="logo-word">PICK</span>
+          <img src="/pick-six-logo.svg" alt="Pick6.io" className="logo-icon" />
+          <span className="logo-suffix">.io</span>
+        </button>
 
-        <div className="header-center">
-          {/* Logo */}
-          <button className="logo" onClick={() => onNav('daily')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <span className="logo-word">PICK</span>
-            <img src="/pick-six-logo.svg" alt="Pick6.io" className="logo-icon" />
-            <span className="logo-suffix">.io</span>
-          </button>
-
-          {/* Nav */}
-          <nav className="nav">
-            {links.map((l, i) => (
-              <Fragment key={l.id}>
-                {i > 0 && <span className="nav-divider" aria-hidden="true" />}
-                <button
-                  className={`nav-link${screen === l.id ? ' active' : ''}`}
-                  onClick={() => onNav(l.id)}
-                >
-                  {l.label}
-                </button>
-              </Fragment>
-            ))}
-          </nav>
-        </div>
+        {/* Nav */}
+        <nav className="nav">
+          {links.map((l, i) => (
+            <Fragment key={l.id}>
+              {i > 0 && <span className="nav-divider" aria-hidden="true" />}
+              <button
+                className={`nav-link${screen === l.id ? ' active' : ''}`}
+                onClick={() => onNav(l.id)}
+              >
+                {l.label}
+              </button>
+            </Fragment>
+          ))}
+        </nav>
 
         {/* Account */}
         <div className="header-right">
