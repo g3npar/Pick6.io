@@ -173,6 +173,37 @@ body {
    ════════════════════════════════════════════════════════════════ */
 .app { display: flex; flex-direction: column; min-height: 100vh; }
 
+/* On the daily puzzle screen, the whole app is locked to exactly one viewport
+   tall and everything inside shrinks to fit it, so the board never scrolls.
+   Every other screen (Archive, Terms, etc.) keeps normal, scrollable flow. */
+.app--game {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.app--game .main-content {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.app--game .puzzle-game {
+  flex: 1;
+  min-height: 0;
+}
+.app--game .circle-nav-row {
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+}
+.app--game .circle-game {
+  width: auto;
+  height: 100%;
+  max-height: 540px;
+  max-width: 100%;
+}
+
 .main-content {
   max-width: 1000px;
   margin: 0 auto;
@@ -481,6 +512,10 @@ body {
   margin: 0 auto;
   overflow: visible;
   flex: 1;
+  /* Everything inside sizes itself off the circle's own rendered width (cqw),
+     not a fixed px value, so labels stay proportional at any circle size. */
+  container-type: inline-size;
+  container-name: wheel;
 }
 
 /* SVG fills the container */
@@ -492,22 +527,24 @@ body {
   overflow: visible;
 }
 
-/* Text labels */
+/* Text labels. Sizes are clamp(min, cqw-scaled, max) against the circle's own
+   width, so they shrink and grow with it instead of overlapping when the
+   circle has to shrink to fit the screen. */
 .fact-label {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 128px;
+  width: clamp(72px, 24cqw, 130px);
   text-align: center;
   pointer-events: none;
   z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: clamp(2px, 1cqw, 5px);
 }
 
 .fl-num {
-  font-size: 11px;
+  font-size: clamp(8px, 2.1cqw, 11px);
   font-weight: 800;
   letter-spacing: 0.14em;
   color: var(--text-muted);
@@ -518,7 +555,7 @@ body {
 .fl-false .fl-num    { color: #ef4444; }
 
 .fl-text {
-  font-size: 11.5px;
+  font-size: clamp(8px, 2.15cqw, 11.5px);
   font-weight: 500;
   line-height: 1.4;
   color: var(--text-sec);
@@ -534,46 +571,46 @@ body {
 }
 .fl-logo,
 .fl-logo-college {
-  width: 55px;
-  height: 55px;
-  min-width: 55px;
-  min-height: 55px;
+  width: clamp(24px, 10.2cqw, 55px);
+  height: clamp(24px, 10.2cqw, 55px);
+  min-width: 24px;
+  min-height: 24px;
   aspect-ratio: 1;
   object-fit: contain;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
 }
 .fl-logos--sm .fl-logo {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: clamp(18px, 7.4cqw, 40px);
+  height: clamp(18px, 7.4cqw, 40px);
+  min-width: 18px;
+  min-height: 18px;
 }
 
 .fl-value {
-  font-size: 28px;
+  font-size: clamp(13px, 5.2cqw, 28px);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
   color: var(--red);
 }
-.fl-value--sm { font-size: 15px; }
+.fl-value--sm { font-size: clamp(8px, 2.8cqw, 15px); }
 .fl-jersey {
   font-family: 'Anton', sans-serif;
   font-weight: 400;
-  font-size: 62px;
+  font-size: clamp(26px, 11.5cqw, 62px);
   letter-spacing: 0.01em;
   -webkit-text-stroke: 2.5px var(--text);
   paint-order: stroke fill;
 }
-.fl-jersey.fl-value--sm { font-size: 36px; -webkit-text-stroke: 1.5px var(--text); }
+.fl-jersey.fl-value--sm { font-size: clamp(16px, 6.7cqw, 36px); -webkit-text-stroke: 1.5px var(--text); }
 .fl-sublabel {
-  font-size: 16px;
+  font-size: clamp(8px, 3cqw, 16px);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text);
   margin-top: 1px;
 }
-.fl-sublabel--sm   { font-size: 10px; margin-top: 0; }
+.fl-sublabel--sm   { font-size: clamp(7px, 1.9cqw, 10px); margin-top: 0; }
 .fl-sublabel--true { color: rgba(0,240,128,0.85); }
 
 /* Lie reveal: a small crossed-out line for the wrong value, the real one
@@ -614,7 +651,7 @@ body {
 .fl-false .fl-text { color: var(--text); }
 
 .fl-tag {
-  font-size: 9px;
+  font-size: clamp(7px, 1.7cqw, 9px);
   font-weight: 800;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -623,7 +660,7 @@ body {
 .fl-selected .fl-tag { color: var(--red); }
 
 .fl-verdict {
-  font-size: 9px;
+  font-size: clamp(7px, 1.7cqw, 9px);
   font-weight: 800;
   letter-spacing: 0.1em;
   padding: 2px 6px;
@@ -1364,9 +1401,6 @@ kbd {
   .nav .nav-divider { display: none; }
 
   .circle-game        { max-width: 340px; }
-  .fact-label        { width: 80px; }
-  .fl-text            { font-size: 9.5px; }
-  .fl-num             { font-size: 8px; }
   .circle-center      { padding: 8px; gap: 5px; }
   .helmet-silhouette  { width: 28px; }
 }
