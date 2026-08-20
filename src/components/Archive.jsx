@@ -45,7 +45,7 @@ export default function Archive({ user, onPlayDate }) {
                 <span className="board-name">{formatDate(r.date)}</span>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   {r.completed && <span className="board-meta board-meta--done">✓ Completed · {r.score}/6</span>}
-                  <button className="header-icon-btn" onClick={() => onPlayDate(r.date)}>
+                  <button className="board-reveal-btn" onClick={() => onPlayDate(r.date)}>
                     {r.completed ? 'View' : 'Play'}
                   </button>
                 </div>
