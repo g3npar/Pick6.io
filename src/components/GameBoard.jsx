@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
+import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -187,6 +188,7 @@ function GameBoard({
     <div className="puzzle-game">
 
       <div className="puzzle-header">
+        {puzzle.date && <p className="puzzle-date">{formatDate(puzzle.date)}</p>}
         {!liePhaseComplete && (
           <div className="attempt-dots-wrap">
             <span className="attempt-label">ATTEMPTS</span>

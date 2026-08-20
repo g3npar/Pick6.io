@@ -1,11 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
+import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-const formatDate = d => {
-  const [y, m, day] = d.split('-').map(Number)
-  return new Date(y, m - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-}
 
 async function postJSON(path, body) {
   const res = await fetch(`${API}${path}`, {
