@@ -140,6 +140,29 @@ async function fetchSavedResult(userId, date) {
   }
 }
 
+// A signed-in user's in-progress (not yet submitted) lie-guessing state for a date, or null.
+async function fetchProgress(userId, date) {
+  if (!userId) return null
+  const r = await pool.query(
+    'SELECT lie_attempts, wrong_ids, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
+    [userId, date]
+  )
+  if (!r.rows.length) return null
+  const row = r.rows[0]
+  return { lieAttempts: row.lie_attempts, wrongIds: row.wrong_ids, lieFound: row.lie_found }
+}
+
+// Strips the answer-revealing fields from a puzzle unless they're safe to show:
+// `lie` once the lie phase is resolved (found or exhausted), `player` once fully submitted.
+function withReveal(puzzle, { lie = false, player = false } = {}) {
+  const { falseFactId, falseExplanation, trueText, playerName, ...safe } = puzzle
+  return {
+    ...safe,
+    ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
+    ...(player ? { playerName } : {}),
+  }
+}
+
 // GET /puzzle/today/current
 app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) => {
   try {
@@ -148,7 +171,12 @@ app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) =
     if (fresh) return res.json(puzzle)
     const date   = todayDateStr()
     const result = await fetchSavedResult(req.userId, date)
-    res.json({ ...puzzle, date, result })
+    if (result) {
+      return res.json({ ...withReveal(puzzle, { lie: true, player: true }), date, result, progress: null })
+    }
+    const progress = await fetchProgress(req.userId, date)
+    const liePhaseComplete = !!progress && (progress.lieFound || progress.lieAttempts >= 3)
+    res.json({ ...withReveal(puzzle, { lie: liePhaseComplete }), date, result: null, progress })
   } catch (err) {
     console.error('Current puzzle failed:', err.message)
     res.status(500).json({ error: 'Could not generate current puzzle' })
@@ -162,9 +190,93 @@ app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
   try {
     const puzzle = await getPuzzleForDate(date)
     const result = await fetchSavedResult(req.userId, date)
-    res.json({ ...puzzle, date, result })
+    if (result) {
+      return res.json({ ...withReveal(puzzle, { lie: true, player: true }), date, result, progress: null })
+    }
+    const progress = await fetchProgress(req.userId, date)
+    const liePhaseComplete = !!progress && (progress.lieFound || progress.lieAttempts >= 3)
+    res.json({ ...withReveal(puzzle, { lie: liePhaseComplete }), date, result: null, progress })
   } catch (err) {
     res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /puzzle/guess-lie: server-verified single guess. Answer data is never sent to the
+// client before this point, so this is the only way to learn which fact is the lie.
+app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
+  const { puzzleDate, factId, giveUp } = req.body || {}
+  const date  = puzzleDate
+  const today = todayDateStr()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today) return res.status(400).json({ error: 'Invalid date' })
+  if (!giveUp && !Number.isInteger(factId)) return res.status(400).json({ error: 'Invalid fact' })
+
+  try {
+    const puzzle = date === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(date)
+
+    // Already fully completed: nothing left to guess, safe to just echo the answer back.
+    const already = await fetchSavedResult(req.userId, date)
+    if (already) {
+      return res.json({
+        correct: already.lieFound, lieFound: already.lieFound, lieAttempts: already.lieAttempts,
+        wrongIds: [], liePhaseComplete: true,
+        falseFactId: puzzle.falseFactId, trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation,
+      })
+    }
+
+    if (!req.userId) {
+      // Anonymous: correctness is still verified server-side (the fix that matters), but
+      // nothing is persisted, so the attempt count itself isn't tamper-proof for guests.
+      const correct = !giveUp && factId === puzzle.falseFactId
+      const liePhaseComplete = correct || !!giveUp
+      return res.json({
+        correct, lieFound: correct, lieAttempts: null, wrongIds: null, liePhaseComplete,
+        ...(liePhaseComplete
+          ? { falseFactId: puzzle.falseFactId, trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation }
+          : {}),
+      })
+    }
+
+    // Signed in: the server's own tally is authoritative from here on.
+    const progRes = await pool.query(
+      'SELECT lie_attempts, wrong_ids, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
+      [req.userId, date]
+    )
+    let attempts = 0, wrongIds = [], lieFound = false
+    if (progRes.rows.length) {
+      attempts = progRes.rows[0].lie_attempts; wrongIds = progRes.rows[0].wrong_ids; lieFound = progRes.rows[0].lie_found
+    }
+
+    let correct = false
+    if (!(lieFound || attempts >= 3)) {
+      if (giveUp) {
+        attempts = 3
+      } else {
+        correct = factId === puzzle.falseFactId
+        if (correct) lieFound = true
+        else {
+          attempts = Math.min(3, attempts + 1)
+          if (!wrongIds.includes(factId)) wrongIds = [...wrongIds, factId]
+        }
+      }
+      await pool.query(`
+        INSERT INTO puzzle_progress (user_id, puzzle_date, lie_attempts, wrong_ids, lie_found, updated_at)
+        VALUES ($1, $2, $3, $4, $5, now())
+        ON CONFLICT (user_id, puzzle_date) DO UPDATE
+          SET lie_attempts = EXCLUDED.lie_attempts, wrong_ids = EXCLUDED.wrong_ids,
+              lie_found = EXCLUDED.lie_found, updated_at = now()
+      `, [req.userId, date, attempts, wrongIds, lieFound])
+    }
+
+    const liePhaseComplete = lieFound || attempts >= 3
+    res.json({
+      correct, lieFound, lieAttempts: attempts, wrongIds, liePhaseComplete,
+      ...(liePhaseComplete
+        ? { falseFactId: puzzle.falseFactId, trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation }
+        : {}),
+    })
+  } catch (err) {
+    console.error('Guess-lie failed:', err.message)
+    res.status(500).json({ error: 'Could not process guess' })
   }
 })
 
@@ -277,33 +389,60 @@ async function requireAdmin(req, res, next) {
   next()
 }
 
-// POST /puzzle/result: recomputes the score server-side so it can't be faked.
-app.post('/puzzle/result', requireAuth, puzzleLimiter, async (req, res) => {
+// POST /puzzle/result: recomputes the score server-side so it can't be faked. Only persists
+// (and only requires auth for persisting) once a userId is present; an anonymous caller still
+// gets an accurate, server-verified verdict so the board can reveal immediately, it just isn't
+// saved until they sign in and this fires again.
+app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
   const { selectedLieId, lieAttempts, playerGuess } = req.body || {}
   const puzzleDate = req.body?.puzzleDate || todayDateStr()
-  const attempts = Number(lieAttempts)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate) || !Number.isInteger(attempts) || attempts < 0 || attempts > 3) {
-    return res.status(400).json({ error: 'Invalid result' })
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)) return res.status(400).json({ error: 'Invalid result' })
   try {
     const today = todayDateStr()
     if (puzzleDate > today) return res.status(400).json({ error: 'Invalid puzzle date' })
     const puzzle = puzzleDate === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(puzzleDate)
 
-    const lieFound = Number.isInteger(selectedLieId) && selectedLieId === puzzle.falseFactId
+    // The server's own tracked guessing progress is authoritative whenever it exists, which
+    // is the normal case for anyone signed in while they played. It only falls back to the
+    // client-reported attempt info when nothing was tracked (e.g. played anonymously, then
+    // signed in afterward) — never trusted at all once a real progress record exists.
+    let lieFound, attempts
+    if (req.userId) {
+      const progRes = await pool.query(
+        'SELECT lie_attempts, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
+        [req.userId, puzzleDate]
+      )
+      if (progRes.rows.length) { lieFound = progRes.rows[0].lie_found; attempts = progRes.rows[0].lie_attempts }
+    }
+    if (lieFound === undefined) {
+      attempts = Number(lieAttempts)
+      if (!Number.isInteger(attempts) || attempts < 0 || attempts > 3) attempts = 3
+      lieFound = Number.isInteger(selectedLieId) && selectedLieId === puzzle.falseFactId
+    }
+
     const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
     const playerCorrect = normName(playerGuess) === normName(puzzle.playerName)
     const score = (lieFound ? Math.max(1, 3 - attempts) : 0) + (playerCorrect ? 3 : 0)
 
-    const r = await pool.query(`
-      INSERT INTO user_results (user_id, puzzle_date, lie_found, lie_attempts, player_correct, player_guess, score)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (user_id, puzzle_date) DO NOTHING
-      RETURNING id
-    `, [req.userId, puzzleDate, lieFound, attempts, playerCorrect, String(playerGuess ?? '').slice(0, 80), score])
+    let saved = false
+    if (req.userId) {
+      const r = await pool.query(`
+        INSERT INTO user_results (user_id, puzzle_date, lie_found, lie_attempts, player_correct, player_guess, score)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (user_id, puzzle_date) DO NOTHING
+        RETURNING id
+      `, [req.userId, puzzleDate, lieFound, attempts, playerCorrect, String(playerGuess ?? '').slice(0, 80), score])
 
-    if (!r.rows.length) return res.status(409).json({ error: "Already recorded that day's result" })
-    res.json({ lieFound, playerCorrect, score })
+      if (!r.rows.length) return res.status(409).json({ error: "Already recorded that day's result" })
+      await pool.query('DELETE FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2', [req.userId, puzzleDate])
+      saved = true
+    }
+
+    res.json({
+      lieFound, lieAttempts: attempts, playerCorrect, score, saved,
+      playerName: puzzle.playerName, falseFactId: puzzle.falseFactId,
+      trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation,
+    })
   } catch (err) {
     console.error('Save result failed:', err.message)
     res.status(500).json({ error: 'Could not save result' })

@@ -27,6 +27,12 @@ export default function Admin() {
   const [busy, setBusy]     = useState(false)
   const [query, setQuery]   = useState('')
   const [results, setResults] = useState([])
+  const [revealed, setRevealed] = useState(new Set())
+
+  const revealDate = (e, date) => {
+    e.stopPropagation()
+    setRevealed(prev => new Set(prev).add(date))
+  }
 
   const load = useCallback(() => {
     fetch(`${API}/admin/puzzles?days=14`, { credentials: 'include' })
@@ -97,7 +103,13 @@ export default function Admin() {
                 onClick={() => selectDate(r)}
               >
                 <span className="board-name">{formatDate(r.date)}</span>
-                <span className="board-meta">{r.puzzle ? r.puzzle.playerName : 'No eligible players'}</span>
+                {!r.puzzle ? (
+                  <span className="board-meta">No eligible players</span>
+                ) : revealed.has(r.date) ? (
+                  <span className="board-meta">{r.puzzle.playerName}</span>
+                ) : (
+                  <button className="board-reveal-btn" onClick={e => revealDate(e, r.date)}>Reveal</button>
+                )}
               </li>
             ))}
           </ul>

@@ -47,6 +47,20 @@ async function ensureAuthSchema(pool) {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE')
   // The player name a user actually typed, so a refresh can restore their finished board.
   await pool.query('ALTER TABLE user_results ADD COLUMN IF NOT EXISTS player_guess TEXT')
+  // Server-tracked lie-guessing progress for a puzzle a user hasn't finished yet. This is
+  // the source of truth for attempt counts (never the client), and lets a mid-puzzle refresh
+  // restore exactly where the player left off instead of losing their progress.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS puzzle_progress (
+      user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      puzzle_date  DATE NOT NULL,
+      lie_attempts SMALLINT NOT NULL DEFAULT 0,
+      wrong_ids    SMALLINT[] NOT NULL DEFAULT '{}',
+      lie_found    BOOLEAN NOT NULL DEFAULT false,
+      updated_at   TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, puzzle_date)
+    )
+  `)
 }
 
 // Verifies a Google ID token and returns the caller's verified account details.

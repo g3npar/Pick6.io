@@ -6,7 +6,7 @@
  *   sublabel: optional context (e.g. "in 2012", null)
  */
 
-// Compacts "2018, 2020 and 2022" → "2018, 2020 & 2022" for tight sublabel space
+// Compacts "2018, 2020 and 2022" -> "2018, 2020 & 2022" for tight sublabel space
 const amp = s => s.replace(/ and /g, ' & ')
 
 export function parseFact(text) {

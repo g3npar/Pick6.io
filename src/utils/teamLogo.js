@@ -1,4 +1,4 @@
-// Maps canonical team names (and historical aliases) → /logos/*.png URL
+// Maps canonical team names (and historical aliases) -> /logos/*.png URL
 const TEAM_SLUG = {
   'Arizona Cardinals':        'arizona-cardinals',
   'Atlanta Falcons':          'atlanta-falcons',
@@ -47,7 +47,7 @@ const TEAM_SLUG = {
 }
 
 /**
- * Returns the absolute URL path to a team's logo PNG, or null if not found.
+ * Returns the absolute URL path to a team's logo PNG, or null if not found
  * @param {string} teamName - Canonical or historical team name
  */
 export function teamLogo(teamName) {

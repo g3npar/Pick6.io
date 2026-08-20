@@ -1,4 +1,4 @@
-// Maps college name → /logos/colleges/{slug}.png
+// Maps college name -> /logos/colleges/{slug}.png
 const COLLEGE_SLUG = {
   // ── Power conferences ───────────────────────────────────────────
   'Alabama':                    'alabama',
@@ -247,7 +247,6 @@ const COLLEGE_SLUG = {
   'Marist':                     'marist',
   'Stony Brook':                'stony-brook',
   'Saginaw Valley State':       'saginaw-valley-st',
-  // ── Round 2: additional downloads ──────────────────────────────
   'Albany':                     'albany',
   'Austin Peay':                'austin-peay',
   'Bethune-Cookman':            'bethune-cookman',
@@ -304,7 +303,7 @@ const COLLEGE_SLUG = {
 }
 
 /**
- * Returns the path to a college logo PNG, or null if not found.
+ * Returns the path to a college logo PNG, or null if not found
  */
 export function collegeLogo(collegeName) {
   if (!collegeName) return null

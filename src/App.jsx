@@ -31,9 +31,6 @@ function preloadLogos(puzzles) {
   urls.forEach(url => { const img = new Image(); img.src = url })
 }
 
-// Normalize curly/smart apostrophes to straight apostrophe for comparison
-const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
-
 function App() {
   const [screen, setScreen] = useState('daily')
   const [user,   setUser]   = useState(null)
@@ -67,25 +64,40 @@ function App() {
   // Any real navigation (nav link, logo, footer) leaves archive-viewing mode.
   const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false) }
 
-  // Rebuilds the finished-board state from a server-saved result, so a refresh doesn't lose it.
-  // Trusts the server's stored playerCorrect rather than re-comparing text, since older saved
-  // results predate the playerGuess column and would otherwise show as wrong on restore.
-  const restoredState = result => result
-    ? {
+  // Rebuilds the board state from what the server knows for this date: a finished result
+  // takes priority, otherwise any in-progress lie-guessing state restores where a refresh
+  // (or a fresh sign-in) left off, so nothing already done is ever lost.
+  const restoredState = (result, progress) => {
+    if (result) {
+      return {
         player: result.playerGuess || '', playerCorrect: result.playerCorrect,
         lieFound: result.lieFound, lieAttempts: result.lieAttempts, submitted: true,
       }
-    : {}
+    }
+    if (progress) {
+      return {
+        lieFound: progress.lieFound, lieAttempts: progress.lieAttempts,
+        confirmedTrueIds: progress.wrongIds || [],
+      }
+    }
+    return {}
+  }
 
-  useEffect(() => {
+  // (Re)loads today's puzzle exactly as the current session (signed in or not) sees it —
+  // called on mount, and again after sign-in/sign-out so the board updates instantly.
+  const loadTodayPuzzle = () => {
     fetch(`${API}/puzzle/today/current`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
       .then(p => {
         setTodayPuzzle(p)
-        setTodayResultSaved(!!p.result); setTodayState(restoredState(p.result))
+        setTodayResultSaved(!!p.result); setTodayState(restoredState(p.result, p.progress))
         preloadLogos([p])
       })
       .catch(err => console.error('Failed to load puzzle:', err))
+  }
+
+  useEffect(() => {
+    loadTodayPuzzle()
 
     fetch(`${API}/auth/me`, { credentials: 'include' })
       .then(r => r.json())
@@ -93,9 +105,11 @@ function App() {
       .catch(() => {})
   }, [])
 
-  // Sends a finished result to the server, called directly or after a sign-in prompt.
+  // Sends a finished result to the server. Works whether signed in or not — the server always
+  // returns an accurate, self-verified verdict; it just doesn't persist (`saved: false`) until
+  // the player is actually signed in, at which point the sign-in prompt re-fires this call.
   const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
-    setActiveResultSaved(true)
+    if (!activePlayingDate) return
     fetch(`${API}/puzzle/result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,25 +120,56 @@ function App() {
         lieAttempts: finalAttempts,
         playerGuess: finalPlayerGuess,
       }),
-    }).catch(() => {})
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return
+        if (data.saved) setActiveResultSaved(true)
+        setActiveState(prev => ({
+          ...prev, submitted: true,
+          playerCorrect: data.playerCorrect, lieFound: data.lieFound, lieAttempts: data.lieAttempts,
+        }))
+        const setPuzzleFn = viewingArchive ? setArchivePuzzle : setTodayPuzzle
+        setPuzzleFn(prev => prev && ({
+          ...prev, playerName: data.playerName, falseFactId: data.falseFactId,
+          trueText: data.trueText, falseExplanation: data.falseExplanation,
+        }))
+        if (!data.saved) { setPendingResult({ finalLieId, finalAttempts, finalPlayerGuess }); setShowSignInPrompt(true) }
+      })
+      .catch(() => {})
   }
 
-  // Saves a finished puzzle's result, prompting sign-in first if the player isn't logged in.
+  // Saves a finished puzzle's result. Always fires immediately for instant feedback/reveal;
+  // postResult itself prompts sign-in if that's what's needed to actually persist it.
   const saveResult = payload => {
     if (!activePlayingDate || activeResultSaved) return
-    if (!user) { setPendingResult(payload); setShowSignInPrompt(true); return }
     postResult(payload)
   }
 
   const handleSignedIn = u => {
     setUser(u)
     setShowSignInPrompt(false)
-    if (pendingResult) { postResult(pendingResult); setPendingResult(null) }
+    if (pendingResult) {
+      postResult(pendingResult)
+      setPendingResult(null)
+    } else {
+      // Not mid-submission — this account may already have progress or a finished
+      // result for today (or the archive date on screen), so refresh to show it now.
+      loadTodayPuzzle()
+      if (viewingArchivePuzzle && archivePuzzle?.date) handlePlayArchiveDate(archivePuzzle.date)
+    }
   }
   const handleSignOut = () => {
     fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
       .catch(() => {})
-      .finally(() => setUser(null))
+      .finally(() => {
+        setUser(null)
+        // Revert to a clean logged-out view instead of still showing this account's board.
+        setTodayResultSaved(false); setTodayState({})
+        setArchiveResultSaved(false); setArchiveState({})
+        loadTodayPuzzle()
+        if (viewingArchivePuzzle && archivePuzzle?.date) handlePlayArchiveDate(archivePuzzle.date)
+      })
   }
   const handleUserUpdated = u => setUser(u)
 
@@ -140,7 +185,7 @@ function App() {
       })
       .then(p => {
         setArchivePuzzle(p)
-        setArchiveResultSaved(!!p.result); setArchiveState(restoredState(p.result))
+        setArchiveResultSaved(!!p.result); setArchiveState(restoredState(p.result, p.progress))
         preloadLogos([p]); setViewingArchivePuzzle(true)
       })
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
@@ -175,39 +220,51 @@ function App() {
   const confirmedTrueIds = curState.confirmedTrueIds ?? []
   const submitted      = curState.submitted     ?? false   // player name submitted = game over
   const playerCorrect  = submitted && (curState.playerCorrect ?? false)
-  const liePhaseComplete = lieFound || lieAttempts >= 3
+  const liePhaseComplete = lieFound || lieAttempts >= 3 || submitted
 
   const updateCurrent = updates => setActiveState(prev => ({ ...prev, ...updates }))
 
-  // Lie guess: evaluate immediately
-  const handleGuessLie = () => {
-    if (!selectedLieId || liePhaseComplete || !puzzle) return
-    const correct = selectedLieId === puzzle.falseFactId
-    if (correct) {
-      updateCurrent({ lieFound: true })
-    } else {
-      const newAttempts = lieAttempts + 1
-      // Reveal the fact the player actually guessed as true (they were wrong to call it a lie)
-      updateCurrent({
-        lieAttempts: newAttempts,
-        confirmedTrueIds: confirmedTrueIds.includes(selectedLieId)
-          ? confirmedTrueIds
-          : [...confirmedTrueIds, selectedLieId],
-        lieId: null,
+  const revealInPuzzle = fields => {
+    const setPuzzleFn = viewingArchive ? setArchivePuzzle : setTodayPuzzle
+    setPuzzleFn(prev => prev && ({ ...prev, ...fields }))
+  }
+
+  // Lie guess: server-verified, since the client is never told the answer up front
+  const handleGuessLie = async () => {
+    if (!selectedLieId || liePhaseComplete || !puzzle || !activePlayingDate) return
+    const factId = selectedLieId
+    let data
+    try {
+      const r = await fetch(`${API}/puzzle/guess-lie`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ puzzleDate: activePlayingDate, factId }),
       })
+      data = r.ok ? await r.json() : null
+    } catch { data = null }
+    if (!data) return
+
+    // Signed-in play is tracked server-side end to end; anonymous play isn't persisted
+    // anywhere, so its attempt count is only ever kept locally for display
+    const tracked = data.lieAttempts !== null && data.lieAttempts !== undefined
+    const newAttempts = tracked ? data.lieAttempts : (data.correct ? lieAttempts : lieAttempts + 1)
+    const newWrongIds = tracked
+      ? data.wrongIds
+      : (data.correct || confirmedTrueIds.includes(factId) ? confirmedTrueIds : [...confirmedTrueIds, factId])
+
+    updateCurrent({ lieFound: data.lieFound, lieAttempts: newAttempts, confirmedTrueIds: newWrongIds, lieId: null })
+    if (data.liePhaseComplete && data.falseFactId !== undefined) {
+      revealInPuzzle({ falseFactId: data.falseFactId, trueText: data.trueText, falseExplanation: data.falseExplanation })
     }
   }
 
   // Player name submit (only available after lie phase)
   const handleSubmit = () => {
     if (!selectedPlayer || !liePhaseComplete || !puzzle) return
-    updateCurrent({ submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: lieAttempts, finalPlayerGuess: selectedPlayer })
   }
 
   const handleGiveUp = () => {
     if (!puzzle) return
-    updateCurrent({ lieAttempts: 3, submitted: true, playerCorrect: normName(selectedPlayer) === normName(puzzle.playerName) })
     saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
   }
 
