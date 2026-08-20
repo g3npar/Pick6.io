@@ -251,7 +251,10 @@ function App() {
       ? data.wrongIds
       : (data.correct || confirmedTrueIds.includes(factId) ? confirmedTrueIds : [...confirmedTrueIds, factId])
 
-    updateCurrent({ lieFound: data.lieFound, lieAttempts: newAttempts, confirmedTrueIds: newWrongIds, lieId: null })
+    updateCurrent({
+      lieFound: data.lieFound, lieAttempts: newAttempts, confirmedTrueIds: newWrongIds,
+      lieId: data.correct ? factId : null,
+    })
     if (data.liePhaseComplete && data.falseFactId !== undefined) {
       revealInPuzzle({ falseFactId: data.falseFactId, trueText: data.trueText, falseExplanation: data.falseExplanation })
     }
