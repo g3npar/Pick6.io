@@ -2,6 +2,18 @@
 
 A daily NFL trivia puzzle game. Each puzzle shows six facts about a mystery player, however one of them is a lie. Spot the lie, name the player, and score points. Whiff on both and it's a Pick Six.
 
+![Pick6.io](public/og-image.png)
+
+## Screenshots
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/daily.png" alt="Daily puzzle"></td>
+<td width="33%"><img src="docs/screenshots/archive.png" alt="Archive"></td>
+<td width="33%"><img src="docs/screenshots/how-to-play.png" alt="How to Play"></td>
+</tr>
+</table>
+
 ## How it works
 
 - One puzzle per day, featuring a currently active NFL player
@@ -31,7 +43,10 @@ A daily NFL trivia puzzle game. Each puzzle shows six facts about a mystery play
 │   └── puzzle.js         # Puzzle generation logic
 ├── public/
 │   ├── awards.csv        # HOF, Pro Bowl, All-Pro, MVP, OPOY, DPOY, ROY, CPOY (1957–2025)
-│   └── logos/            # NFL team + college logos
+│   ├── logos/            # NFL team + college logos
+│   └── og-image.png      # Social share preview image
+├── docs/
+│   └── screenshots/      # README screenshots
 ├── scripts/              # Data loading + scraping scripts (Python)
 ├── render.yaml           # Render deployment config (API)
 └── vercel.json           # Vercel deployment config (frontend)
