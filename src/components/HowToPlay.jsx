@@ -3,11 +3,6 @@ export default function HowToPlay() {
     <div className="htp-page">
       <div className="htp-card">
 
-        <div className="htp-hero">
-          <h1 className="htp-title">How to Play</h1>
-          <p className="htp-subtitle">Spot the lie. Name the player. Score big.</p>
-        </div>
-
         <div className="htp-steps">
 
           <div className="htp-step">

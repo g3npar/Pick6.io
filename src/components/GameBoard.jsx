@@ -6,6 +6,15 @@ import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+// Aug 17, 2026 is the first date a daily puzzle was ever released, so it's puzzle #1.
+const PUZZLE_EPOCH = new Date(2026, 7, 17)
+
+function puzzleNumber(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return Math.round((date - PUZZLE_EPOCH) / 86400000) + 1
+}
+
 // SVG-based fact paths, 6 facts at 60 degrees each
 const SVG_R  = 298
 const SVG_CX = 300
@@ -72,7 +81,7 @@ function GameBoard({
   puzzle, totalPuzzles,
   selectedLieId, selectedPlayer,
   lieFound, lieAttempts, confirmedTrueIds, liePhaseComplete,
-  submitted, playerCorrect,
+  submitted, playerCorrect, gaveUp,
   onSelectLie, onSelectPlayer,
   onGuessLie, onSubmit, onGiveUp,
   currentScore,
@@ -83,33 +92,24 @@ function GameBoard({
   const [searching,    setSearching]    = useState(false)
   const [hoveredIdx,   setHoveredIdx]   = useState(null)
   const [tabIdx,       setTabIdx]       = useState(-1)
-  const [displayScore, setDisplayScore] = useState(currentScore)
   const [shareState, setShareState] = useState('idle') // 'idle' | 'copied'
+  const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
+  const [selectedHeadshot, setSelectedHeadshot] = useState(null)
   const wrapRef       = useRef(null)
   const inputRef      = useRef(null)
   const debounceRef   = useRef(null)
-  const scoreRef      = useRef(currentScore)
-
-  useEffect(() => {
-    const target = currentScore
-    const start  = scoreRef.current
-    if (target === start) return
-    scoreRef.current = target
-    const diff     = target - start
-    const steps    = Math.abs(diff)
-    const interval = Math.max(20, Math.floor(300 / steps))
-    let current    = start
-    const timer    = setInterval(() => {
-      current += diff > 0 ? 1 : -1
-      setDisplayScore(current)
-      if (current === target) clearInterval(timer)
-    }, interval)
-    return () => clearInterval(timer)
-  }, [currentScore])
 
   useEffect(() => {
     setQuery(''); setDropdown(false); setResults([]); setHoveredIdx(null); setTabIdx(-1)
+    setConfirmingGiveUp(false); setSelectedHeadshot(null)
   }, [puzzle.id])
+
+  // Reverts the "Are you sure?" confirmation on its own if left untouched.
+  useEffect(() => {
+    if (!confirmingGiveUp) return
+    const t = setTimeout(() => setConfirmingGiveUp(false), 3000)
+    return () => clearTimeout(t)
+  }, [confirmingGiveUp])
 
   useEffect(() => {
     const handler = e => {
@@ -158,11 +158,13 @@ function GameBoard({
 
   const handleSelect = item => {
     setQuery(item.name); onSelectPlayer(item.name)
+    setSelectedHeadshot(item.headshot_url || null)
     setDropdown(false); setResults([]); setTabIdx(-1)
   }
 
   const handleClear = () => {
     setQuery(''); onSelectPlayer('')
+    setSelectedHeadshot(null)
     setDropdown(false); setResults([]); setTabIdx(-1)
   }
 
@@ -182,81 +184,54 @@ function GameBoard({
     }
   }
 
+  // Requires a second click on the "Are you sure?" state before actually giving up.
+  const handleGiveUpClick = () => {
+    if (confirmingGiveUp) { setConfirmingGiveUp(false); onGiveUp() }
+    else setConfirmingGiveUp(true)
+  }
+
   const handleShare = async () => {
-    const link = 'https://pick6.io'
+    const lieScore    = lieFound ? Math.max(1, 3 - lieAttempts) : 0
+    const playerScore = playerCorrect ? 3 : 0
+    const lieEmoji    = lieScore === 3 ? '🟩' : lieScore > 0 ? '🟨' : '🟥'
+    const playerEmoji = playerScore === 3 ? '🟩' : '🟥'
+    const num = puzzle.date ? ` #${puzzleNumber(puzzle.date)}` : ''
+    const text = `Pick6${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
+
+    let copied = false
     try {
-      await navigator.clipboard.writeText(link)
+      await navigator.clipboard.writeText(text)
+      copied = true
     } catch {
+      // Clipboard API unavailable/denied — fall back to the legacy copy command.
       const ta = document.createElement('textarea')
-      ta.value = link
+      ta.value = text
       ta.style.position = 'fixed'
       ta.style.opacity = '0'
       document.body.appendChild(ta)
       ta.select()
-      try { document.execCommand('copy') } catch { /* nothing more we can do */ }
+      try { copied = document.execCommand('copy') } catch { copied = false }
       document.body.removeChild(ta)
     }
-    setShareState('copied')
+    setShareState(copied ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 
   const canGuessLie     = selectedLieId !== null && !liePhaseComplete
   const canSubmitPlayer = selectedPlayer.trim().length > 0 && liePhaseComplete && !submitted
 
+  const scoreTier = currentScore === 6 ? 'good' : currentScore === 0 ? 'bad' : 'mid'
+
   return (
     <div className="puzzle-game">
 
-      <div className="puzzle-header">
-        <div className="htp-hero puzzle-hero">
-          <h1 className="htp-title">Daily</h1>
-          {puzzle.date && <p className="puzzle-date">{formatDate(puzzle.date)}</p>}
-        </div>
-        {!liePhaseComplete && (
-          <div className="attempt-dots-wrap">
-            <span className="attempt-label">ATTEMPTS</span>
-            <div className="attempt-dots">
-              {[0, 1, 2].map(i => (
-                <span key={i} className={`attempt-dot${i < lieAttempts ? ' attempt-dot--wrong' : ''}`} />
-              ))}
-            </div>
-          </div>
-        )}
-        {liePhaseComplete && !submitted && (
-          <p className="phase-label">Now guess the player ↓</p>
-        )}
-        {submitted && !lieFound && !playerCorrect && (
-          <p className="pick-six-banner">PICK SIX</p>
-        )}
-        {submitted && (
-          <>
-            <p className="score-label">Total Score</p>
-            <p className="puzzle-score">
-              <span className="score-val">{displayScore}</span>
-              <span className="score-frac">/6</span>
-              <span className="score-unit">PTS</span>
-            </p>
-          </>
-        )}
-      </div>
-
-      {!liePhaseComplete ? (
-        <div className="submit-section">
-          <button className="submit-btn" onClick={onGuessLie} disabled={!canGuessLie}>
-            {canGuessLie ? 'GUESS LIE →' : 'Select a fact'}
-          </button>
-          <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
-        </div>
-      ) : !submitted ? (
-        <div className="submit-section">
-          <button className="submit-btn" onClick={onSubmit} disabled={!canSubmitPlayer}>
-            {canSubmitPlayer ? 'LOCK IN →' : 'Enter player name'}
-          </button>
-          <button className="give-up-btn" onClick={onGiveUp}>Give Up</button>
-        </div>
-      ) : null}
-
       {/* ── Circle ───────────────────────────────────── */}
       <div className="circle-nav-row">
+
+        <div className="circle-side circle-side--left">
+          {puzzle.date && <span className="puzzle-date-big">{formatDate(puzzle.date)}</span>}
+          {puzzle.date && <span className="puzzle-number-label">Puzzle #{puzzleNumber(puzzle.date)}</span>}
+        </div>
 
         <div className="circle-game">
 
@@ -358,98 +333,146 @@ function GameBoard({
         })}
 
         {/* Center: player search (only after lie phase) or hint */}
-        <div className="circle-center">
+        <div className={`circle-center${submitted ? (playerCorrect ? ' circle-center--correct' : ' circle-center--wrong') : ''}`}>
 
           {!liePhaseComplete ? (
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>
-              Pick the lie
-            </p>
-          ) : !submitted ? (
-            <div className="search-wrap" ref={wrapRef}>
-              <div className="search-input-container">
-                <span className="search-icon">⌕</span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  className="player-search-input"
-                  placeholder="Search player…"
-                  value={query}
-                  onChange={handleQueryChange}
-                  onKeyDown={handleInputKeyDown}
-                  onFocus={() => results.length > 0 && setDropdown(true)}
-                  autoComplete="off"
-                  spellCheck="false"
-                />
-                {query && (
-                  <button className="clear-search-btn" onClick={handleClear} aria-label="Clear">✕</button>
-                )}
-              </div>
-              {dropdownOpen && (
-                <ul className="player-dropdown">
-                  {searching && <li className="dropdown-item no-results">Searching…</li>}
-                  {!searching && results.map((item, i) => (
-                    <li key={item.id} className={`dropdown-item${i === tabIdx ? ' dropdown-item-active' : ''}`} onMouseDown={() => handleSelect(item)}>
-                      <span className="dropdown-player-name">{item.name}</span>
-                      <span className="dropdown-player-meta">
-                        {item.position}{item.draft_year ? ` · ${item.draft_year}` : ''}
-                      </span>
-                    </li>
+            <div className="circle-lie-phase">
+              <div className="circle-attempts">
+                <span className="attempt-label">ATTEMPTS</span>
+                <div className="attempt-dots">
+                  {[0, 1, 2].map(i => (
+                    <span key={i} className={`attempt-dot${i < lieAttempts ? ' attempt-dot--wrong' : ''}`} />
                   ))}
-                </ul>
-              )}
-            </div>
-          ) : (
-            <div className={`player-reveal-photo ${playerCorrect ? 'reveal-correct' : 'reveal-wrong'}`}>
-              <div className="reveal-photo-ring">
-                {puzzle.headshotUrl ? (
-                  <img src={puzzle.headshotUrl} alt={puzzle.playerName} className="reveal-headshot" />
-                ) : (
-                  <div className="reveal-headshot reveal-headshot--fallback">🏈</div>
-                )}
-                <span className="reveal-photo-badge">{playerCorrect ? '✓' : '✗'}</span>
+                </div>
               </div>
-              <span className="reveal-name-caption">{puzzle.playerName}</span>
-              {!playerCorrect && selectedPlayer.trim() && (
-                <span className="reveal-guess-caption">You: {selectedPlayer.trim()}</span>
-              )}
+              <button className="circle-guess-btn" onClick={onGuessLie} disabled={!canGuessLie}>
+                {canGuessLie ? 'GUESS LIE →' : 'Select a fact'}
+              </button>
             </div>
-          )}
+          ) : !submitted ? (
+            <div className="circle-lie-phase">
+              <div className="search-wrap" ref={wrapRef}>
+                <div className="search-input-container">
+                  <span className="search-icon">⌕</span>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    className="player-search-input"
+                    placeholder="Search player…"
+                    value={query}
+                    onChange={handleQueryChange}
+                    onKeyDown={handleInputKeyDown}
+                    onFocus={() => results.length > 0 && setDropdown(true)}
+                    autoComplete="off"
+                    spellCheck="false"
+                  />
+                  {query && (
+                    <button className="clear-search-btn" onClick={handleClear} aria-label="Clear">✕</button>
+                  )}
+                </div>
+                {dropdownOpen && (
+                  <ul className="player-dropdown">
+                    {searching && <li className="dropdown-item no-results">Searching…</li>}
+                    {!searching && results.map((item, i) => (
+                      <li key={item.id} className={`dropdown-item${i === tabIdx ? ' dropdown-item-active' : ''}`} onMouseDown={() => handleSelect(item)}>
+                        <span className="dropdown-player-name">{item.name}</span>
+                        <span className="dropdown-player-meta">
+                          {item.position}{item.draft_year ? ` · ${item.draft_year}` : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <button className="circle-guess-btn" onClick={onSubmit} disabled={!canSubmitPlayer}>
+                {canSubmitPlayer ? 'LOCK IN →' : 'Pick a player'}
+              </button>
+            </div>
+          ) : (() => {
+            // A give-up has no real guess to show — fall back to the same
+            // treatment if there's simply no guess photo on hand at all
+            // (e.g. a freeform guess restored after a refresh), so the
+            // circle never shows the bare football placeholder over a wrong.
+            const isGiveUp = gaveUp || (!playerCorrect && !selectedPlayer.trim())
+            const showCorrect = playerCorrect || isGiveUp
+            const photoUrl = showCorrect ? puzzle.headshotUrl : selectedHeadshot
+            return (
+              <div className="player-reveal-photo">
+                <div className="player-reveal-photo-inner">
+                  <span className={`reveal-guess-label ${playerCorrect ? 'reveal-guess-label--correct' : 'reveal-guess-label--wrong'}`}>
+                    <span className="reveal-guess-label-lead">{isGiveUp ? 'Correct Answer' : 'You guessed'}</span>
+                    <span className="reveal-guess-label-name">{showCorrect ? puzzle.playerName : selectedPlayer}</span>
+                  </span>
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={showCorrect ? puzzle.playerName : selectedPlayer}
+                      className="reveal-headshot"
+                    />
+                  ) : (
+                    <div className="reveal-headshot reveal-headshot--fallback">🏈</div>
+                  )}
+                </div>
+                <span className={`reveal-badge ${playerCorrect ? 'reveal-badge--correct' : 'reveal-badge--wrong'}`}>
+                  {playerCorrect ? '✓' : '✗'}
+                </span>
+              </div>
+            )
+          })()}
         </div>
 
         </div>{/* end circle-game */}
+
+        <div className="circle-side circle-side--right">
+          {!submitted && (
+            <button
+              className={`give-up-btn${confirmingGiveUp ? ' give-up-btn--confirm' : ''}`}
+              onClick={handleGiveUpClick}
+            >
+              {confirmingGiveUp ? 'Are you sure?' : 'Give Up'}
+            </button>
+          )}
+          {submitted && (
+            <div className="result-table">
+              <div className="result-table-row">
+                <span className="result-table-label">
+                  <span className={`result-table-check ${lieFound ? 'result-table-check--correct' : 'result-table-check--wrong'}`}>
+                    {lieFound ? '✓' : '✗'}
+                  </span>
+                  Lie
+                  <span className="result-table-attempts">used {lieFound ? lieAttempts + 1 : lieAttempts}/3 attempts</span>
+                </span>
+                <span className="result-table-value">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
+              </div>
+              <div className="result-table-row">
+                <span className="result-table-label">
+                  <span className={`result-table-check ${playerCorrect ? 'result-table-check--correct' : 'result-table-check--wrong'}`}>
+                    {playerCorrect ? '✓' : '✗'}
+                  </span>
+                  Player
+                </span>
+                <span className="result-table-value">{playerCorrect ? '+3' : '+0'}</span>
+              </div>
+              <div className="result-table-divider" />
+              <div className={`result-table-row result-table-total result-table-total--${scoreTier}`}>
+                <span className="result-table-label">Total</span>
+                <span className="result-table-value">{currentScore}/6</span>
+              </div>
+              {scoreTier === 'bad' && (
+                <>
+                  <p className="result-table-pick6">You scored a Pick 6.</p>
+                  <p className="result-table-pick6">Better luck next time.</p>
+                </>
+              )}
+              <div className="share-row">
+                <button className="share-btn" onClick={handleShare}>Share Result</button>
+                {shareState === 'copied' && <span className="share-toast">Link copied!</span>}
+                {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
+              </div>
+            </div>
+          )}
+        </div>
       </div>{/* end circle-nav-row */}
-
-      {submitted && (
-        <div className="submit-result-row">
-          <div className={`submit-result-chip ${lieFound ? 'src-correct' : 'src-wrong'}`}>
-            <div className="src-main">
-              <span className="src-icon">{lieFound ? '✓' : '✗'}</span>
-              <span className="src-label">LIE</span>
-              <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
-            </div>
-            <div className="attempt-dots attempt-dots--result">
-              {[0, 1, 2].map(i => (
-                <span key={i} className={`attempt-dot${i < lieAttempts ? ' attempt-dot--wrong' : ''}`} />
-              ))}
-            </div>
-          </div>
-          <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
-            <div className="src-main">
-              <span className="src-icon">{playerCorrect ? '✓' : '✗'}</span>
-              <span className="src-label">PLAYER</span>
-              <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
-            </div>
-            <span className="src-sub">{puzzle.playerName}</span>
-          </div>
-        </div>
-      )}
-
-      {submitted && (
-        <div className="share-row">
-          <button className="share-btn" onClick={handleShare}>Share Result</button>
-          {shareState === 'copied' && <span className="share-toast">Link copied!</span>}
-        </div>
-      )}
 
     </div>
   )

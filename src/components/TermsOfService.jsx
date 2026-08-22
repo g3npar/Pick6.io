@@ -3,10 +3,6 @@ export default function TermsOfService() {
     <div className="htp-page">
       <div className="htp-card">
 
-        <div className="htp-hero">
-          <h1 className="htp-title">Terms of Service</h1>
-          <p className="htp-subtitle">The short version: play fair, and we'll keep the lights on.</p>
-        </div>
         <p className="legal-meta">Last updated: August 18, 2026</p>
 
         <div className="legal-section">

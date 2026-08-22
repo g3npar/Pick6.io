@@ -83,11 +83,6 @@ export default function Admin() {
     <div className="htp-page">
       <div className="htp-card">
 
-        <div className="htp-hero">
-          <h1 className="htp-title">Puzzle Scheduler</h1>
-          <p className="htp-subtitle">Preview and lock in upcoming daily puzzles.</p>
-        </div>
-
         {error && <p className="board-empty">Couldn't load the schedule.</p>}
         {!error && !rows && (
           <div className="loading-wheel-wrap" style={{ padding: '24px 0' }}>

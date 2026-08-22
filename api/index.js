@@ -8,6 +8,7 @@ const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
+  headshotThumb,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
@@ -43,31 +44,37 @@ app.use(cors({
 ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
-const apiLimiter = rateLimit({
+// Rate limiting is disabled outside production (render.yaml sets
+// NODE_ENV=production on the deployed API) so local dev/testing never trips
+// it — a no-op middleware stands in for each limiter instead.
+const RATE_LIMITING_ENABLED = process.env.NODE_ENV === 'production'
+const noopLimiter = (req, res, next) => next()
+
+const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,          // 1 minute
   max: 60,                       // 60 requests/min per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please slow down.' },
-})
+}) : noopLimiter
 
 // Tighter limit for expensive puzzle generation
-const puzzleLimiter = rateLimit({
+const puzzleLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many puzzle requests, please wait a moment.' },
-})
+}) : noopLimiter
 
 // Tighter still for auth, since it's a common abuse/brute-force target
-const authLimiter = rateLimit({
+const authLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many auth requests, please slow down.' },
-})
+}) : noopLimiter
 
 app.use(apiLimiter)
 
@@ -82,12 +89,12 @@ const PLAYERS_CACHE_TTL = 60 * 60 * 1000  // 1 hour
 async function ensureCurrentPlayers() {
   if (currentPlayers.length && Date.now() - playersCacheTime < PLAYERS_CACHE_TTL) return
   const r = await pool.query(`
-    SELECT DISTINCT p.id, p.name, p.position, p.draft_year
+    SELECT DISTINCT p.id, p.name, p.position, p.draft_year, p.headshot_url
     FROM players p
     JOIN player_seasons ps ON ps.player_id = p.id
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
-  currentPlayers   = r.rows
+  currentPlayers   = r.rows.map(p => ({ ...p, headshot_url: headshotThumb(p.headshot_url) }))
   playersCacheTime = Date.now()
 }
 
@@ -471,13 +478,13 @@ app.get('/leaderboard', async (_req, res) => {
   }
 })
 
-const adminLimiter = rateLimit({
+const adminLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many admin requests, please slow down.' },
-})
+}) : noopLimiter
 
 function upcomingDates(days) {
   const dates = []

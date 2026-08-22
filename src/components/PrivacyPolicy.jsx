@@ -3,10 +3,6 @@ export default function PrivacyPolicy() {
     <div className="htp-page">
       <div className="htp-card">
 
-        <div className="htp-hero">
-          <h1 className="htp-title">Privacy Policy</h1>
-          <p className="htp-subtitle">What Pick6.io collects, and what it doesn't.</p>
-        </div>
         <p className="legal-meta">Last updated: August 18, 2026</p>
 
         <div className="legal-section">

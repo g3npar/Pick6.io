@@ -227,6 +227,7 @@ function App() {
   const confirmedTrueIds = curState.confirmedTrueIds ?? []
   const submitted      = curState.submitted     ?? false   // player name submitted = game over
   const playerCorrect  = submitted && (curState.playerCorrect ?? false)
+  const gaveUp         = curState.gaveUp        ?? false
   const liePhaseComplete = lieFound || lieAttempts >= 3 || submitted
 
   const updateCurrent = updates => setActiveState(prev => ({ ...prev, ...updates }))
@@ -275,6 +276,7 @@ function App() {
 
   const handleGiveUp = () => {
     if (!puzzle) return
+    updateCurrent({ gaveUp: true })
     saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
   }
 
@@ -307,6 +309,7 @@ function App() {
           liePhaseComplete={liePhaseComplete}
           submitted={submitted}
           playerCorrect={playerCorrect}
+          gaveUp={gaveUp}
           onSelectLie={id => !liePhaseComplete && updateCurrent({ lieId: id })}
           onSelectPlayer={name => !submitted && updateCurrent({ player: name })}
           onGuessLie={handleGuessLie}
