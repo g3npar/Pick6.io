@@ -79,7 +79,7 @@ function FactValue({ display, compact }) {
 
 function GameBoard({
   puzzle, totalPuzzles,
-  selectedLieId, selectedPlayer,
+  selectedLieId, selectedPlayer, selectedHeadshot,
   lieFound, lieAttempts, confirmedTrueIds, liePhaseComplete,
   submitted, playerCorrect, gaveUp,
   onSelectLie, onSelectPlayer,
@@ -94,14 +94,13 @@ function GameBoard({
   const [tabIdx,       setTabIdx]       = useState(-1)
   const [shareState, setShareState] = useState('idle') // 'idle' | 'copied'
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
-  const [selectedHeadshot, setSelectedHeadshot] = useState(null)
   const wrapRef       = useRef(null)
   const inputRef      = useRef(null)
   const debounceRef   = useRef(null)
 
   useEffect(() => {
     setQuery(''); setDropdown(false); setResults([]); setHoveredIdx(null); setTabIdx(-1)
-    setConfirmingGiveUp(false); setSelectedHeadshot(null)
+    setConfirmingGiveUp(false)
   }, [puzzle.id])
 
   // Reverts the "Are you sure?" confirmation on its own if left untouched.
@@ -157,14 +156,12 @@ function GameBoard({
   }
 
   const handleSelect = item => {
-    setQuery(item.name); onSelectPlayer(item.name)
-    setSelectedHeadshot(item.headshot_url || null)
+    setQuery(item.name); onSelectPlayer(item.name, item.headshot_url || null)
     setDropdown(false); setResults([]); setTabIdx(-1)
   }
 
   const handleClear = () => {
-    setQuery(''); onSelectPlayer('')
-    setSelectedHeadshot(null)
+    setQuery(''); onSelectPlayer('', null)
     setDropdown(false); setResults([]); setTabIdx(-1)
   }
 
@@ -174,7 +171,7 @@ function GameBoard({
       const next = (tabIdx + 1) % results.length
       setTabIdx(next)
       setQuery(results[next].name)
-      onSelectPlayer(results[next].name)
+      onSelectPlayer(results[next].name, results[next].headshot_url || null)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       const target = tabIdx >= 0 && results[tabIdx]
@@ -196,7 +193,7 @@ function GameBoard({
     const lieEmoji    = lieScore === 3 ? '🟩' : lieScore > 0 ? '🟨' : '🟥'
     const playerEmoji = playerScore === 3 ? '🟩' : '🟥'
     const num = puzzle.date ? ` #${puzzleNumber(puzzle.date)}` : ''
-    const text = `Pick6${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
+    const text = `Pick6 Daily${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
 
     let copied = false
     try {
@@ -230,7 +227,7 @@ function GameBoard({
 
         <div className="circle-side circle-side--left">
           {puzzle.date && <span className="puzzle-date-big">{formatDate(puzzle.date)}</span>}
-          {puzzle.date && <span className="puzzle-number-label">Puzzle #{puzzleNumber(puzzle.date)}</span>}
+          {puzzle.date && <span className="puzzle-number-label">Daily #{puzzleNumber(puzzle.date)}</span>}
         </div>
 
         <div className="circle-game">
@@ -440,7 +437,7 @@ function GameBoard({
                     {lieFound ? '✓' : '✗'}
                   </span>
                   Lie
-                  <span className="result-table-attempts">used {lieFound ? lieAttempts + 1 : lieAttempts}/3 attempts</span>
+                  <span className="result-table-attempts">used {lieAttempts}/3 attempts</span>
                 </span>
                 <span className="result-table-value">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
               </div>

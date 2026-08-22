@@ -17,6 +17,17 @@ import { collegeLogo } from './utils/collegeLogo'
 const API          = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const PUZZLE_COUNT = 3
 
+// Only ever nudge an anonymous player to sign in once, on their first
+// completed puzzle (daily or archive) — not every single time they finish
+// one while still not signed in.
+const SIGNIN_PROMPT_SEEN_KEY = 'pick6_signin_prompt_seen'
+const hasSeenSignInPrompt = () => {
+  try { return localStorage.getItem(SIGNIN_PROMPT_SEEN_KEY) === '1' } catch { return false }
+}
+const markSignInPromptSeen = () => {
+  try { localStorage.setItem(SIGNIN_PROMPT_SEEN_KEY, '1') } catch {}
+}
+
 function preloadLogos(puzzles) {
   const urls = new Set()
   for (const puzzle of puzzles) {
@@ -61,6 +72,44 @@ function App() {
   const activeResultSaved  = viewingArchive ? archiveResultSaved : todayResultSaved
   const setActiveResultSaved = viewingArchive ? setArchiveResultSaved : setTodayResultSaved
   const activePlayingDate  = activePuzzle?.date ?? null
+
+  // Gates the whole board (not just the wheel) behind every logo it needs
+  // actually being loaded, so nothing pops in piecemeal — one loading state
+  // for the puzzle data AND its images, not two in sequence.
+  //
+  // Derived by comparing dates rather than a plain boolean an effect flips:
+  // a boolean reset from inside a useEffect only lands *after* the render
+  // that already swapped to the new puzzle has committed, leaving one frame
+  // where the new puzzle's data shows under the *previous* puzzle's still-
+  // true ready flag. Comparing against activePuzzle.date is recomputed fresh
+  // on every render, so it reads "not ready" for a new puzzle immediately,
+  // no effect round-trip required. Keyed on date, not id — every puzzle's
+  // `id` is just its position within its own date (almost always 1), so two
+  // different dates' puzzles routinely share the same id.
+  const [logosReadyForDate, setLogosReadyForDate] = useState(null)
+  const logosReady = activePuzzle != null && logosReadyForDate === activePuzzle.date
+  useEffect(() => {
+    if (!activePuzzle) return
+    const myDate = activePuzzle.date
+    const urls = new Set()
+    for (const fact of activePuzzle.facts) {
+      const d = parseFact(fact.text)
+      if (d.isTeams) d.value.split(', ').forEach(team => { const u = teamLogo(team); if (u) urls.add(u) })
+      else if (d.isCollege) { const u = collegeLogo(d.value); if (u) urls.add(u) }
+    }
+    let cancelled = false
+    const finish = () => { if (!cancelled) setLogosReadyForDate(myDate) }
+    if (urls.size === 0) { finish(); return }
+    let remaining = urls.size
+    const settle = () => { remaining -= 1; if (!cancelled && remaining <= 0) finish() }
+    urls.forEach(src => {
+      const img = new Image()
+      img.onload = settle; img.onerror = settle; img.src = src
+    })
+    // A logo that never resolves shouldn't hold the whole page hostage forever.
+    const timeout = setTimeout(finish, 4000)
+    return () => { cancelled = true; clearTimeout(timeout) }
+  }, [activePuzzle?.date])
 
   // Any real navigation (nav link, logo, footer) leaves archive-viewing mode.
   const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false) }
@@ -136,7 +185,10 @@ function App() {
           trueText: data.trueText, falseExplanation: data.falseExplanation,
           headshotUrl: data.headshotUrl,
         }))
-        if (!data.saved) { setPendingResult({ finalLieId, finalAttempts, finalPlayerGuess }); setShowSignInPrompt(true) }
+        if (!data.saved) {
+          setPendingResult({ finalLieId, finalAttempts, finalPlayerGuess })
+          if (!hasSeenSignInPrompt()) { setShowSignInPrompt(true); markSignInPromptSeen() }
+        }
       })
       .catch(() => {})
   }
@@ -193,19 +245,25 @@ function App() {
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
   }
 
-  if (!todayPuzzle) {
+  // Nothing about the board — not the header's date, not the Give Up button,
+  // not the wheel — shows until the puzzle data AND every logo it needs are
+  // both ready, so it appears once, fully formed, instead of the shell
+  // popping in first and the wheel catching up a moment later.
+  const dailyPending   = screen === 'daily' && (!todayPuzzle || !logosReady)
+  const archivePending = viewingArchive && (!archivePuzzle || !logosReady)
+  if (!todayPuzzle || dailyPending || archivePending) {
     return (
       <div className="app">
         <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
-          {screen === 'daily'       && (
+          {(dailyPending || archivePending) && (
             <div className="loading-wheel-wrap">
               <WheelSpinner />
               <span className="loading-label">Loading puzzle…</span>
             </div>
           )}
           {screen === 'how-to-play' && <HowToPlay />}
-          {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
+          {screen === 'archive' && !viewingArchivePuzzle && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
           {screen === 'leaderboard' && <Leaderboard />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
@@ -222,6 +280,7 @@ function App() {
   const curState       = activeState
   const selectedLieId  = curState.lieId         ?? null
   const selectedPlayer = curState.player        ?? ''
+  const selectedHeadshot = curState.headshot    ?? null
   const lieFound       = curState.lieFound      ?? false
   const lieAttempts    = curState.lieAttempts   ?? 0
   const confirmedTrueIds = curState.confirmedTrueIds ?? []
@@ -276,8 +335,18 @@ function App() {
 
   const handleGiveUp = () => {
     if (!puzzle) return
-    updateCurrent({ gaveUp: true })
-    saveResult({ finalLieId: selectedLieId, finalAttempts: 3, finalPlayerGuess: selectedPlayer })
+    // A merely *selected* (not yet confirmed via "Guess Lie") wedge must not
+    // get scored as a found lie just because it happened to be highlighted
+    // when the button was hit. But if the lie was already genuinely found
+    // before giving up (e.g. give-up is only forfeiting the player guess),
+    // that real result must survive — so only forfeit the lie guess when it
+    // wasn't actually confirmed found yet.
+    updateCurrent({ gaveUp: true, player: '' })
+    saveResult({
+      finalLieId: lieFound ? selectedLieId : null,
+      finalAttempts: lieFound ? lieAttempts : 3,
+      finalPlayerGuess: '',
+    })
   }
 
   const lieScore   = submitted ? (lieFound ? Math.max(1, 3 - lieAttempts) : 0) : 0
@@ -303,6 +372,7 @@ function App() {
           totalPuzzles={1}
           selectedLieId={selectedLieId}
           selectedPlayer={selectedPlayer}
+          selectedHeadshot={selectedHeadshot}
           lieFound={lieFound}
           lieAttempts={lieAttempts}
           confirmedTrueIds={confirmedTrueIds}
@@ -311,7 +381,7 @@ function App() {
           playerCorrect={playerCorrect}
           gaveUp={gaveUp}
           onSelectLie={id => !liePhaseComplete && updateCurrent({ lieId: id })}
-          onSelectPlayer={name => !submitted && updateCurrent({ player: name })}
+          onSelectPlayer={(name, headshot) => !submitted && updateCurrent({ player: name, headshot: headshot ?? null })}
           onGuessLie={handleGuessLie}
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}

@@ -593,7 +593,7 @@ body {
   -webkit-text-stroke: 2.5px var(--text);
   paint-order: stroke fill;
 }
-.fl-jersey.fl-value--sm { font-size: clamp(15px, 6.7cqw, 36px); -webkit-text-stroke: 1.5px var(--text); }
+.fl-jersey.fl-value--sm { font-size: clamp(10px, 4.2cqw, 22px); -webkit-text-stroke: 1px var(--text); }
 .fl-sublabel {
   font-size: clamp(8px, 3cqw, 16px);
   font-weight: 700;
