@@ -581,6 +581,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
     falseFactId:      lieIdx + 1,
     falseExplanation: lie.explanation,
     trueText:         chosen[lieIdx].text,
+    headshotUrl:      player.headshot_url || null,
   }
 }
 

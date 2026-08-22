@@ -6,6 +6,20 @@ import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+// Wordle-style plain-text recap of a finished puzzle, safe to paste anywhere.
+function buildShareText({ date, lieFound, lieAttempts, playerCorrect, score }) {
+  const lieSquares = lieFound ? '🟥'.repeat(lieAttempts) + '🟩' : '🟥🟥🟥'
+  const playerSquare = playerCorrect ? '✅' : '❌'
+  const scoreLine = score === 0 ? `${score}/6 PTS — PICK SIX 😬` : `${score}/6 PTS`
+  return [
+    `Pick6.io — ${formatDate(date)}`,
+    `🕵️ Lie    ${lieSquares}`,
+    `👤 Player ${playerSquare}`,
+    scoreLine,
+    'pick6.io',
+  ].join('\n')
+}
+
 // SVG-based fact paths, 6 facts at 60 degrees each
 const SVG_R  = 298
 const SVG_CX = 300
@@ -84,6 +98,7 @@ function GameBoard({
   const [hoveredIdx,   setHoveredIdx]   = useState(null)
   const [tabIdx,       setTabIdx]       = useState(-1)
   const [displayScore, setDisplayScore] = useState(currentScore)
+  const [shareState, setShareState] = useState('idle') // 'idle' | 'copied'
   const wrapRef       = useRef(null)
   const inputRef      = useRef(null)
   const debounceRef   = useRef(null)
@@ -179,6 +194,30 @@ function GameBoard({
         : dropdownOpen && results.length > 0 ? results[0] : null
       if (target) handleSelect(target)
     }
+  }
+
+  // Prefers the native share sheet on mobile (lets people drop it straight into a
+  // text/DM/app); falls back to the clipboard everywhere else.
+  const handleShare = async () => {
+    const text = buildShareText({ date: puzzle.date, lieFound, lieAttempts, playerCorrect, score: currentScore })
+    if (navigator.share) {
+      try { await navigator.share({ text }); return }
+      catch { /* user cancelled the share sheet — fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      try { document.execCommand('copy') } catch { /* nothing more we can do */ }
+      document.body.removeChild(ta)
+    }
+    setShareState('copied')
+    setTimeout(() => setShareState('idle'), 2000)
   }
 
   const canGuessLie     = selectedLieId !== null && !liePhaseComplete
@@ -377,14 +416,16 @@ function GameBoard({
               )}
             </div>
           ) : (
-            <div className={`player-reveal ${playerCorrect ? 'reveal-correct' : 'reveal-wrong'}`}>
-              <span className="reveal-verdict">{playerCorrect ? '✓' : '✗'}</span>
-              <div className="reveal-info">
-                <span className="reveal-name">{puzzle.playerName}</span>
-                {!playerCorrect && selectedPlayer.trim() && (
-                  <span className="reveal-guess">You: {selectedPlayer.trim()}</span>
-                )}
-              </div>
+            <div className={`player-reveal-photo ${playerCorrect ? 'reveal-correct' : 'reveal-wrong'}`}>
+              {puzzle.headshotUrl ? (
+                <img src={puzzle.headshotUrl} alt={puzzle.playerName} className="reveal-headshot" />
+              ) : (
+                <div className="reveal-headshot reveal-headshot--fallback">🏈</div>
+              )}
+              <span className="reveal-photo-badge">{playerCorrect ? '✓' : '✗'}</span>
+              {!playerCorrect && selectedPlayer.trim() && (
+                <span className="reveal-guess-caption">You: {selectedPlayer.trim()}</span>
+              )}
             </div>
           )}
         </div>
@@ -408,7 +449,16 @@ function GameBoard({
               <span className="src-label">PLAYER</span>
               <span className="src-pts">{playerCorrect ? '+3' : '+0'}</span>
             </div>
+            <span className="src-sub">{puzzle.playerName}</span>
           </div>
+        </div>
+      )}
+
+      {submitted && (
+        <div className="share-row">
+          <button className="share-btn" onClick={handleShare}>
+            {shareState === 'copied' ? '✓ Copied!' : 'Share Result'}
+          </button>
         </div>
       )}
 

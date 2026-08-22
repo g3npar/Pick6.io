@@ -155,11 +155,11 @@ async function fetchProgress(userId, date) {
 // Strips the answer-revealing fields from a puzzle unless they're safe to show:
 // `lie` once the lie phase is resolved (found or exhausted), `player` once fully submitted.
 function withReveal(puzzle, { lie = false, player = false } = {}) {
-  const { falseFactId, falseExplanation, trueText, playerName, ...safe } = puzzle
+  const { falseFactId, falseExplanation, trueText, playerName, headshotUrl, ...safe } = puzzle
   return {
     ...safe,
     ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
-    ...(player ? { playerName } : {}),
+    ...(player ? { playerName, headshotUrl } : {}),
   }
 }
 
@@ -442,6 +442,7 @@ app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
       lieFound, lieAttempts: attempts, playerCorrect, score, saved,
       playerName: puzzle.playerName, falseFactId: puzzle.falseFactId,
       trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation,
+      headshotUrl: puzzle.headshotUrl,
     })
   } catch (err) {
     console.error('Save result failed:', err.message)

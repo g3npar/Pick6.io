@@ -9,6 +9,7 @@ import Leaderboard from './components/Leaderboard'
 import Archive from './components/Archive'
 import Admin from './components/Admin'
 import SignInPrompt from './components/SignInPrompt'
+import WheelSpinner from './components/WheelSpinner'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
@@ -133,6 +134,7 @@ function App() {
         setPuzzleFn(prev => prev && ({
           ...prev, playerName: data.playerName, falseFactId: data.falseFactId,
           trueText: data.trueText, falseExplanation: data.falseExplanation,
+          headshotUrl: data.headshotUrl,
         }))
         if (!data.saved) { setPendingResult({ finalLieId, finalAttempts, finalPlayerGuess }); setShowSignInPrompt(true) }
       })
@@ -196,7 +198,12 @@ function App() {
       <div className="app">
         <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
-          {screen === 'daily'       && <p style={{ opacity: 0.5 }}>Loading puzzles…</p>}
+          {screen === 'daily'       && (
+            <div className="loading-wheel-wrap">
+              <WheelSpinner />
+              <span className="loading-label">Loading puzzle…</span>
+            </div>
+          )}
           {screen === 'how-to-play' && <HowToPlay />}
           {screen === 'archive'     && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
           {screen === 'leaderboard' && <Leaderboard />}

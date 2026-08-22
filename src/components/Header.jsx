@@ -124,7 +124,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
                 <>
                   <span className="user-name">{user.displayName}</span>
                   <button className="header-icon-btn" onClick={startEditing} aria-label="Edit username">✎</button>
-                  <button className="header-icon-btn" onClick={onSignOut}>Sign out</button>
+                  <button className="header-icon-btn header-icon-btn--danger" onClick={onSignOut}>Sign out</button>
                 </>
               )}
             </div>

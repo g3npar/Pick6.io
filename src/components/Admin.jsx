@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { formatDate } from '../utils/formatDate'
+import WheelSpinner from './WheelSpinner'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -88,7 +89,11 @@ export default function Admin() {
         </div>
 
         {error && <p className="board-empty">Couldn't load the schedule.</p>}
-        {!error && !rows && <p className="board-empty">Loading…</p>}
+        {!error && !rows && (
+          <div className="loading-wheel-wrap" style={{ padding: '24px 0' }}>
+            <WheelSpinner size={40} />
+          </div>
+        )}
 
         {rows && (
           <ul className="board-list">

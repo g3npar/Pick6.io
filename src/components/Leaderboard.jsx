@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import WheelSpinner from './WheelSpinner'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -27,7 +28,11 @@ export default function Leaderboard() {
         </div>
 
         {error && <p className="board-empty">Couldn't load the leaderboard right now.</p>}
-        {!error && !rows && <p className="board-empty">Loading…</p>}
+        {!error && !rows && (
+          <div className="loading-wheel-wrap" style={{ padding: '24px 0' }}>
+            <WheelSpinner size={40} />
+          </div>
+        )}
         {rows && rows.length === 0 && <p className="board-empty">No results yet, be the first to finish a daily puzzle.</p>}
 
         {rows && rows.length > 0 && (
