@@ -6,20 +6,6 @@ import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Wordle-style plain-text recap of a finished puzzle, safe to paste anywhere.
-function buildShareText({ date, lieFound, lieAttempts, playerCorrect, score }) {
-  const lieSquares = lieFound ? '🟥'.repeat(lieAttempts) + '🟩' : '🟥🟥🟥'
-  const playerSquare = playerCorrect ? '✅' : '❌'
-  const scoreLine = score === 0 ? `${score}/6 PTS — PICK SIX 😬` : `${score}/6 PTS`
-  return [
-    `Pick6.io — ${formatDate(date)}`,
-    `🕵️ Lie    ${lieSquares}`,
-    `👤 Player ${playerSquare}`,
-    scoreLine,
-    'pick6.io',
-  ].join('\n')
-}
-
 // SVG-based fact paths, 6 facts at 60 degrees each
 const SVG_R  = 298
 const SVG_CX = 300
@@ -196,19 +182,13 @@ function GameBoard({
     }
   }
 
-  // Prefers the native share sheet on mobile (lets people drop it straight into a
-  // text/DM/app); falls back to the clipboard everywhere else.
   const handleShare = async () => {
-    const text = buildShareText({ date: puzzle.date, lieFound, lieAttempts, playerCorrect, score: currentScore })
-    if (navigator.share) {
-      try { await navigator.share({ text }); return }
-      catch { /* user cancelled the share sheet — fall through to clipboard */ }
-    }
+    const link = 'https://pick6.io'
     try {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(link)
     } catch {
       const ta = document.createElement('textarea')
-      ta.value = text
+      ta.value = link
       ta.style.position = 'fixed'
       ta.style.opacity = '0'
       document.body.appendChild(ta)
@@ -217,7 +197,7 @@ function GameBoard({
       document.body.removeChild(ta)
     }
     setShareState('copied')
-    setTimeout(() => setShareState('idle'), 2000)
+    setTimeout(() => setShareState('idle'), 1800)
   }
 
   const canGuessLie     = selectedLieId !== null && !liePhaseComplete
@@ -227,7 +207,10 @@ function GameBoard({
     <div className="puzzle-game">
 
       <div className="puzzle-header">
-        {puzzle.date && <p className="puzzle-date">{formatDate(puzzle.date)}</p>}
+        <div className="htp-hero puzzle-hero">
+          <h1 className="htp-title">Daily</h1>
+          {puzzle.date && <p className="puzzle-date">{formatDate(puzzle.date)}</p>}
+        </div>
         {!liePhaseComplete && (
           <div className="attempt-dots-wrap">
             <span className="attempt-label">ATTEMPTS</span>
@@ -417,12 +400,15 @@ function GameBoard({
             </div>
           ) : (
             <div className={`player-reveal-photo ${playerCorrect ? 'reveal-correct' : 'reveal-wrong'}`}>
-              {puzzle.headshotUrl ? (
-                <img src={puzzle.headshotUrl} alt={puzzle.playerName} className="reveal-headshot" />
-              ) : (
-                <div className="reveal-headshot reveal-headshot--fallback">🏈</div>
-              )}
-              <span className="reveal-photo-badge">{playerCorrect ? '✓' : '✗'}</span>
+              <div className="reveal-photo-ring">
+                {puzzle.headshotUrl ? (
+                  <img src={puzzle.headshotUrl} alt={puzzle.playerName} className="reveal-headshot" />
+                ) : (
+                  <div className="reveal-headshot reveal-headshot--fallback">🏈</div>
+                )}
+                <span className="reveal-photo-badge">{playerCorrect ? '✓' : '✗'}</span>
+              </div>
+              <span className="reveal-name-caption">{puzzle.playerName}</span>
               {!playerCorrect && selectedPlayer.trim() && (
                 <span className="reveal-guess-caption">You: {selectedPlayer.trim()}</span>
               )}
@@ -441,7 +427,11 @@ function GameBoard({
               <span className="src-label">LIE</span>
               <span className="src-pts">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
             </div>
-            <span className="src-sub">({lieAttempts} out of 3 attempts used)</span>
+            <div className="attempt-dots attempt-dots--result">
+              {[0, 1, 2].map(i => (
+                <span key={i} className={`attempt-dot${i < lieAttempts ? ' attempt-dot--wrong' : ''}`} />
+              ))}
+            </div>
           </div>
           <div className={`submit-result-chip ${playerCorrect ? 'src-correct' : 'src-wrong'}`}>
             <div className="src-main">
@@ -456,9 +446,8 @@ function GameBoard({
 
       {submitted && (
         <div className="share-row">
-          <button className="share-btn" onClick={handleShare}>
-            {shareState === 'copied' ? '✓ Copied!' : 'Share Result'}
-          </button>
+          <button className="share-btn" onClick={handleShare}>Share Result</button>
+          {shareState === 'copied' && <span className="share-toast">Link copied!</span>}
         </div>
       )}
 

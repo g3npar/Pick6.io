@@ -544,6 +544,15 @@ function buildFactPool(player, seasons, dbAwards, rng) {
 
 const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 'rec_tds', 'sacks', 'def_ints'])
 
+// The stored headshot URLs are Cloudinary-backed (NFL's CDN) but untransformed: full-res,
+// loosely cropped cutouts whose background-removal often leaves visible banding artifacts
+// around the edges. A tight, face-centered crop both fixes that (cropping the bad edges out)
+// and serves a far smaller, sharper image than what an untouched cutout would deliver.
+function headshotThumb(url) {
+  if (!url) return null
+  return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
+}
+
 // Builds one puzzle from raw DB data.
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
@@ -581,7 +590,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
     falseFactId:      lieIdx + 1,
     falseExplanation: lie.explanation,
     trueText:         chosen[lieIdx].text,
-    headshotUrl:      player.headshot_url || null,
+    headshotUrl:      headshotThumb(player.headshot_url),
   }
 }
 
