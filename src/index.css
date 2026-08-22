@@ -942,13 +942,13 @@ body {
   top: calc(50% + 50% * sin(-30deg));
   left: calc(50% + 50% * cos(-30deg));
   transform: translate(-50%, -50%);
-  width: 26px;
-  height: 26px;
+  width: clamp(16px, 4.9cqw, 26px);
+  height: clamp(16px, 4.9cqw, 26px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: clamp(9px, 2.8cqw, 14px);
   font-weight: 900;
   border: 2px solid #0d0d14;
   z-index: 5;
