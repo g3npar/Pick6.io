@@ -94,13 +94,14 @@ function GameBoard({
   const [tabIdx,       setTabIdx]       = useState(-1)
   const [shareState, setShareState] = useState('idle') // 'idle' | 'copied'
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
+  const [showAnswer, setShowAnswer] = useState(false)
   const wrapRef       = useRef(null)
   const inputRef      = useRef(null)
   const debounceRef   = useRef(null)
 
   useEffect(() => {
     setQuery(''); setDropdown(false); setResults([]); setHoveredIdx(null); setTabIdx(-1)
-    setConfirmingGiveUp(false)
+    setConfirmingGiveUp(false); setShowAnswer(false)
   }, [puzzle.id])
 
   // Reverts the "Are you sure?" confirmation on its own if left untouched.
@@ -150,7 +151,12 @@ function GameBoard({
 
   const handleQueryChange = e => {
     const val = e.target.value
-    setQuery(val); onSelectPlayer(val); setTabIdx(-1)
+    setQuery(val); setTabIdx(-1)
+    // Only forfeit the already-confirmed headshot when the name is actually
+    // changing — a duplicate/no-op change event (autofill re-firing, etc.)
+    // with the same text a player already picked must not silently wipe out
+    // a perfectly valid selection's photo.
+    if (val !== selectedPlayer) onSelectPlayer(val)
     if (!val) { setResults([]); setDropdown(false); return }
     searchPlayers(val)
   }
@@ -460,6 +466,22 @@ function GameBoard({
                   <p className="result-table-pick6">You scored a Pick 6.</p>
                   <p className="result-table-pick6">Better luck next time.</p>
                 </>
+              )}
+              {(!lieFound || !playerCorrect) && (
+                showAnswer ? (
+                  <div className="result-table-answer">
+                    {!lieFound && puzzle.trueText && (
+                      <p><span className="result-table-answer-label">Lie:</span> {puzzle.trueText}</p>
+                    )}
+                    {!playerCorrect && (
+                      <p><span className="result-table-answer-label">Player:</span> {puzzle.playerName}</p>
+                    )}
+                  </div>
+                ) : (
+                  <button className="result-table-reveal-btn" onClick={() => setShowAnswer(true)}>
+                    Show Correct Answer
+                  </button>
+                )
               )}
               <div className="share-row">
                 <button className="share-btn" onClick={handleShare}>Share Result</button>
