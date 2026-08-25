@@ -544,6 +544,22 @@ function buildFactPool(player, seasons, dbAwards, rng) {
 
 const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 'rec_tds', 'sacks', 'def_ints'])
 
+// Positions with no stat category above that can ever apply to them (no
+// passing/rushing/receiving/sacks/interceptions data is meaningful for O-line
+// or specialists, and none of that — sacks allowed, pancakes, FG%, punt/kick
+// average — is tracked anywhere in this schema). Without it, these puzzles
+// lean entirely on college/draft/jersey/Super Bowls, which are much harder
+// to actually recognize a specific player from, so these positions are
+// excluded from ever being picked as a puzzle's subject at all rather than
+// relying on the fact-pool-size check to filter them out after the fact —
+// a player here can still clear that bar (a Pro Bowl covers the gap) while
+// still being a much less guessable puzzle than a stat-backed one.
+const NO_STAT_POSITIONS = new Set(['OT', 'OL', 'T', 'LT', 'C', 'G', 'LG', 'RG', 'K', 'P', 'LS'])
+function hasNoMeaningfulStats(position) {
+  if (!position) return false
+  return NO_STAT_POSITIONS.has(position.split('/')[0].trim().toUpperCase())
+}
+
 // The stored headshot URLs are Cloudinary-backed (NFL's CDN) but untransformed: full-res,
 // loosely cropped cutouts whose background-removal often leaves visible banding artifacts
 // around the edges. A tight, face-centered crop both fixes that (cropping the bad edges out)
@@ -597,7 +613,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
 // DB helpers.
 async function fetchEligibleIds() {
   const res = await pool.query(`
-    SELECT p.id, p.name
+    SELECT p.id, p.name, p.position
     FROM players p
     JOIN player_seasons ps ON ps.player_id = p.id
     GROUP BY p.id
@@ -607,12 +623,17 @@ async function fetchEligibleIds() {
 
   const era1 = [], era2 = [], era3 = []
   for (const r of res.rows) {
-    // awards.csv has no Pro Bowl rows, so All-Pro selections place a player in an era instead.
-    const allPros = lookupAwards(r.name).filter(a => a.award === 'ALL_PRO_FIRST' && a.year > 0)
-    if (allPros.length < 1) continue
+    if (hasNoMeaningfulStats(r.position)) continue
 
-    // Uses the median All-Pro year to determine era.
-    const years = allPros.map(a => a.year).sort((a, b) => a - b)
+    // All-Pro or Pro Bowl selections place a player in an era (the CSV does
+    // carry Pro Bowl rows despite what an earlier comment here claimed —
+    // requiring All-Pro alone set the bar far higher than necessary).
+    const honors = lookupAwards(r.name).filter(a =>
+      (a.award === 'ALL_PRO_FIRST' || a.award === 'PRO_BOWL') && a.year > 0)
+    if (honors.length < 1) continue
+
+    // Uses the median honor year to determine era.
+    const years = honors.map(a => a.year).sort((a, b) => a - b)
     const median = years[Math.floor(years.length / 2)]
 
     if (median <= 1995)      era1.push(r.id)
@@ -702,7 +723,7 @@ let _currentCache = null  // { date: 'YYYY-MM-DD', puzzle: {...} }
 
 async function fetchCurrentPlayerIds() {
   const res = await pool.query(`
-    SELECT DISTINCT p.id, p.name
+    SELECT DISTINCT p.id, p.name, p.position
     FROM players p
     JOIN player_seasons ps ON ps.player_id = p.id
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
@@ -727,6 +748,7 @@ async function fetchCurrentPlayerIds() {
 
   return res.rows
     .filter(r => {
+      if (hasNoMeaningfulStats(r.position)) return false
       if (statQualified.has(r.id)) return true
       const awards = lookupAwards(r.name)
       return awards.some(a => a.award === 'ALL_PRO_FIRST' && a.year >= 2021)

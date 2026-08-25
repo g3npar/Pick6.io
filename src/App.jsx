@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import GameBoard from './components/GameBoard'
@@ -28,6 +28,19 @@ const markSignInPromptSeen = () => {
   try { localStorage.setItem(SIGNIN_PROMPT_SEEN_KEY, '1') } catch {}
 }
 
+// Remembers which screen (and, if viewing one, which archived puzzle's date)
+// the player was on, plus each board's in-progress guess — sessionStorage
+// so it survives a reload within this tab but doesn't linger forever like
+// localStorage would. Without this, refreshing always dumped the player
+// back on Daily with a blank board, no matter what they'd been doing.
+const SESSION_UI_KEY = 'pick6_session_ui'
+const readSessionUI = () => {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_UI_KEY)) || {} } catch { return {} }
+}
+const writeSessionUI = data => {
+  try { sessionStorage.setItem(SESSION_UI_KEY, JSON.stringify(data)) } catch {}
+}
+
 function preloadLogos(puzzles) {
   const urls = new Set()
   for (const puzzle of puzzles) {
@@ -44,7 +57,7 @@ function preloadLogos(puzzles) {
 }
 
 function App() {
-  const [screen, setScreen] = useState('daily')
+  const [screen, setScreen] = useState(() => readSessionUI().screen || 'daily')
   const [user,   setUser]   = useState(null)
 
   // Today's daily puzzle lives in its own slot, separate from whatever the user
@@ -59,7 +72,15 @@ function App() {
 
   // True while showing a puzzle opened from the Archive tab, so the board replaces
   // the archive list in place instead of jumping the nav over to Daily.
-  const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(false)
+  const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(() => !!readSessionUI().viewingArchivePuzzle)
+
+  // A stable, mount-time snapshot of the cache — NOT a live re-read. The
+  // write-back effect below fires on every render including the very first
+  // (with state still at its just-reset initial value), so a live read
+  // inside loadTodayPuzzle's async callback would see that already-
+  // overwritten (empty) cache instead of what was actually there before
+  // this reload, losing the very data being restored.
+  const initialCachedUI = useRef(readSessionUI())
 
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [pendingResult, setPendingResult] = useState(null)
@@ -140,7 +161,12 @@ function App() {
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
       .then(p => {
         setTodayPuzzle(p)
-        setTodayResultSaved(!!p.result); setTodayState(restoredState(p.result, p.progress))
+        setTodayResultSaved(!!p.result)
+        // Cached in-progress guess (name/headshot/lie pick) fills in whatever
+        // the server doesn't track itself, so a mid-round refresh doesn't
+        // wipe out a selection that was never submitted yet. Server fields
+        // still win where both exist — they're authoritative.
+        setTodayState({ ...(initialCachedUI.current.todayState || {}), ...restoredState(p.result, p.progress) })
         preloadLogos([p])
       })
       .catch(err => console.error('Failed to load puzzle:', err))
@@ -149,11 +175,29 @@ function App() {
   useEffect(() => {
     loadTodayPuzzle()
 
+    // Was mid-archive-puzzle when the tab last closed/refreshed — the puzzle
+    // data itself isn't persisted (only re-fetched fresh), just which date to
+    // go back to; viewingArchivePuzzle is already seeded true from the same
+    // cache, so the board's loading gate holds until this actually lands.
+    const cachedUI = initialCachedUI.current
+    if (cachedUI.viewingArchivePuzzle && cachedUI.archiveDate) handlePlayArchiveDate(cachedUI.archiveDate)
+
     fetch(`${API}/auth/me`, { credentials: 'include' })
       .then(r => r.json())
       .then(({ user }) => setUser(user))
       .catch(() => {})
   }, [])
+
+  // Keeps the "where was I" cache in sync so a reload can restore it.
+  useEffect(() => {
+    writeSessionUI({
+      screen,
+      viewingArchivePuzzle,
+      archiveDate: viewingArchivePuzzle ? (archivePuzzle?.date ?? null) : null,
+      todayState,
+      archiveState,
+    })
+  }, [screen, viewingArchivePuzzle, archivePuzzle?.date, todayState, archiveState])
 
   // Sends a finished result to the server. Works whether signed in or not — the server always
   // returns an accurate, self-verified verdict; it just doesn't persist (`saved: false`) until
@@ -239,7 +283,14 @@ function App() {
       })
       .then(p => {
         setArchivePuzzle(p)
-        setArchiveResultSaved(!!p.result); setArchiveState(restoredState(p.result, p.progress))
+        setArchiveResultSaved(!!p.result)
+        // Same cached-guess merge as loadTodayPuzzle, but only reuse the
+        // cache if it was actually left there for this same archive date —
+        // otherwise it's a stale in-progress guess from a *different*
+        // archived puzzle browsed earlier this session.
+        const cachedUI = initialCachedUI.current
+        const cachedState = cachedUI.archiveDate === date ? (cachedUI.archiveState || {}) : {}
+        setArchiveState({ ...cachedState, ...restoredState(p.result, p.progress) })
         preloadLogos([p]); setViewingArchivePuzzle(true)
       })
       .catch(err => alert(`Could not load puzzle: ${err.message}`))
