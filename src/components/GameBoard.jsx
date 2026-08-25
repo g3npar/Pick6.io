@@ -397,13 +397,19 @@ function GameBoard({
             // (e.g. a freeform guess restored after a refresh), so the
             // circle never shows the bare football placeholder over a wrong.
             const isGiveUp = gaveUp || (!playerCorrect && !selectedPlayer.trim())
-            const showCorrect = playerCorrect || isGiveUp
+            // Peeking at the answer (via "Show Correct Answer" below) swaps
+            // the circle over to the correct player too — that data is
+            // always reliably on hand from the server, unlike the guessed
+            // player's own headshot, which anonymous play never persists
+            // past a real page reload.
+            const revealingCorrect = isGiveUp || (showAnswer && !playerCorrect)
+            const showCorrect = playerCorrect || revealingCorrect
             const photoUrl = showCorrect ? puzzle.headshotUrl : selectedHeadshot
             return (
               <div className="player-reveal-photo">
                 <div className="player-reveal-photo-inner">
                   <span className={`reveal-guess-label ${playerCorrect ? 'reveal-guess-label--correct' : 'reveal-guess-label--wrong'}`}>
-                    <span className="reveal-guess-label-lead">{isGiveUp ? 'Correct Answer' : 'You guessed'}</span>
+                    <span className="reveal-guess-label-lead">{revealingCorrect ? 'Correct Answer' : 'You guessed'}</span>
                     <span className="reveal-guess-label-name">{showCorrect ? puzzle.playerName : selectedPlayer}</span>
                   </span>
                   {photoUrl ? (
@@ -467,21 +473,10 @@ function GameBoard({
                   <p className="result-table-pick6">Better luck next time.</p>
                 </>
               )}
-              {(!lieFound || !playerCorrect) && (
-                showAnswer ? (
-                  <div className="result-table-answer">
-                    {!lieFound && puzzle.trueText && (
-                      <p><span className="result-table-answer-label">Lie:</span> {puzzle.trueText}</p>
-                    )}
-                    {!playerCorrect && (
-                      <p><span className="result-table-answer-label">Player:</span> {puzzle.playerName}</p>
-                    )}
-                  </div>
-                ) : (
-                  <button className="result-table-reveal-btn" onClick={() => setShowAnswer(true)}>
-                    Show Correct Answer
-                  </button>
-                )
+              {!playerCorrect && !gaveUp && (
+                <button className="result-table-reveal-btn" onClick={() => setShowAnswer(v => !v)}>
+                  {showAnswer ? 'Hide Correct Answer' : 'Show Correct Answer'}
+                </button>
               )}
               <div className="share-row">
                 <button className="share-btn" onClick={handleShare}>Share Result</button>

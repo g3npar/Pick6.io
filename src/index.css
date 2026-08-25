@@ -1036,26 +1036,6 @@ body {
 }
 .result-table-reveal-btn:hover { color: var(--text); border-color: var(--text-sec); }
 
-.result-table-answer {
-  margin-top: 4px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 2px solid var(--border-bright);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.result-table-answer p {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.4;
-}
-.result-table-answer-label {
-  font-weight: 800;
-  color: var(--text-sec);
-  margin-right: 4px;
-}
-
 /* ── Submit result (post-submission inline) ──────────────────────── */
 .submit-result-row {
   display: flex;
