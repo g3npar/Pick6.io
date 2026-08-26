@@ -18,8 +18,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
     ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
 
-  // On mobile the horizontal nav is hidden, so tapping the logo opens a
-  // dropdown of the same links instead of jumping straight to Daily.
+  // mobile logo opens nav dropdown
   const handleLogoClick = () => {
     if (window.matchMedia('(max-width: 600px)').matches) {
       setMobileNavOpen(open => !open)

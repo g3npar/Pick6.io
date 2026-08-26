@@ -3,11 +3,11 @@ const { Pool, types } = require('pg')
 const fs   = require('fs')
 const path = require('path')
 
-// Returns DATE columns as plain "YYYY-MM-DD" strings instead of a JS Date.
+// dates as plain strings not js date
 types.setTypeParser(1082, val => val)
 
-// Awards CSV, loaded once at startup.
-const _awardsIdx = new Map()  // normalizedName → [{award, year, ...}]
+// awards csv loaded at startup
+const _awardsIdx = new Map()  // normalized name to awards
 
 function _normName(n) {
   return String(n).toLowerCase()
@@ -40,7 +40,7 @@ function _normName(n) {
 
 function lookupAwards(playerName) {
   const key = _normName(playerName)
-  // Exact match only, to avoid contamination from a last-name fallback.
+  // exact match only
   return _awardsIdx.get(key) || []
 }
 
@@ -68,7 +68,7 @@ function seededShuffle(arr, rng) {
   return a
 }
 
-// Formatting helpers.
+// formatting helpers
 function ordinal(n) {
   const s = ['th', 'st', 'nd', 'rd']
   const v = n % 100
@@ -99,7 +99,7 @@ function otherCollege(real, rng) {
   return pool[Math.floor(rng() * pool.length)]
 }
 
-// Award display labels.
+// award display labels
 const AWARD_LABELS = {
   OPOY: 'AP Offensive Player of the Year',
   DPOY: 'AP Defensive Player of the Year',
@@ -108,7 +108,7 @@ const AWARD_LABELS = {
   CPOY: 'AP Comeback Player of the Year',
 }
 
-// Fact builders, each returning { cat, text, makeLie(rng) } or null if the player lacks data for that category.
+// fact builders
 
 function primaryCollege(raw) {
   if (!raw) return null
@@ -192,7 +192,7 @@ function proBowlFact(p, count) {
     text: `Was selected to ${count} Pro Bowl${pl}`,
     makeLie(rng) {
       const delta = 1 + Math.floor(rng() * 3)
-      // Always add when subtracting would hit 0 or the same value
+      // avoid zero or same value
       const fake  = (count - delta) >= 1 && (count - delta) !== count && rng() < 0.5
         ? count - delta
         : count + delta
@@ -334,7 +334,7 @@ function recTdFact(p, season) {
 }
 
 function sacksFact(p, season) {
-  // Only valid for defensive positions, since the sacks column means times sacked for offensive players.
+  // defensive positions only
   const defPositions = /^(DE|DT|LB|OLB|ILB|MLB|EDGE|NT|DL|LDE|RDE|LDT|RDT|LLB|RLB|LILB|RILB|LOLB|ROLB|LE|RE)$/i
   if (!defPositions.test(p.position || '')) return null
   if (!season || !season.sacks || season.sacks < 5) return null
@@ -443,7 +443,7 @@ function awardFact(p, award) {
   }
 }
 
-// CSV-backed fact builders.
+// csv backed fact builders
 
 function hofFact(p, csvAwards) {
   const entry = csvAwards.find(a => a.award === 'HOF' && a.year > 0)
@@ -469,7 +469,7 @@ function csvAwardFact(p, csvAwards) {
     DROY: 'AP Defensive Rookie of the Year',
     CPOY: 'AP Comeback Player of the Year',
   }
-  // Return one fact for the highest-priority award the player won
+  // top priority award only
   for (const atype of ['OPOY', 'DPOY', 'OROY', 'DROY', 'CPOY']) {
     const entries = csvAwards.filter(a => a.award === atype && a.year > 0)
     if (!entries.length) continue
@@ -497,12 +497,12 @@ function csvAwardFact(p, csvAwards) {
   return null
 }
 
-// Assembles the fact pool for a player.
+// assembles fact pool
 function buildFactPool(player, seasons, dbAwards, rng) {
-  // CSV awards: Pro Bowl count, HOF, OPOY/DPOY/OROY/DROY/CPOY
+  // csv awards
   const csvAwards = lookupAwards(player.name)
 
-  // CSV counts are more reliable than the DB's ap_allpro_first/pro_bowl columns
+  // csv counts more reliable than db columns
   const csvAllProCount = csvAwards.filter(a => a.award === 'ALL_PRO_FIRST').length
   const allPro      = csvAllProCount || seasons.filter(s => s.ap_allpro_first).length
   const csvPBCount = csvAwards.filter(a => a.award === 'PRO_BOWL').length
@@ -510,7 +510,7 @@ function buildFactPool(player, seasons, dbAwards, rng) {
   const sbWins  = seasons.filter(s => s.super_bowl_winner).length
   const mvpYrs  = seasons.filter(s => s.ap_mvp).map(s => s.season_year)
 
-  // Best single-season performances per category
+  // best season per category
   const bestPass    = [...seasons].filter(s => s.passing_yards  > 0).sort((a, b) => b.passing_yards  - a.passing_yards)[0]
   const bestPassTds = [...seasons].filter(s => s.passing_tds > 0).sort((a, b) => b.passing_tds - a.passing_tds)[0]
   const bestRush    = [...seasons].filter(s => s.rush_yards     > 0).sort((a, b) => b.rush_yards     - a.rush_yards)[0]
@@ -544,32 +544,20 @@ function buildFactPool(player, seasons, dbAwards, rng) {
 
 const STAT_CATS = new Set(['passing', 'passing_tds', 'rushing', 'receiving', 'rec_tds', 'sacks', 'def_ints'])
 
-// Positions with no stat category above that can ever apply to them (no
-// passing/rushing/receiving/sacks/interceptions data is meaningful for O-line
-// or specialists, and none of that — sacks allowed, pancakes, FG%, punt/kick
-// average — is tracked anywhere in this schema). Without it, these puzzles
-// lean entirely on college/draft/jersey/Super Bowls, which are much harder
-// to actually recognize a specific player from, so these positions are
-// excluded from ever being picked as a puzzle's subject at all rather than
-// relying on the fact-pool-size check to filter them out after the fact —
-// a player here can still clear that bar (a Pro Bowl covers the gap) while
-// still being a much less guessable puzzle than a stat-backed one.
+// positions with no usable stat category
 const NO_STAT_POSITIONS = new Set(['OT', 'OL', 'T', 'LT', 'C', 'G', 'LG', 'RG', 'K', 'P', 'LS'])
 function hasNoMeaningfulStats(position) {
   if (!position) return false
   return NO_STAT_POSITIONS.has(position.split('/')[0].trim().toUpperCase())
 }
 
-// The stored headshot URLs are Cloudinary-backed (NFL's CDN) but untransformed: full-res,
-// loosely cropped cutouts whose background-removal often leaves visible banding artifacts
-// around the edges. A tight, face-centered crop both fixes that (cropping the bad edges out)
-// and serves a far smaller, sharper image than what an untouched cutout would deliver.
+// crops and shrinks the raw headshot
 function headshotThumb(url) {
   if (!url) return null
   return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
 }
 
-// Builds one puzzle from raw DB data.
+// builds one puzzle
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
   const pool = buildFactPool(player, seasons, awards, rng)
@@ -578,17 +566,17 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
   const nonStatFacts = seededShuffle(pool.filter(f => !STAT_CATS.has(f.cat)), rng)
 
-  // Uses at most one stat fact and fills the rest with non-stat facts, aiming for six.
+  // one stat fact plus non stat facts
   const chosen = [
     ...statFacts.slice(0, 1),
     ...nonStatFacts,
   ].slice(0, 6)
 
-  // Fall back to more stat facts if we can't reach 6
+  // fall back to more stat facts
   if (chosen.length < 6) {
     chosen.push(...statFacts.slice(1, 6 - chosen.length + 1))
   }
-  // Every one of the six needs a fact, so a partial puzzle is never returned.
+  // no partial puzzles
   if (chosen.length < 6) return null
 
   const lieIdx = Math.floor(rng() * chosen.length)
@@ -610,7 +598,7 @@ function buildPuzzle(id, player, seasons, awards, seed) {
   }
 }
 
-// DB helpers.
+// db helpers
 async function fetchEligibleIds() {
   const res = await pool.query(`
     SELECT p.id, p.name, p.position
@@ -625,14 +613,12 @@ async function fetchEligibleIds() {
   for (const r of res.rows) {
     if (hasNoMeaningfulStats(r.position)) continue
 
-    // All-Pro or Pro Bowl selections place a player in an era (the CSV does
-    // carry Pro Bowl rows despite what an earlier comment here claimed —
-    // requiring All-Pro alone set the bar far higher than necessary).
+    // all pro or pro bowl places player in an era
     const honors = lookupAwards(r.name).filter(a =>
       (a.award === 'ALL_PRO_FIRST' || a.award === 'PRO_BOWL') && a.year > 0)
     if (honors.length < 1) continue
 
-    // Uses the median honor year to determine era.
+    // median honor year sets the era
     const years = honors.map(a => a.year).sort((a, b) => a - b)
     const median = years[Math.floor(years.length / 2)]
 
@@ -675,7 +661,7 @@ async function generatePlayerPuzzle(name, draftYear) {
   return puzzle
 }
 
-// Daily puzzle cache.
+// daily puzzle cache
 let _cache = null   // { date: 'YYYY-MM-DD', puzzles: [...] }
 
 const EPOCH = new Date('2026-01-01')
@@ -718,7 +704,7 @@ async function getDailyPuzzles() {
   return puzzles
 }
 
-// Current-player daily puzzle, one puzzle from the active roster.
+// current roster daily puzzle
 let _currentCache = null  // { date: 'YYYY-MM-DD', puzzle: {...} }
 
 async function fetchCurrentPlayerIds() {
@@ -729,7 +715,7 @@ async function fetchCurrentPlayerIds() {
     WHERE ps.season_year = (SELECT MAX(season_year) FROM player_seasons)
   `)
 
-  // Award-only gating excluded notable players with no All-Pro or Pro Bowl selections.
+  // stat qualified players count too
   const statRes = await pool.query(`
     SELECT DISTINCT player_id AS id
     FROM player_seasons
@@ -761,7 +747,7 @@ function todayDateStr() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 }
 
-// Durable storage for daily puzzles, since the in-memory cache is lost on every server restart.
+// durable storage for daily puzzles
 async function ensurePuzzleSchema(dbPool) {
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS daily_puzzles (
@@ -788,9 +774,9 @@ async function buildAndStoreDailyPuzzle(dateStr) {
   return puzzle
 }
 
-// Admin puzzle scheduler
+// admin puzzle scheduler
 
-// The same deterministic pick a future date would get by default, computed live.
+// deterministic pick computed live
 async function previewDailyPuzzle(dateStr) {
   const seed      = Math.floor((new Date(dateStr) - EPOCH) / 86400000) + 9999
   const ids       = await fetchCurrentPlayerIds()
@@ -800,7 +786,7 @@ async function previewDailyPuzzle(dateStr) {
   return puzzle
 }
 
-// A different random candidate for the same date, for the admin to shuffle through.
+// random candidate to shuffle through
 async function shuffleDailyPuzzle(dateStr) {
   const seed = Date.now()
   const ids  = await fetchCurrentPlayerIds()
@@ -810,7 +796,7 @@ async function shuffleDailyPuzzle(dateStr) {
   return puzzle
 }
 
-// Locks in a puzzle for dateStr, replacing whatever was set before. Future dates only.
+// locks in a puzzle for future dates only
 async function setScheduledPuzzle(dateStr, puzzle) {
   if (dateStr <= todayDateStr()) throw new Error('Can only schedule a date after today')
   await pool.query(
@@ -820,7 +806,7 @@ async function setScheduledPuzzle(dateStr, puzzle) {
   )
 }
 
-// Which of a list of dates already have a puzzle locked in.
+// dates with a puzzle already locked
 async function getScheduledDates(dates) {
   const res = await pool.query(
     'SELECT puzzle_date FROM daily_puzzles WHERE puzzle_date = ANY($1::date[])',
@@ -829,7 +815,7 @@ async function getScheduledDates(dates) {
   return new Set(res.rows.map(r => r.puzzle_date))
 }
 
-// Fetches the eligible pool once and reuses it across every date, instead of re-querying per day.
+// fetches pool once reuses across dates
 async function previewUpcomingDates(dates) {
   const ids = await fetchCurrentPlayerIds()
   if (!ids.length) throw new Error('No current eligible players found')
@@ -880,7 +866,7 @@ async function getDailyCurrentPuzzle(fresh = false) {
   return puzzle
 }
 
-// Serves a past date's puzzle for the Archive. Never regenerates a missing date.
+// serves archive puzzle never regenerates
 async function getPuzzleForDate(dateStr) {
   if (dateStr >= todayDateStr()) throw new Error('That date is not available yet')
   const res = await pool.query('SELECT puzzle FROM daily_puzzles WHERE puzzle_date = $1', [dateStr])
@@ -888,7 +874,7 @@ async function getPuzzleForDate(dateStr) {
   return res.rows[0].puzzle
 }
 
-// Lists every date with a stored daily puzzle, most recent first, no puzzle content included.
+// lists dates with stored puzzles
 async function listArchiveDates(limit = 60) {
   const res = await pool.query('SELECT puzzle_date FROM daily_puzzles ORDER BY puzzle_date DESC LIMIT $1', [limit])
   return res.rows.map(r => r.puzzle_date)

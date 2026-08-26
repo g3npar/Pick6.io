@@ -4,8 +4,7 @@ import WheelSpinner from './WheelSpinner'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Survives remounts (leaving and returning to the tab), so switching nav screens
-// shows the last result instantly instead of a loading flash every time.
+// survives remounts to avoid loading flash
 let cachedRows = null
 
 export default function Archive({ user, onPlayDate }) {

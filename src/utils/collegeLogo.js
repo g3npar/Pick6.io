@@ -1,6 +1,6 @@
-// Maps college name -> /logos/colleges/{slug}.png
+// maps college name to logo url
 const COLLEGE_SLUG = {
-  // ── Power conferences ───────────────────────────────────────────
+  // power conferences
   'Alabama':                    'alabama',
   'Arizona':                    'arizona',
   'Arizona State':              'arizona-state',
@@ -86,7 +86,7 @@ const COLLEGE_SLUG = {
   'West Virginia':              'west-virginia',
   'Wisconsin':                  'wisconsin',
   'Wyoming':                    'wyoming',
-  // ── Group of 5 / mid-major ──────────────────────────────────────
+  // group of 5 mid major
   'Akron':                      'akron',
   'Appalachian State':          'appalachian-state',
   'Arkansas State':             'arkansas-state',
@@ -170,10 +170,10 @@ const COLLEGE_SLUG = {
   'Western Michigan':           'western-michigan',
   'Wyoming':                    'wyoming',
   'Youngstown State':           'youngstown-state',
-  // ── HBCUs ───────────────────────────────────────────────────────
+  // hbcus
   'Grambling':                  'grambling',
   'Grambling State':            'grambling',
-  // ── FCS / Mid-major with ESPN logos ────────────────────────────
+  // fcs mid major
   'Air Force':                  'air-force',
   'Cal State Northridge':       'cal-state-northridge',
   'CSUN':                       'cal-state-northridge',
@@ -296,7 +296,7 @@ const COLLEGE_SLUG = {
   'Winston-Salem State':        'winston-salem',
   'Gardner-Webb':               'gardner-webb',
   'NW Missouri State University': 'northwest-missouri',
-  // ── Alternate/historical spellings ──────────────────────────────
+  // alternate spellings
   'Texas A & M':                'texas-am',
   'Louisiana Lafayette':        'louisiana',
   'Miami (FL)':                 'miami',
@@ -307,10 +307,10 @@ const COLLEGE_SLUG = {
  */
 export function collegeLogo(collegeName) {
   if (!collegeName) return null
-  // Try exact match
+  // exact match
   const slug = COLLEGE_SLUG[collegeName]
   if (slug) return `/logos/colleges/${slug}.png`
-  // Case-insensitive fallback
+  // case insensitive fallback
   const lower = collegeName.toLowerCase()
   for (const [name, s] of Object.entries(COLLEGE_SLUG)) {
     if (name.toLowerCase() === lower) return `/logos/colleges/${s}.png`

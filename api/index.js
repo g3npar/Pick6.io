@@ -32,7 +32,7 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow server-to-server / curl (no origin) only in dev
+    // allow no origin in dev only
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
     cb(new Error('CORS: origin not allowed'))
   },
@@ -44,9 +44,7 @@ app.use(cors({
 ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
-// Rate limiting is disabled outside production (render.yaml sets
-// NODE_ENV=production on the deployed API) so local dev/testing never trips
-// it — a no-op middleware stands in for each limiter instead.
+// rate limiting only in production
 const RATE_LIMITING_ENABLED = process.env.NODE_ENV === 'production'
 const noopLimiter = (req, res, next) => next()
 
@@ -58,7 +56,7 @@ const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   message: { error: 'Too many requests, please slow down.' },
 }) : noopLimiter
 
-// Tighter limit for expensive puzzle generation
+// tighter limit for puzzle generation
 const puzzleLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -67,7 +65,7 @@ const puzzleLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   message: { error: 'Too many puzzle requests, please wait a moment.' },
 }) : noopLimiter
 
-// Tighter still for auth, since it's a common abuse/brute-force target
+// tighter limit for auth
 const authLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -78,10 +76,10 @@ const authLimiter = RATE_LIMITING_ENABLED ? rateLimit({
 
 app.use(apiLimiter)
 
-// Disable information-leaking headers
+// hide identifying headers
 app.disable('x-powered-by')
 
-// In-memory cache of current players
+// in memory player cache
 let currentPlayers    = []
 let playersCacheTime  = 0
 const PLAYERS_CACHE_TTL = 60 * 60 * 1000  // 1 hour
@@ -101,7 +99,7 @@ async function ensureCurrentPlayers() {
 // GET /players/search?q=mahomes
 app.get('/players/search', async (req, res) => {
   const raw = String(req.query.q || '').trim()
-  // Reject overly long or suspicious input
+  // reject bad input length
   if (raw.length < 2 || raw.length > 60) return res.json([])
 
   const q = raw.toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
@@ -132,7 +130,7 @@ app.get('/puzzle/today', async (req, res) => {
   }
 })
 
-// A signed-in user's already-saved result for a puzzle date, or null
+// saved result for a puzzle date
 async function fetchSavedResult(userId, date) {
   if (!userId) return null
   const r = await pool.query(
@@ -147,7 +145,7 @@ async function fetchSavedResult(userId, date) {
   }
 }
 
-// A signed-in user's in-progress (not yet submitted) lie-guessing state for a date, or null.
+// in progress lie guess state
 async function fetchProgress(userId, date) {
   if (!userId) return null
   const r = await pool.query(
@@ -159,8 +157,7 @@ async function fetchProgress(userId, date) {
   return { lieAttempts: row.lie_attempts, wrongIds: row.wrong_ids, lieFound: row.lie_found }
 }
 
-// Strips the answer-revealing fields from a puzzle unless they're safe to show:
-// `lie` once the lie phase is resolved (found or exhausted), `player` once fully submitted.
+// strips answer fields until safe to show
 function withReveal(puzzle, { lie = false, player = false } = {}) {
   const { falseFactId, falseExplanation, trueText, playerName, headshotUrl, ...safe } = puzzle
   return {
@@ -190,7 +187,7 @@ app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) =
   }
 })
 
-// GET /puzzle/date/2026-08-10 (play a specific past archive date)
+// GET /puzzle/date/2026-08-10 archive date
 app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
   const date = req.params.date
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
@@ -208,8 +205,7 @@ app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
   }
 })
 
-// POST /puzzle/guess-lie: server-verified single guess. Answer data is never sent to the
-// client before this point, so this is the only way to learn which fact is the lie.
+// POST /puzzle/guess-lie server verified guess
 app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
   const { puzzleDate, factId, giveUp } = req.body || {}
   const date  = puzzleDate
@@ -220,7 +216,7 @@ app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
   try {
     const puzzle = date === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(date)
 
-    // Already fully completed: nothing left to guess, safe to just echo the answer back.
+    // already complete just echo answer
     const already = await fetchSavedResult(req.userId, date)
     if (already) {
       return res.json({
@@ -231,8 +227,7 @@ app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
     }
 
     if (!req.userId) {
-      // Anonymous: correctness is still verified server-side (the fix that matters), but
-      // nothing is persisted, so the attempt count itself isn't tamper-proof for guests.
+      // anonymous verified but not persisted
       const correct = !giveUp && factId === puzzle.falseFactId
       const liePhaseComplete = correct || !!giveUp
       return res.json({
@@ -243,7 +238,7 @@ app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
       })
     }
 
-    // Signed in: the server's own tally is authoritative from here on.
+    // signed in server tally is authoritative
     const progRes = await pool.query(
       'SELECT lie_attempts, wrong_ids, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
       [req.userId, date]
@@ -287,10 +282,10 @@ app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
   }
 })
 
-// GET /puzzle/archive: released dates with per-user completion status
+// GET /puzzle/archive completion status
 app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   try {
-    // Today's puzzle lives on the Daily tab, not here.
+    // todays puzzle lives on daily tab
     const dates = (await listArchiveDates()).filter(d => d < todayDateStr())
     if (!dates.length) return res.json([])
     const r = await pool.query(`
@@ -311,7 +306,7 @@ app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   }
 })
 
-// GET /puzzle/generate (fresh random set)
+// GET /puzzle/generate fresh random set
 app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
   try {
     const puzzles = await generateFreshPuzzles()
@@ -322,14 +317,14 @@ app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
   }
 })
 
-// GET /puzzle/player?name=Tom+Brady&draftYear=2000
+// GET /puzzle/player by name
 app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
   const raw  = String(req.query.name || '').trim()
   if (!raw || raw.length > 80) return res.status(400).json({ error: 'Invalid name' })
-  // Strip anything that isn't a letter, space, apostrophe, hyphen, or dot
+  // strip disallowed characters
   const name = raw.replace(/[^a-zA-Z .'\-]/g, '').trim()
   if (!name) return res.status(400).json({ error: 'Invalid name' })
-  // Disambiguates players who share an exact name (e.g. two different "Josh Allen"s)
+  // disambiguates same name players
   const draftYear = /^\d{4}$/.test(req.query.draftYear) ? Number(req.query.draftYear) : undefined
   try {
     const puzzle = await generatePlayerPuzzle(name, draftYear)
@@ -345,7 +340,7 @@ const toUserJSON = u => ({
   isAdmin: isAdminEmail(u.email),
 })
 
-// POST /auth/google { credential }
+// POST /auth/google
 app.post('/auth/google', authLimiter, async (req, res) => {
   const credential = req.body?.credential
   if (!credential || typeof credential !== 'string') return res.status(400).json({ error: 'Missing credential' })
@@ -375,7 +370,7 @@ app.get('/auth/me', optionalAuth, async (req, res) => {
   res.json({ user: toUserJSON(r.rows[0]) })
 })
 
-// PUT /auth/username { username }
+// PUT /auth/username
 app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
   const raw = String(req.body?.username || '').trim()
   if (!/^[a-zA-Z0-9 _\-]{2,20}$/.test(raw)) {
@@ -389,17 +384,14 @@ app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
   }
 })
 
-// requireAdmin (chain after requireAuth)
+// requireAdmin chain after requireAuth
 async function requireAdmin(req, res, next) {
   const r = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId])
   if (!r.rows.length || !isAdminEmail(r.rows[0].email)) return res.status(403).json({ error: 'Admin access required' })
   next()
 }
 
-// POST /puzzle/result: recomputes the score server-side so it can't be faked. Only persists
-// (and only requires auth for persisting) once a userId is present; an anonymous caller still
-// gets an accurate, server-verified verdict so the board can reveal immediately, it just isn't
-// saved until they sign in and this fires again.
+// POST /puzzle/result recomputes score server side
 app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
   const { selectedLieId, lieAttempts, playerGuess } = req.body || {}
   const puzzleDate = req.body?.puzzleDate || todayDateStr()
@@ -409,10 +401,7 @@ app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
     if (puzzleDate > today) return res.status(400).json({ error: 'Invalid puzzle date' })
     const puzzle = puzzleDate === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(puzzleDate)
 
-    // The server's own tracked guessing progress is authoritative whenever it exists, which
-    // is the normal case for anyone signed in while they played. It only falls back to the
-    // client-reported attempt info when nothing was tracked (e.g. played anonymously, then
-    // signed in afterward) — never trusted at all once a real progress record exists.
+    // tracked progress wins over client reported
     let lieFound, attempts
     if (req.userId) {
       const progRes = await pool.query(
@@ -496,7 +485,7 @@ function upcomingDates(days) {
   return dates
 }
 
-// GET /admin/puzzles?days=14: preview/status for each upcoming date.
+// GET /admin/puzzles status per date
 app.get('/admin/puzzles', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
   const days = Math.min(30, Math.max(1, Number(req.query.days) || 14))
   try {
@@ -508,7 +497,7 @@ app.get('/admin/puzzles', requireAuth, requireAdmin, adminLimiter, async (req, r
   }
 })
 
-// POST /admin/preview { date, mode, name?, draftYear? }: candidate puzzle, not saved.
+// POST /admin/preview candidate not saved
 app.post('/admin/preview', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
   const { date, mode, name, draftYear } = req.body || {}
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= todayDateStr()) {
@@ -527,7 +516,7 @@ app.post('/admin/preview', requireAuth, requireAdmin, adminLimiter, async (req, 
   }
 })
 
-// POST /admin/set { date, puzzle }: locks in a puzzle, replacing any prior one for that date.
+// POST /admin/set locks in a puzzle
 app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
   const { date, puzzle } = req.body || {}
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !puzzle?.facts) {
@@ -541,10 +530,10 @@ app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res)
   }
 })
 
-// 404 for any unmatched route
+// 404 unmatched route
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 
-// Global error handler (never leak stack traces)
+// global error handler
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err.message)
   res.status(500).json({ error: 'Internal server error' })

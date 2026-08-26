@@ -6,7 +6,7 @@ import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Aug 17, 2026 is the first date a daily puzzle was ever released, so it's puzzle #1.
+// first puzzle date
 const PUZZLE_EPOCH = new Date(2026, 7, 17)
 
 function puzzleNumber(dateStr) {
@@ -15,7 +15,7 @@ function puzzleNumber(dateStr) {
   return Math.round((date - PUZZLE_EPOCH) / 86400000) + 1
 }
 
-// SVG-based fact paths, 6 facts at 60 degrees each
+// fact wedge paths
 const SVG_R  = 298
 const SVG_CX = 300
 const SVG_CY = 300
@@ -43,9 +43,7 @@ function getFactCentroid(i) {
 const FACT_PATHS   = Array.from({ length: N_FACTS }, (_, i) => getFactPath(i))
 const FACT_CENTERS = Array.from({ length: N_FACTS }, (_, i) => getFactCentroid(i))
 
-// Renders a parsed fact's value as logo(s) or text, shared by the normal
-// fact display and the crossed-out/corrected display shown for a lie.
-// `compact` shrinks it for the struck-through "wrong" line in a correction.
+// renders fact value as logos or text
 function FactValue({ display, compact }) {
   if (display.isTeams) {
     const many = display.value.split(', ').length >= 3
@@ -104,7 +102,7 @@ function GameBoard({
     setConfirmingGiveUp(false); setShowAnswer(false)
   }, [puzzle.id])
 
-  // Reverts the "Are you sure?" confirmation on its own if left untouched.
+  // reverts confirm state if untouched
   useEffect(() => {
     if (!confirmingGiveUp) return
     const t = setTimeout(() => setConfirmingGiveUp(false), 3000)
@@ -116,7 +114,7 @@ function GameBoard({
       const tag = document.activeElement?.tagName
       const alreadyTyping = tag === 'INPUT' || tag === 'TEXTAREA'
       if (!submitted && !liePhaseComplete && !alreadyTyping && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // no-op: search box is hidden during lie phase
+        // no-op during lie phase
       }
     }
     document.addEventListener('keydown', handler)
@@ -152,10 +150,7 @@ function GameBoard({
   const handleQueryChange = e => {
     const val = e.target.value
     setQuery(val); setTabIdx(-1)
-    // Only forfeit the already-confirmed headshot when the name is actually
-    // changing — a duplicate/no-op change event (autofill re-firing, etc.)
-    // with the same text a player already picked must not silently wipe out
-    // a perfectly valid selection's photo.
+    // clear headshot only on real name change
     if (val !== selectedPlayer) onSelectPlayer(val)
     if (!val) { setResults([]); setDropdown(false); return }
     searchPlayers(val)
@@ -187,7 +182,7 @@ function GameBoard({
     }
   }
 
-  // Requires a second click on the "Are you sure?" state before actually giving up.
+  // needs second click to confirm
   const handleGiveUpClick = () => {
     if (confirmingGiveUp) { setConfirmingGiveUp(false); onGiveUp() }
     else setConfirmingGiveUp(true)
@@ -206,7 +201,7 @@ function GameBoard({
       await navigator.clipboard.writeText(text)
       copied = true
     } catch {
-      // Clipboard API unavailable/denied — fall back to the legacy copy command.
+      // fallback copy method
       const ta = document.createElement('textarea')
       ta.value = text
       ta.style.position = 'fixed'
@@ -392,16 +387,9 @@ function GameBoard({
               </button>
             </div>
           ) : (() => {
-            // A give-up has no real guess to show — fall back to the same
-            // treatment if there's simply no guess photo on hand at all
-            // (e.g. a freeform guess restored after a refresh), so the
-            // circle never shows the bare football placeholder over a wrong.
+            // give up has no real guess to show
             const isGiveUp = gaveUp || (!playerCorrect && !selectedPlayer.trim())
-            // Peeking at the answer (via "Show Correct Answer" below) swaps
-            // the circle over to the correct player too — that data is
-            // always reliably on hand from the server, unlike the guessed
-            // player's own headshot, which anonymous play never persists
-            // past a real page reload.
+            // peek toggle swaps to correct player
             const revealingCorrect = isGiveUp || (showAnswer && !playerCorrect)
             const showCorrect = playerCorrect || revealingCorrect
             const photoUrl = showCorrect ? puzzle.headshotUrl : selectedHeadshot

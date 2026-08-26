@@ -1,4 +1,4 @@
-// Miniature version of the puzzle wheel's 6-wedge layout, spinning as a loading indicator.
+// mini spinning wheel loading icon
 const R = 46, CX = 50, CY = 50, N = 6, DEG = 360 / N
 
 function wedgePath(i) {

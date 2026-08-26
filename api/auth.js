@@ -9,7 +9,7 @@ const COOKIE_NAME = 'session'
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
 
-// Comma-separated allowlist of admin emails for the puzzle scheduler.
+// admin email allowlist
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
@@ -17,7 +17,7 @@ function isAdminEmail(email) {
   return ADMIN_EMAILS.includes(String(email || '').toLowerCase())
 }
 
-// Creates the users/user_results tables if they don't exist yet. Safe to call on every boot.
+// creates tables if missing
 async function ensureAuthSchema(pool) {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -43,13 +43,11 @@ async function ensureAuthSchema(pool) {
     )
   `)
   await pool.query('CREATE INDEX IF NOT EXISTS idx_user_results_user ON user_results (user_id)')
-  // Custom display name a user can set, separate from their Google name.
+  // custom display name
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE')
-  // The player name a user actually typed, so a refresh can restore their finished board.
+  // typed player guess for refresh restore
   await pool.query('ALTER TABLE user_results ADD COLUMN IF NOT EXISTS player_guess TEXT')
-  // Server-tracked lie-guessing progress for a puzzle a user hasn't finished yet. This is
-  // the source of truth for attempt counts (never the client), and lets a mid-puzzle refresh
-  // restore exactly where the player left off instead of losing their progress.
+  // tracked lie guess progress
   await pool.query(`
     CREATE TABLE IF NOT EXISTS puzzle_progress (
       user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -63,7 +61,7 @@ async function ensureAuthSchema(pool) {
   `)
 }
 
-// Verifies a Google ID token and returns the caller's verified account details.
+// verifies google id token
 async function verifyGoogleCredential(credential) {
   if (!googleClient) throw new Error('Google sign-in is not configured on this server')
   const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID })
@@ -88,7 +86,7 @@ async function upsertUser(pool, { googleId, email, name, picture }) {
   return res.rows[0]
 }
 
-// Sets a user's custom display name. Throws a friendly error if it's taken.
+// sets custom username
 async function setUsername(pool, userId, username) {
   try {
     const res = await pool.query(
@@ -114,7 +112,7 @@ function verifySession(token) {
   }
 }
 
-// Frontend and API share a parent domain, so Lax works everywhere.
+// lax works for shared domain
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -123,14 +121,14 @@ const cookieOptions = {
   path: '/',
 }
 
-// Attaches req.userId if a valid session cookie is present, otherwise null. Never rejects.
+// attaches userId or null never rejects
 function optionalAuth(req, _res, next) {
   const token = req.cookies?.[COOKIE_NAME]
   req.userId = token ? verifySession(token) : null
   next()
 }
 
-// Same, but rejects with 401 if there's no valid session.
+// same but rejects with 401
 function requireAuth(req, res, next) {
   const token = req.cookies?.[COOKIE_NAME]
   const uid = token ? verifySession(token) : null

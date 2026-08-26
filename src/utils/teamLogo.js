@@ -1,4 +1,4 @@
-// Maps canonical team names (and historical aliases) -> /logos/*.png URL
+// maps team name to logo url
 const TEAM_SLUG = {
   'Arizona Cardinals':        'arizona-cardinals',
   'Atlanta Falcons':          'atlanta-falcons',

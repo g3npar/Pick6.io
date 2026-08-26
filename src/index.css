@@ -1,6 +1,6 @@
-/* Pick Six global styles, dark NFL-themed UI. */
+/* global styles */
 
-/* ── Design tokens ──────────────────────────────────────────────── */
+/* design tokens */
 :root {
   --bg:            #10121e;
   --bg-surface:    #181b2c;
@@ -25,7 +25,7 @@
   --radius-sm:     0px;
 }
 
-/* ── Reset & base ───────────────────────────────────────────────── */
+/* reset and base */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 button { cursor: pointer; font: inherit; border: none; background: none; }
 a      { text-decoration: none; color: inherit; }
@@ -43,16 +43,14 @@ body {
   line-height: 1.5;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────────── */
+/* scrollbar */
 ::-webkit-scrollbar              { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track        { background: transparent; }
 ::-webkit-scrollbar-thumb        { background: #2a2a2a; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover  { background: #3a3a3a; }
 
 
-/* ════════════════════════════════════════════════════════════════
-   HEADER
-   ════════════════════════════════════════════════════════════════ */
+/* header */
 .header {
   position: sticky;
   top: 0;
@@ -72,7 +70,7 @@ body {
   gap: 24px;
 }
 
-/* Logo */
+/* logo */
 .logo {
   display: flex;
   align-items: center;
@@ -128,7 +126,7 @@ body {
 .mobile-nav-item:hover  { background: #1a2035; color: var(--text); }
 .mobile-nav-item.active { color: #fff; background: var(--red); font-weight: 700; }
 
-/* Nav */
+/* nav */
 .nav {
   display: flex;
   align-items: center;
@@ -146,7 +144,7 @@ body {
 .nav-link.active { color: #fff; background: var(--red); font-weight: 700; border-left: 3px solid #fff; }
 .nav-divider { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
 
-/* Header right */
+/* header right */
 .header-right {
   display: flex;
   align-items: center;
@@ -193,9 +191,7 @@ body {
 }
 
 
-/* ════════════════════════════════════════════════════════════════
-   LAYOUT
-   ════════════════════════════════════════════════════════════════ */
+/* layout */
 .app { display: flex; flex-direction: column; min-height: 100vh; }
 
 .main-content {
@@ -235,7 +231,7 @@ body {
 }
 
 
-/* ── Mode toggle ─────────────────────────────────────────────────── */
+/* mode toggle */
 .mode-toggle {
   display: flex;
   justify-content: center;
@@ -262,7 +258,7 @@ body {
   border-color: var(--red);
 }
 
-/* ── Puzzle game ─────────────────────────────────────────────────────────────── */
+/* puzzle game */
 .puzzle-game {
   display: flex;
   flex-direction: column;
@@ -272,7 +268,7 @@ body {
   padding-top: 40px;
 }
 
-/* ── Attempt dots ────────────────────────────────────────────────── */
+/* attempt dots */
 .attempt-label {
   font-size: 10px;
   font-weight: 800;
@@ -358,7 +354,7 @@ body {
 .puzzle-subtitle strong { color: var(--text); }
 
 
-/* ── Circle nav row ──────────────────────────────────────────────── */
+/* circle nav row */
 .circle-nav-row {
   display: flex;
   align-items: center;
@@ -387,7 +383,7 @@ body {
   background: rgba(255, 34, 68, 0.1);
 }
 
-/* ── Pagination dots ─────────────────────────────────────────────── */
+/* pagination dots */
 .puzzle-dots {
   display: flex;
   justify-content: center;
@@ -457,7 +453,7 @@ body {
 .puzzle-dot.dot-wrong .dot-check { color: var(--red); }
 .puzzle-dot.dot-wrong.dot-active .dot-check { color: #fff; }
 
-/* ── Final results rows ──────────────────────────────────────────── */
+/* final results rows */
 .final-rows {
   display: flex;
   flex-direction: column;
@@ -495,7 +491,7 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* ── Circle game ─────────────────────────────────────────────────── */
+/* circle game */
 .circle-game {
   position: relative;
   width: 100%;
@@ -504,13 +500,12 @@ body {
   margin: 0 auto;
   overflow: visible;
   flex: 1;
-  /* Everything inside sizes itself off the circle's own rendered width (cqw),
-     not a fixed px value, so labels never wrap/overlap at a smaller circle size. */
+  /* sizes off circle width not fixed px */
   container-type: inline-size;
   container-name: wheel;
 }
 
-/* SVG fills the container */
+/* svg fills the container */
 .circle-svg {
   position: absolute;
   inset: 0;
@@ -519,8 +514,7 @@ body {
   overflow: visible;
 }
 
-/* Text labels. Sizes are clamp(min, cqw-scaled, max) against the circle's own
-   width, so they shrink and grow with it instead of wrapping/overlapping. */
+/* labels scale with circle width */
 .fact-label {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -604,8 +598,7 @@ body {
 .fl-sublabel--sm   { font-size: clamp(7px, 1.9cqw, 10px); margin-top: 0; }
 .fl-sublabel--true { color: rgba(0,240,128,0.85); }
 
-/* Lie reveal: a small crossed-out line for the wrong value, the real one
-   shown prominently beneath it at normal size. */
+/* crossed out wrong value above real one */
 .fl-correction {
   display: flex;
   flex-direction: column;
@@ -641,9 +634,7 @@ body {
 .fl-true  .fl-text,
 .fl-false .fl-text { color: var(--text); }
 
-/* Keeps the jersey number's red fill (against its white stroke) once a wedge
-   is revealed, otherwise the generic true/false text color above flattens
-   both to white and the stitched-number look disappears. */
+/* keeps jersey number red fill on reveal */
 .fl-hovered .fl-jersey,
 .fl-selected .fl-jersey,
 .fl-true  .fl-jersey,
@@ -668,7 +659,7 @@ body {
 .flv-true  { color: var(--green); border-color: var(--green); }
 .flv-false { color: #ef4444;      border-color: #ef4444; }
 
-/* Center circle */
+/* center circle */
 .circle-center {
   position: absolute;
   left: 50%;
@@ -731,7 +722,7 @@ body {
   cursor: not-allowed;
 }
 
-/* ── Lie explanation ─────────────────────────────────────────────── */
+/* lie explanation */
 .lie-explanation {
   font-size: 13px;
   color: var(--text-sec);
@@ -747,7 +738,7 @@ body {
   color: #ef4444;
 }
 
-/* ── Player search input ─────────────────────────────────────────── */
+/* player search input */
 .search-wrap {
   position: relative;
 }
@@ -793,7 +784,7 @@ body {
 }
 .clear-search-btn:hover { color: var(--text); }
 
-/* Dropdown */
+/* dropdown */
 .player-dropdown {
   position: absolute;
   top: calc(100% + 2px);
@@ -851,10 +842,7 @@ body {
 }
 .no-results:hover { background: none; }
 
-/* Headshot reveal (replaces the name box in the center circle). The badge
-   needs to sit half-on/half-off the outer rim (see below), so clipping is
-   done one level in on `-inner` rather than here, keeping this outer layer
-   `overflow: visible` for the badge. */
+/* headshot reveal overflow visible for badge */
 .player-reveal-photo {
   position: relative;
   margin: -12px;
@@ -865,9 +853,7 @@ body {
   justify-content: center;
 }
 
-/* Circular clip for the label banner + photo. Because this box is a square,
-   width-based percentages (the CSS spec's rule for padding/inset, even on
-   top/bottom) come out equal to the same share of its height too. */
+/* circular clip for label banner and photo */
 .player-reveal-photo-inner {
   position: relative;
   width: 100%;
@@ -876,10 +862,7 @@ body {
   overflow: hidden;
 }
 
-/* A full-width banner, not a floating chip — its rectangular corners get
-   clipped into the circle's curve by the parent's overflow:hidden, and it's
-   sized to fully cover the gap left by the bottom-anchored, shrunk photo
-   below rather than floating over it. */
+/* full width banner covers the photo gap */
 .reveal-guess-label {
   position: absolute;
   top: 0;
@@ -913,10 +896,7 @@ body {
 .reveal-guess-label--correct { color: var(--green); }
 .reveal-guess-label--wrong   { color: var(--red); }
 
-/* No border-radius: the source photo is already a square (server-side
-   Cloudinary crop), so a circular mask here would only crop it further by
-   eating its corners. Sized to 78% and bottom-anchored so those square
-   corners land just inside the rim's curve on their own — no clip needed. */
+/* no border radius photo is already square */
 .reveal-headshot {
   position: absolute;
   bottom: 0;
@@ -934,9 +914,7 @@ body {
   font-size: 22px;
 }
 
-/* Sits exactly on the inner circle's rim, at the same angle (-30deg) as one
-   of the wheel's 6 spoke dividers, so the badge lands right on the point
-   where the rim crosses a wedge boundary instead of floating inside it. */
+/* badge sits on rim at spoke angle */
 .reveal-badge {
   position: absolute;
   top: calc(50% + 50% * sin(-30deg));
@@ -956,7 +934,7 @@ body {
 .reveal-badge--correct { background: var(--green); color: #0d0d14; }
 .reveal-badge--wrong   { background: var(--red);   color: #fff; }
 
-/* Results breakdown table (right of the wheel, once submitted) */
+/* results breakdown table */
 .result-table {
   width: 100%;
   display: flex;
@@ -1036,7 +1014,7 @@ body {
 }
 .result-table-reveal-btn:hover { color: var(--text); border-color: var(--text-sec); }
 
-/* ── Submit result (post-submission inline) ──────────────────────── */
+/* submit result inline */
 .submit-result-row {
   display: flex;
   gap: 10px;
@@ -1067,7 +1045,7 @@ body {
 .src-pts   { font-size: 12px; font-weight: 700; opacity: 0.75; margin-left: 2px; }
 .src-sub   { font-size: 10px; font-weight: 600; opacity: 0.65; letter-spacing: 0.02em; }
 
-/* ── Submit ──────────────────────────────────────────────────────── */
+/* submit */
 .submit-section {
   display: flex;
   justify-content: center;
@@ -1174,7 +1152,7 @@ body {
 }
 .submit-btn.submit-btn--green:not(:disabled):hover { background: linear-gradient(135deg, #00e88c 0%, #00a85f 100%); }
 
-/* ── Custom player puzzle form ───────────────────────────────────── */
+/* custom player puzzle form */
 .custom-player-form {
   display: flex;
   gap: 6px;
@@ -1225,7 +1203,7 @@ body {
   text-transform: none;
 }
 
-/* ── Results overlay + card ─────────────────────────────────────── */
+/* results overlay and card */
 .results-overlay {
   position: fixed;
   inset: 0;
@@ -1334,9 +1312,7 @@ body {
 }
 .results-reveal strong { color: var(--text); }
 
-/* ════════════════════════════════════════════════════════════════
-   HOW TO PLAY
-   ════════════════════════════════════════════════════════════════ */
+/* how to play */
 .htp-page {
   max-width: 680px;
   margin: 0 auto;
@@ -1459,9 +1435,7 @@ body {
 }
 .htp-tip-list strong { color: var(--text); }
 
-/* ════════════════════════════════════════════════════════════════
-   LEGAL PAGES (Privacy / Terms)
-   ════════════════════════════════════════════════════════════════ */
+/* legal pages */
 .legal-meta {
   font-size: 12px;
   color: var(--text-muted);
@@ -1498,9 +1472,7 @@ body {
 .legal-section strong { color: var(--text); }
 .legal-section a { color: var(--red); text-decoration: underline; }
 
-/* ════════════════════════════════════════════════════════════════
-   LEADERBOARD / ARCHIVE
-   ════════════════════════════════════════════════════════════════ */
+/* leaderboard and archive */
 .board-empty {
   text-align: center;
   font-size: 13px;
@@ -1577,9 +1549,7 @@ kbd {
   color: var(--text);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ADMIN
-   ════════════════════════════════════════════════════════════════ */
+/* admin */
 .admin-row { cursor: pointer; }
 .admin-row:hover { border-color: var(--border-bright); }
 .admin-row--active { border-color: var(--red); }
@@ -1616,9 +1586,7 @@ kbd {
 }
 .admin-search { position: relative; }
 
-/* ════════════════════════════════════════════════════════════════
-   COMING SOON
-   ════════════════════════════════════════════════════════════════ */
+/* coming soon */
 .coming-soon-page {
   display: flex;
   align-items: center;
@@ -1637,9 +1605,7 @@ kbd {
 .coming-soon-title { font-size: 22px; font-weight: 900; color: var(--text); }
 .coming-soon-sub   { font-size: 13px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
 
-/* ════════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════════════════════════ */
+/* responsive */
 @media (max-width: 600px) {
   .puzzle-title  { font-size: 22px; }
   .results-card  { padding: 24px 20px; }
