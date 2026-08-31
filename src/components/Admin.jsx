@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { formatDate } from '../utils/formatDate'
 import WheelSpinner from './WheelSpinner'
+import AdminPlayTest from './AdminPlayTest'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -25,6 +26,7 @@ export default function Admin() {
   const [query, setQuery]   = useState('')
   const [results, setResults] = useState([])
   const [revealed, setRevealed] = useState(new Set())
+  const [playing, setPlaying] = useState(false)
 
   const revealDate = (e, date) => {
     e.stopPropagation()
@@ -43,13 +45,13 @@ export default function Admin() {
   const selectDate = row => {
     setSelected(row.date)
     setCandidate(row.puzzle)
-    setQuery(''); setResults([])
+    setQuery(''); setResults([]); setPlaying(false)
   }
 
   const shuffle = () => {
     setBusy(true)
     postJSON('/admin/preview', { date: selected, mode: 'shuffle' })
-      .then(d => setCandidate(d.puzzle))
+      .then(d => { setCandidate(d.puzzle); setPlaying(false) })
       .catch(e => alert(e.message))
       .finally(() => setBusy(false))
   }
@@ -111,7 +113,11 @@ export default function Admin() {
           </ul>
         )}
 
-        {selected && candidate && (
+        {selected && candidate && playing && (
+          <AdminPlayTest puzzle={candidate} date={selected} onClose={() => setPlaying(false)} />
+        )}
+
+        {selected && candidate && !playing && (
           <div className="admin-detail">
             <h2 className="htp-section-title">{formatDate(selected)}</h2>
             <p className="admin-player-name">{candidate.playerName} · {candidate.position}</p>
@@ -125,6 +131,7 @@ export default function Admin() {
 
             <div className="admin-actions">
               <button className="header-icon-btn" disabled={busy} onClick={shuffle}>Shuffle</button>
+              <button className="header-icon-btn" disabled={busy} onClick={() => setPlaying(true)}>Play</button>
               <button className="submit-btn submit-btn--green" disabled={busy} onClick={setPuzzle} style={{ flex: 1 }}>
                 Set This Puzzle
               </button>
