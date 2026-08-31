@@ -58,6 +58,9 @@ export function parseFact(text) {
   m = text.match(/Wears jersey number (\d+)/)
   if (m) return { label: 'JERSEY NO.', value: m[1], sublabel: null, isJersey: true }
 
+  m = text.match(/Has the initials "(.+)"/)
+  if (m) return { label: 'INITIALS', value: m[1], sublabel: null }
+
   m = text.match(/Played college football at (.+)/)
   if (m) return { label: 'COLLEGE', value: m[1], sublabel: null, isCollege: true }
 

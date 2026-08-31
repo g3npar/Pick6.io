@@ -147,6 +147,31 @@ function jerseyFact(p) {
   }
 }
 
+function initialsOf(name) {
+  return name.trim().split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
+}
+
+// lie is a real teammate's initials (same team, same season, same position)
+// skipped entirely if no such teammate exists rather than loosening the match
+function initialsFact(p, teammateNames) {
+  if (!teammateNames.length) return null
+  const realInitials = initialsOf(p.name)
+  const candidates = teammateNames.filter(n => initialsOf(n) !== realInitials)
+  if (!candidates.length) return null
+  return {
+    cat: 'initials',
+    text: `Has the initials "${realInitials}"`,
+    makeLie(rng) {
+      const other = candidates[Math.floor(rng() * candidates.length)]
+      const fake  = initialsOf(other)
+      return {
+        text: `Has the initials "${fake}"`,
+        explanation: `${p.name}'s initials are ${realInitials}, not ${fake}.`,
+      }
+    },
+  }
+}
+
 const roundForPick = pick => Math.min(7, Math.max(1, Math.ceil(pick / 32)))
 
 function draftFact(p) {
@@ -498,7 +523,7 @@ function csvAwardFact(p, csvAwards) {
 }
 
 // assembles fact pool
-function buildFactPool(player, seasons, dbAwards, rng) {
+function buildFactPool(player, seasons, dbAwards, rng, teammateNames) {
   // csv awards
   const csvAwards = lookupAwards(player.name)
 
@@ -523,6 +548,7 @@ function buildFactPool(player, seasons, dbAwards, rng) {
     collegeFact(player),
     draftFact(player),
     jerseyFact(player),
+    initialsFact(player, teammateNames),
     allPro  > 0 ? allProFact(player, allPro)     : null,
     proBowl > 0 ? proBowlFact(player, proBowl)   : null,
     superBowlFact(player, sbWins),
@@ -566,9 +592,9 @@ function warmHeadshot(url) {
 }
 
 // builds one puzzle
-function buildPuzzle(id, player, seasons, awards, seed) {
+function buildPuzzle(id, player, seasons, awards, seed, teammateNames = []) {
   const rng  = seedRng(seed)
-  const pool = buildFactPool(player, seasons, awards, rng)
+  const pool = buildFactPool(player, seasons, awards, rng, teammateNames)
   if (pool.length < 6) return null
 
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
@@ -638,13 +664,33 @@ async function fetchEligibleIds() {
   return { era1, era2, era3 }
 }
 
+const MULTI_TEAM_CODE = /^\d+TM$/
+
+// other players on the same real team, same season, same position — the lie
+// source for initialsFact. Skipped (empty array) if the player's most recent
+// season has no single real team on record.
+async function fetchTeammateNames(player, seasons) {
+  const latest = [...seasons].reverse().find(s => s.team && !MULTI_TEAM_CODE.test(s.team))
+  if (!latest) return []
+  const res = await pool.query(
+    `SELECT DISTINCT p.name FROM players p
+     JOIN player_seasons ps ON ps.player_id = p.id
+     WHERE ps.team = $1 AND ps.season_year = $2 AND p.position = $3 AND p.id != $4`,
+    [latest.team, latest.season_year, player.position, player.id]
+  )
+  return res.rows.map(r => r.name)
+}
+
 async function fetchPlayerData(playerId) {
   const [pRes, sRes, aRes] = await Promise.all([
     pool.query('SELECT * FROM players       WHERE id        = $1', [playerId]),
     pool.query('SELECT * FROM player_seasons WHERE player_id = $1 ORDER BY season_year', [playerId]),
     pool.query('SELECT * FROM player_awards  WHERE player_id = $1', [playerId]),
   ])
-  return { player: pRes.rows[0], seasons: sRes.rows, awards: aRes.rows }
+  const player  = pRes.rows[0]
+  const seasons = sRes.rows
+  const teammateNames = await fetchTeammateNames(player, seasons)
+  return { player, seasons, awards: aRes.rows, teammateNames }
 }
 
 async function generatePlayerPuzzle(name, draftYear) {
@@ -663,8 +709,8 @@ async function generatePlayerPuzzle(name, draftYear) {
     )
   }
   if (!res.rows.length) throw new Error(`Player not found: ${name}`)
-  const { player, seasons, awards } = await fetchPlayerData(res.rows[0].id)
-  const puzzle = buildPuzzle(1, player, seasons, awards, Date.now())
+  const { player, seasons, awards, teammateNames } = await fetchPlayerData(res.rows[0].id)
+  const puzzle = buildPuzzle(1, player, seasons, awards, Date.now(), teammateNames)
   if (!puzzle) throw new Error(`Could not build puzzle for ${name} (insufficient facts)`)
   return puzzle
 }
@@ -700,15 +746,15 @@ async function pickOneFromBucket(bucket, rng, seed, pid, attempted, recentlyUsed
     if (attempted.has(id)) continue
     if (recentlyUsed.has(id)) { skipped.push(id); continue }
     attempted.add(id)
-    const { player, seasons, awards } = await fetchPlayerData(id)
-    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid)
+    const { player, seasons, awards, teammateNames } = await fetchPlayerData(id)
+    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, teammateNames)
     if (puzzle) return puzzle
   }
   // pool exhausted under the cooldown — allow a recent repeat rather than fail outright
   for (const id of skipped) {
     attempted.add(id)
-    const { player, seasons, awards } = await fetchPlayerData(id)
-    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid)
+    const { player, seasons, awards, teammateNames } = await fetchPlayerData(id)
+    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, teammateNames)
     if (puzzle) return puzzle
   }
   return null
