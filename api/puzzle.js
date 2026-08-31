@@ -148,7 +148,8 @@ function jerseyFact(p) {
 }
 
 function initialsOf(name) {
-  return name.trim().split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
+  const stripped = name.trim().replace(/\s+(jr|sr|ii|iii|iv|v)\.?$/i, '')
+  return stripped.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
 }
 
 // lie uses a real teammates initials
