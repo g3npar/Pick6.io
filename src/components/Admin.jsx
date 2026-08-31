@@ -81,6 +81,12 @@ export default function Admin() {
       .finally(() => setBusy(false))
   }
 
+  // rendered full width, outside htp-page's narrow doc layout, since the
+  // wheel needs its normal puzzle-game width, not a 680px capped column
+  if (selected && candidate && playing) {
+    return <AdminPlayTest puzzle={candidate} date={selected} onClose={() => setPlaying(false)} />
+  }
+
   return (
     <div className="htp-page">
       <div className="htp-card">
@@ -113,11 +119,7 @@ export default function Admin() {
           </ul>
         )}
 
-        {selected && candidate && playing && (
-          <AdminPlayTest puzzle={candidate} date={selected} onClose={() => setPlaying(false)} />
-        )}
-
-        {selected && candidate && !playing && (
+        {selected && candidate && (
           <div className="admin-detail">
             <h2 className="htp-section-title">{formatDate(selected)}</h2>
             <p className="admin-player-name">{candidate.playerName} · {candidate.position}</p>
