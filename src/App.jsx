@@ -386,6 +386,7 @@ function App() {
           gaveUp={gaveUp}
           onSelectLie={id => !liePhaseComplete && updateCurrent({ lieId: id })}
           onSelectPlayer={(name, headshot) => !submitted && updateCurrent({ player: name, headshot: headshot ?? null })}
+          onBackfillHeadshot={headshot => updateCurrent({ headshot })}
           onGuessLie={handleGuessLie}
           onSubmit={handleSubmit}
           onGiveUp={handleGiveUp}

@@ -151,8 +151,7 @@ function initialsOf(name) {
   return name.trim().split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
 }
 
-// lie is a real teammate's initials (same team, same season, same position)
-// skipped entirely if no such teammate exists rather than loosening the match
+// lie uses a real teammates initials
 function initialsFact(p, teammateNames) {
   if (!teammateNames.length) return null
   const realInitials = initialsOf(p.name)
@@ -583,9 +582,7 @@ function headshotThumb(url) {
   return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
 }
 
-// fires the transform once server side so the CDN has it cached by the time
-// any real player loads this puzzle's reveal photo — a cold hit here costs a
-// few seconds, invisible either way since nothing is sent to a client
+// pre warms the cdn cache
 function warmHeadshot(url) {
   if (!url) return
   fetch(url).catch(() => {})
@@ -666,9 +663,7 @@ async function fetchEligibleIds() {
 
 const MULTI_TEAM_CODE = /^\d+TM$/
 
-// other players on the same real team, same season, same position — the lie
-// source for initialsFact. Skipped (empty array) if the player's most recent
-// season has no single real team on record.
+// teammates same team same season same position
 async function fetchTeammateNames(player, seasons) {
   const latest = [...seasons].reverse().find(s => s.team && !MULTI_TEAM_CODE.test(s.team))
   if (!latest) return []
@@ -750,7 +745,7 @@ async function pickOneFromBucket(bucket, rng, seed, pid, attempted, recentlyUsed
     const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, teammateNames)
     if (puzzle) return puzzle
   }
-  // pool exhausted under the cooldown — allow a recent repeat rather than fail outright
+  // fallback allow a recent repeat
   for (const id of skipped) {
     attempted.add(id)
     const { player, seasons, awards, teammateNames } = await fetchPlayerData(id)
@@ -839,11 +834,7 @@ async function ensurePuzzleSchema(dbPool) {
       created_at  TIMESTAMPTZ DEFAULT now()
     )
   `)
-  // player_seasons is joined by player_id in every eligible-player query
-  // (fetchEligibleIds, fetchCurrentPlayerIds, ensureCurrentPlayers) but has
-  // no index anywhere in this codebase or the data loader scripts, unlike
-  // player_awards which already has one — likely forcing a sequential scan
-  // on every cache-miss generation.
+  // missing index on player_seasons player_id
   await dbPool.query('CREATE INDEX IF NOT EXISTS idx_player_seasons_player ON player_seasons (player_id)')
 }
 

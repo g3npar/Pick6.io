@@ -80,7 +80,7 @@ function GameBoard({
   selectedLieId, selectedPlayer, selectedHeadshot,
   lieFound, lieAttempts, confirmedTrueIds, liePhaseComplete,
   submitted, playerCorrect, gaveUp,
-  onSelectLie, onSelectPlayer,
+  onSelectLie, onSelectPlayer, onBackfillHeadshot,
   onGuessLie, onSubmit, onGiveUp,
   currentScore,
 }) {
@@ -128,6 +128,21 @@ function GameBoard({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // backfills a missing headshot from an old bug
+  useEffect(() => {
+    if (!submitted || playerCorrect || gaveUp || selectedHeadshot || !selectedPlayer.trim()) return
+    let cancelled = false
+    fetch(`${API}/players/search?${new URLSearchParams({ q: selectedPlayer })}`)
+      .then(r => r.json())
+      .then(matches => {
+        if (cancelled) return
+        const exact = matches.find(m => m.name.toLowerCase() === selectedPlayer.trim().toLowerCase())
+        if (exact?.headshot_url) onBackfillHeadshot?.(exact.headshot_url)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [submitted, playerCorrect, gaveUp, selectedPlayer, selectedHeadshot])
 
   const searchPlayers = useCallback((q) => {
     clearTimeout(debounceRef.current)
