@@ -1,5 +1,6 @@
 require('dotenv').config({ path: '../.env' })
 const express      = require('express')
+const compression  = require('compression')
 const cors         = require('cors')
 const helmet       = require('helmet')
 const rateLimit    = require('express-rate-limit')
@@ -18,6 +19,7 @@ const {
 const app = express()
 
 app.set('trust proxy', 1)
+app.use(compression())
 
 app.use(helmet({
   contentSecurityPolicy: false,   // API-only; no HTML served

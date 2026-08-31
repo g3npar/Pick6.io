@@ -557,6 +557,14 @@ function headshotThumb(url) {
   return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
 }
 
+// fires the transform once server side so the CDN has it cached by the time
+// any real player loads this puzzle's reveal photo — a cold hit here costs a
+// few seconds, invisible either way since nothing is sent to a client
+function warmHeadshot(url) {
+  if (!url) return
+  fetch(url).catch(() => {})
+}
+
 // builds one puzzle
 function buildPuzzle(id, player, seasons, awards, seed) {
   const rng  = seedRng(seed)
@@ -666,10 +674,38 @@ let _cache = null   // { date: 'YYYY-MM-DD', puzzles: [...] }
 
 const EPOCH = new Date('2026-01-01')
 
-async function pickOneFromBucket(bucket, rng, seed, pid, attempted) {
+// avoid repeating a puzzle subject within this many weeks of another one
+const RECENT_PLAYER_WEEKS = 4
+
+// players already featured within the window before refDateStr
+async function fetchRecentlyUsedPlayerIds(refDateStr, weeks = RECENT_PLAYER_WEEKS) {
+  const cutoff = new Date(refDateStr)
+  cutoff.setDate(cutoff.getDate() - weeks * 7)
+  const cutoffStr = cutoff.toLocaleDateString('en-CA')
+  const res = await pool.query(
+    `SELECT DISTINCT puzzle->>'playerName' AS name FROM daily_puzzles
+     WHERE puzzle_date >= $1 AND puzzle_date < $2`,
+    [cutoffStr, refDateStr]
+  )
+  const names = res.rows.map(r => r.name).filter(Boolean).map(n => n.toLowerCase())
+  if (!names.length) return new Set()
+  const idsRes = await pool.query('SELECT id FROM players WHERE LOWER(name) = ANY($1::text[])', [names])
+  return new Set(idsRes.rows.map(r => r.id))
+}
+
+async function pickOneFromBucket(bucket, rng, seed, pid, attempted, recentlyUsed = new Set()) {
   const shuffled = seededShuffle(bucket, rng)
+  const skipped = []
   for (const id of shuffled) {
     if (attempted.has(id)) continue
+    if (recentlyUsed.has(id)) { skipped.push(id); continue }
+    attempted.add(id)
+    const { player, seasons, awards } = await fetchPlayerData(id)
+    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid)
+    if (puzzle) return puzzle
+  }
+  // pool exhausted under the cooldown — allow a recent repeat rather than fail outright
+  for (const id of skipped) {
     attempted.add(id)
     const { player, seasons, awards } = await fetchPlayerData(id)
     const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid)
@@ -691,9 +727,10 @@ async function getDailyPuzzles() {
   }
 
   const attempted = new Set()
-  const p1 = await pickOneFromBucket(era1, seedRng(daySeed + 1), daySeed, 1, attempted)
-  const p2 = await pickOneFromBucket(era2, seedRng(daySeed + 2), daySeed, 2, attempted)
-  const p3 = await pickOneFromBucket(era3, seedRng(daySeed + 3), daySeed, 3, attempted)
+  const recentlyUsed = await fetchRecentlyUsedPlayerIds(today)
+  const p1 = await pickOneFromBucket(era1, seedRng(daySeed + 1), daySeed, 1, attempted, recentlyUsed)
+  const p2 = await pickOneFromBucket(era2, seedRng(daySeed + 2), daySeed, 2, attempted, recentlyUsed)
+  const p3 = await pickOneFromBucket(era3, seedRng(daySeed + 3), daySeed, 3, attempted, recentlyUsed)
   const puzzles = [p1, p2, p3].filter(Boolean)
 
   if (puzzles.length < 3) {
@@ -756,6 +793,12 @@ async function ensurePuzzleSchema(dbPool) {
       created_at  TIMESTAMPTZ DEFAULT now()
     )
   `)
+  // player_seasons is joined by player_id in every eligible-player query
+  // (fetchEligibleIds, fetchCurrentPlayerIds, ensureCurrentPlayers) but has
+  // no index anywhere in this codebase or the data loader scripts, unlike
+  // player_awards which already has one — likely forcing a sequential scan
+  // on every cache-miss generation.
+  await dbPool.query('CREATE INDEX IF NOT EXISTS idx_player_seasons_player ON player_seasons (player_id)')
 }
 
 async function buildAndStoreDailyPuzzle(dateStr) {
@@ -764,13 +807,15 @@ async function buildAndStoreDailyPuzzle(dateStr) {
   if (!ids.length) throw new Error('No current eligible players found')
 
   const attempted = new Set()
-  const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted)
+  const recentlyUsed = await fetchRecentlyUsedPlayerIds(dateStr)
+  const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted, recentlyUsed)
   if (!puzzle) throw new Error('Could not build current player puzzle')
 
   await pool.query(
     'INSERT INTO daily_puzzles (puzzle_date, puzzle) VALUES ($1, $2) ON CONFLICT (puzzle_date) DO NOTHING',
     [dateStr, puzzle]
   )
+  warmHeadshot(puzzle.headshotUrl)
   return puzzle
 }
 
@@ -781,7 +826,8 @@ async function previewDailyPuzzle(dateStr) {
   const seed      = Math.floor((new Date(dateStr) - EPOCH) / 86400000) + 9999
   const ids       = await fetchCurrentPlayerIds()
   if (!ids.length) throw new Error('No current eligible players found')
-  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+  const recentlyUsed = await fetchRecentlyUsedPlayerIds(dateStr)
+  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set(), recentlyUsed)
   if (!puzzle) throw new Error('Could not build a puzzle for that date')
   return puzzle
 }
@@ -791,7 +837,8 @@ async function shuffleDailyPuzzle(dateStr) {
   const seed = Date.now()
   const ids  = await fetchCurrentPlayerIds()
   if (!ids.length) throw new Error('No current eligible players found')
-  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+  const recentlyUsed = await fetchRecentlyUsedPlayerIds(dateStr)
+  const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set(), recentlyUsed)
   if (!puzzle) throw new Error('Could not build a puzzle for that date')
   return puzzle
 }
@@ -804,6 +851,7 @@ async function setScheduledPuzzle(dateStr, puzzle) {
      ON CONFLICT (puzzle_date) DO UPDATE SET puzzle = EXCLUDED.puzzle`,
     [dateStr, puzzle]
   )
+  warmHeadshot(puzzle.headshotUrl)
 }
 
 // dates with a puzzle already locked
@@ -834,7 +882,8 @@ async function previewUpcomingDates(dates) {
     }
     try {
       const seed = Math.floor((new Date(dateStr) - EPOCH) / 86400000) + 9999
-      const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set())
+      const recentlyUsed = await fetchRecentlyUsedPlayerIds(dateStr)
+      const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, new Set(), recentlyUsed)
       if (!puzzle) throw new Error('no candidate')
       results.push({ date: dateStr, scheduled: false, puzzle })
     } catch {
@@ -852,7 +901,8 @@ async function getDailyCurrentPuzzle(fresh = false) {
     const ids       = await fetchCurrentPlayerIds()
     if (!ids.length) throw new Error('No current eligible players found')
     const attempted = new Set()
-    const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted)
+    const recentlyUsed = await fetchRecentlyUsedPlayerIds(today)
+    const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted, recentlyUsed)
     if (!puzzle) throw new Error('Could not build current player puzzle')
     return puzzle
   }
@@ -888,9 +938,10 @@ async function generateFreshPuzzles() {  const seed = Date.now()
   }
 
   const attempted = new Set()
-  const p1 = await pickOneFromBucket(era1, seedRng(seed + 1), seed, 1, attempted)
-  const p2 = await pickOneFromBucket(era2, seedRng(seed + 2), seed, 2, attempted)
-  const p3 = await pickOneFromBucket(era3, seedRng(seed + 3), seed, 3, attempted)
+  const recentlyUsed = await fetchRecentlyUsedPlayerIds(todayDateStr())
+  const p1 = await pickOneFromBucket(era1, seedRng(seed + 1), seed, 1, attempted, recentlyUsed)
+  const p2 = await pickOneFromBucket(era2, seedRng(seed + 2), seed, 2, attempted, recentlyUsed)
+  const p3 = await pickOneFromBucket(era3, seedRng(seed + 3), seed, 3, attempted, recentlyUsed)
   const puzzles = [p1, p2, p3].filter(Boolean)
 
   if (puzzles.length < 3) {
