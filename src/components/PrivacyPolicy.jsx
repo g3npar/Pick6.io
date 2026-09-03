@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Contact</h2>
-          <p>Questions about this policy or your data: <a href="mailto:parinraizada@gmail.com">parinraizada@gmail.com</a></p>
+          <p>Questions about this policy or your data: <a href="mailto:contact@pick6.io">contact@pick6.io</a></p>
         </div>
 
       </div>

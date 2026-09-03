@@ -53,7 +53,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Contact</h2>
-          <p>Questions about these terms: <a href="mailto:parinraizada@gmail.com">parinraizada@gmail.com</a></p>
+          <p>Questions about these terms: <a href="mailto:contact@pick6.io">contact@pick6.io</a></p>
         </div>
 
       </div>

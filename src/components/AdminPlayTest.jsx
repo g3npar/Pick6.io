@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import GameBoard from './GameBoard'
 
-// plays a puzzle for real using GameBoard, but entirely in local state.
-// guessing the lie and submitting a player never hit the server, so
-// finishing this can never write a result or touch puzzle progress.
 export default function AdminPlayTest({ puzzle, date, onClose }) {
   const [state, setState] = useState({})
   const update = u => setState(prev => ({ ...prev, ...u }))

@@ -172,20 +172,43 @@ function initialsFact(p, teammateNames) {
   }
 }
 
-const roundForPick = pick => Math.min(7, Math.max(1, Math.ceil(pick / 32)))
-
 function draftFact(p) {
   if (!p.draft_number || !p.draft_year || !p.draft_round) return null
   return {
     cat: 'draft',
     text: `Was the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}) in the ${p.draft_year} NFL Draft`,
     makeLie(rng) {
-      const delta = 3 + Math.floor(rng() * 12)
-      const sign  = rng() < 0.5 ? 1 : -1
-      const fake  = Math.max(1, p.draft_number + sign * delta)
+      // pick number only fakeable for round 1, where exact order is well known
+      // round and year can always be faked, at least one always changes
+      const isFirstRound = p.draft_round === 1
+      let changeRound = rng() < 0.4
+      let changeYear  = rng() < 0.4
+      let changePick  = isFirstRound && rng() < 0.4
+      if (!changeRound && !changeYear && !changePick) {
+        if (isFirstRound) changePick = true
+        else changeRound = true
+      }
+
+      let fakeRound = p.draft_round
+      if (changeRound) {
+        do { fakeRound = 1 + Math.floor(rng() * 7) } while (fakeRound === p.draft_round)
+      }
+
+      let fakeYear = p.draft_year
+      if (changeYear) {
+        const delta = 1 + Math.floor(rng() * 4)
+        fakeYear = rng() < 0.5 ? p.draft_year + delta : p.draft_year - delta
+      }
+
+      let fakePick = p.draft_number
+      if (changePick) {
+        // stays within round 1 so the pick alone is what's being tested
+        do { fakePick = 1 + Math.floor(rng() * 32) } while (fakePick === p.draft_number)
+      }
+
       return {
-        text: `Was the ${ordinal(fake)} overall pick (Round ${roundForPick(fake)}) in the ${p.draft_year} NFL Draft`,
-        explanation: `${p.name} was actually the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}).`,
+        text: `Was the ${ordinal(fakePick)} overall pick (Round ${fakeRound}) in the ${fakeYear} NFL Draft`,
+        explanation: `${p.name} was the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}) in the ${p.draft_year} NFL Draft.`,
       }
     },
   }
@@ -231,18 +254,7 @@ function proBowlFact(p, count) {
 }
 
 function superBowlFact(p, sbWins) {
-  if (sbWins === 0) {
-    return {
-      cat: 'superbowl',
-      text: `Never won a Super Bowl championship`,
-      makeLie(_rng) {
-        return {
-          text: `Won a Super Bowl championship`,
-          explanation: `${p.name} never won a Super Bowl.`,
-        }
-      },
-    }
-  }
+  if (sbWins === 0) return null
   const pl = sbWins > 1 ? 's' : ''
   return {
     cat: 'superbowl',
