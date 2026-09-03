@@ -27,6 +27,8 @@ export default function Admin() {
   const [results, setResults] = useState([])
   const [revealed, setRevealed] = useState(new Set())
   const [playing, setPlaying] = useState(false)
+  const [alternatives, setAlternatives] = useState(null)
+  const [swapFor, setSwapFor] = useState(null)
 
   const revealDate = (e, date) => {
     e.stopPropagation()
@@ -45,13 +47,13 @@ export default function Admin() {
   const selectDate = row => {
     setSelected(row.date)
     setCandidate(row.puzzle)
-    setQuery(''); setResults([]); setPlaying(false)
+    setQuery(''); setResults([]); setPlaying(false); closeSwap()
   }
 
   const shuffle = () => {
     setBusy(true)
     postJSON('/admin/preview', { date: selected, mode: 'shuffle' })
-      .then(d => { setCandidate(d.puzzle); setPlaying(false) })
+      .then(d => { setCandidate(d.puzzle); setPlaying(false); closeSwap() })
       .catch(e => alert(e.message))
       .finally(() => setBusy(false))
   }
@@ -68,7 +70,7 @@ export default function Admin() {
   const pickPlayer = item => {
     setBusy(true)
     postJSON('/admin/preview', { date: selected, mode: 'player', name: item.name, draftYear: item.draft_year })
-      .then(d => { setCandidate(d.puzzle); setQuery(item.name); setResults([]) })
+      .then(d => { setCandidate(d.puzzle); setQuery(item.name); setResults([]); closeSwap() })
       .catch(e => alert(e.message))
       .finally(() => setBusy(false))
   }
@@ -77,6 +79,25 @@ export default function Admin() {
     setBusy(true)
     postJSON('/admin/set', { date: selected, puzzle: candidate })
       .then(() => { load(); setSelected(null); setCandidate(null) })
+      .catch(e => alert(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  const closeSwap = () => { setSwapFor(null); setAlternatives(null) }
+
+  const openSwap = factId => {
+    if (swapFor === factId) return closeSwap()
+    setSwapFor(factId)
+    setAlternatives(null)
+    postJSON('/admin/preview/alternatives', { candidate })
+      .then(d => setAlternatives(d.alternatives))
+      .catch(e => { alert(e.message); closeSwap() })
+  }
+
+  const swapFact = (factId, replacementText) => {
+    setBusy(true)
+    postJSON('/admin/preview/swap', { candidate, factId, replacementText })
+      .then(d => { setCandidate(d.puzzle); closeSwap() })
       .catch(e => alert(e.message))
       .finally(() => setBusy(false))
   }
@@ -137,9 +158,26 @@ export default function Admin() {
                 <li
                   key={f.id}
                   className={`admin-fact-pick${f.id === candidate.falseFactId ? ' admin-fact--lie' : ''}`}
-                  onClick={() => !busy && selectLie(f.id)}
                 >
-                  {f.id === candidate.falseFactId ? '✗' : '✓'} {f.text}
+                  <div className="admin-fact-row" onClick={() => !busy && selectLie(f.id)}>
+                    <span>{f.id === candidate.falseFactId ? '✗' : '✓'} {f.text}</span>
+                    <button
+                      className="admin-swap-btn"
+                      disabled={busy}
+                      onClick={e => { e.stopPropagation(); openSwap(f.id) }}
+                    >
+                      Swap
+                    </button>
+                  </div>
+                  {swapFor === f.id && (
+                    <ul className="admin-swap-menu">
+                      {!alternatives && <li className="admin-swap-empty">Loading…</li>}
+                      {alternatives?.length === 0 && <li className="admin-swap-empty">No other facts available</li>}
+                      {alternatives?.map(alt => (
+                        <li key={alt.text} onClick={() => !busy && swapFact(f.id, alt.text)}>{alt.text}</li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

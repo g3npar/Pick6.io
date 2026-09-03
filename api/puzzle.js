@@ -727,6 +727,35 @@ async function generatePlayerPuzzle(name, draftYear) {
   return puzzle
 }
 
+// unused facts from this players pool, for the admin swap menu
+async function listFactAlternatives(candidate) {
+  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const rng   = seedRng(Date.now())
+  const facts = buildFactPool(player, seasons, awards, rng, teammateNames)
+  const used  = new Set(candidate.facts.map(f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)))
+  return facts.filter(f => !used.has(f.text)).map(f => ({ cat: f.cat, text: f.text }))
+}
+
+// swaps one slot for a different fact from the same players pool
+async function swapPuzzleFact(candidate, factId, replacementText) {
+  if (!candidate.facts.some(f => f.id === factId)) throw new Error('Invalid fact')
+
+  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const rng   = seedRng(Date.now())
+  const entry = buildFactPool(player, seasons, awards, rng, teammateNames).find(f => f.text === replacementText)
+  if (!entry) throw new Error('That fact is not available for this player')
+
+  // swapping the lie itself needs a fresh fake for the replacement
+  const isLie = factId === candidate.falseFactId
+  const lie   = isLie ? entry.makeLie(rng) : null
+
+  return {
+    ...candidate,
+    facts: candidate.facts.map(f => (f.id === factId ? { id: f.id, text: isLie ? lie.text : entry.text } : f)),
+    ...(isLie ? { trueText: entry.text, falseExplanation: lie.explanation } : {}),
+  }
+}
+
 // rebuilds a candidate with a specific fact forced as the lie, for the admin
 // preview's "select the lie" tool. re-derives a fresh lie for that fact from
 // its own fact builder rather than faking generic text
@@ -1035,5 +1064,5 @@ module.exports = {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb, setPuzzleLie,
+  headshotThumb, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
 }

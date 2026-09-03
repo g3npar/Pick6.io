@@ -9,7 +9,7 @@ const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb, setPuzzleLie,
+  headshotThumb, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
@@ -525,6 +525,30 @@ app.post('/admin/preview/lie', requireAuth, requireAdmin, adminLimiter, async (r
   try {
     const puzzle = await setPuzzleLie(candidate, factId)
     res.json({ puzzle })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /admin/preview/alternatives unused facts for this player
+app.post('/admin/preview/alternatives', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { candidate } = req.body || {}
+  if (!candidate) return res.status(400).json({ error: 'Invalid request' })
+  try {
+    res.json({ alternatives: await listFactAlternatives(candidate) })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /admin/preview/swap replaces one fact with another
+app.post('/admin/preview/swap', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { candidate, factId, replacementText } = req.body || {}
+  if (!candidate || !Number.isInteger(factId) || !replacementText) {
+    return res.status(400).json({ error: 'Invalid request' })
+  }
+  try {
+    res.json({ puzzle: await swapPuzzleFact(candidate, factId, replacementText) })
   } catch (err) {
     res.status(404).json({ error: err.message })
   }
