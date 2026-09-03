@@ -1579,6 +1579,8 @@ kbd {
   border: 1px solid var(--border);
 }
 .admin-fact--lie { color: var(--red); border-color: var(--red) !important; }
+.admin-fact-pick { cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.admin-fact-pick:hover:not(.admin-fact--lie) { border-color: var(--border-bright); color: var(--text); }
 .admin-actions {
   display: flex;
   gap: 10px;

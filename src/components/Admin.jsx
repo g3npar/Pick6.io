@@ -81,6 +81,15 @@ export default function Admin() {
       .finally(() => setBusy(false))
   }
 
+  const selectLie = factId => {
+    if (factId === candidate.falseFactId) return
+    setBusy(true)
+    postJSON('/admin/preview/lie', { candidate, factId })
+      .then(d => setCandidate(d.puzzle))
+      .catch(e => alert(e.message))
+      .finally(() => setBusy(false))
+  }
+
   // rendered full width, outside htp-page's narrow doc layout, since the
   // wheel needs its normal puzzle-game width, not a 680px capped column
   if (selected && candidate && playing) {
@@ -125,7 +134,11 @@ export default function Admin() {
             <p className="admin-player-name">{candidate.playerName} · {candidate.position}</p>
             <ul className="admin-fact-list">
               {candidate.facts.map(f => (
-                <li key={f.id} className={f.id === candidate.falseFactId ? 'admin-fact--lie' : ''}>
+                <li
+                  key={f.id}
+                  className={`admin-fact-pick${f.id === candidate.falseFactId ? ' admin-fact--lie' : ''}`}
+                  onClick={() => !busy && selectLie(f.id)}
+                >
                   {f.id === candidate.falseFactId ? '✗' : '✓'} {f.text}
                 </li>
               ))}

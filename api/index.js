@@ -9,7 +9,7 @@ const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb,
+  headshotThumb, setPuzzleLie,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
@@ -338,7 +338,7 @@ app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
 })
 
 const toUserJSON = u => ({
-  id: u.id, email: u.email, displayName: u.username || u.display_name, avatarUrl: u.avatar_url,
+  id: u.id, email: u.email, displayName: u.username || 'Anonymous', avatarUrl: u.avatar_url,
   isAdmin: isAdminEmail(u.email),
 })
 
@@ -452,13 +452,13 @@ app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
 app.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`
-      SELECT COALESCE(u.username, u.display_name) AS display_name,
+      SELECT COALESCE(u.username, 'Anonymous') AS display_name,
              COUNT(*)::int AS puzzles_played,
              SUM(ur.score)::int AS total_score,
              ROUND(AVG(ur.score), 2)::float AS avg_score
       FROM user_results ur
       JOIN users u ON u.id = ur.user_id
-      GROUP BY u.id, u.display_name, u.username
+      GROUP BY u.id, u.username
       ORDER BY total_score DESC
       LIMIT 50
     `)
@@ -513,6 +513,18 @@ app.post('/admin/preview', requireAuth, requireAdmin, adminLimiter, async (req, 
       puzzle = await generatePlayerPuzzle(name, /^\d{4}$/.test(draftYear) ? Number(draftYear) : undefined)
     } else puzzle = await previewDailyPuzzle(date)
     res.json({ date, puzzle })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /admin/preview/lie forces a specific fact as the lie
+app.post('/admin/preview/lie', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { candidate, factId } = req.body || {}
+  if (!candidate || !Number.isInteger(factId)) return res.status(400).json({ error: 'Invalid request' })
+  try {
+    const puzzle = await setPuzzleLie(candidate, factId)
+    res.json({ puzzle })
   } catch (err) {
     res.status(404).json({ error: err.message })
   }

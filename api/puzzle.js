@@ -701,7 +701,7 @@ async function fetchPlayerData(playerId) {
   return { player, seasons, awards: aRes.rows, teammateNames }
 }
 
-async function generatePlayerPuzzle(name, draftYear) {
+async function fetchPlayerDataByName(name, draftYear) {
   const trimmed = name.trim()
   let res
   if (draftYear) {
@@ -717,10 +717,40 @@ async function generatePlayerPuzzle(name, draftYear) {
     )
   }
   if (!res.rows.length) throw new Error(`Player not found: ${name}`)
-  const { player, seasons, awards, teammateNames } = await fetchPlayerData(res.rows[0].id)
+  return fetchPlayerData(res.rows[0].id)
+}
+
+async function generatePlayerPuzzle(name, draftYear) {
+  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(name, draftYear)
   const puzzle = buildPuzzle(1, player, seasons, awards, Date.now(), teammateNames)
   if (!puzzle) throw new Error(`Could not build puzzle for ${name} (insufficient facts)`)
   return puzzle
+}
+
+// rebuilds a candidate with a specific fact forced as the lie, for the admin
+// preview's "select the lie" tool. re-derives a fresh lie for that fact from
+// its own fact builder rather than faking generic text
+async function setPuzzleLie(candidate, factId) {
+  const target = candidate.facts.find(f => f.id === factId)
+  if (!target) throw new Error('Invalid fact')
+
+  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const rng  = seedRng(Date.now())
+  const pool = buildFactPool(player, seasons, awards, rng, teammateNames)
+
+  const trueTextOf = f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)
+  const wanted = trueTextOf(target)
+  const entry  = pool.find(e => e && e.text === wanted)
+  if (!entry) throw new Error('Could not regenerate a lie for that fact')
+  const lie = entry.makeLie(rng)
+
+  return {
+    ...candidate,
+    facts: candidate.facts.map(f => ({ id: f.id, text: f.id === factId ? lie.text : trueTextOf(f) })),
+    falseFactId: factId,
+    trueText: wanted,
+    falseExplanation: lie.explanation,
+  }
 }
 
 // daily puzzle cache
@@ -1005,5 +1035,5 @@ module.exports = {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb,
+  headshotThumb, setPuzzleLie,
 }
