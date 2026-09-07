@@ -58,7 +58,7 @@ const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   message: { error: 'Too many requests, please slow down.' },
 }) : noopLimiter
 
-// tighter limit for puzzle generation
+// tighter limit for puzzle generation only
 const puzzleLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -170,7 +170,7 @@ function withReveal(puzzle, { lie = false, player = false } = {}) {
 }
 
 // GET /puzzle/today/current
-app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) => {
+app.get('/puzzle/today/current', optionalAuth, async (req, res) => {
   try {
     const fresh  = req.query.fresh !== undefined
     const puzzle = await getDailyCurrentPuzzle(fresh)
@@ -190,7 +190,7 @@ app.get('/puzzle/today/current', puzzleLimiter, optionalAuth, async (req, res) =
 })
 
 // GET /puzzle/date/2026-08-10 archive date
-app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
+app.get('/puzzle/date/:date', optionalAuth, async (req, res) => {
   const date = req.params.date
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
   try {
@@ -208,7 +208,7 @@ app.get('/puzzle/date/:date', puzzleLimiter, optionalAuth, async (req, res) => {
 })
 
 // POST /puzzle/guess-lie server verified guess
-app.post('/puzzle/guess-lie', puzzleLimiter, optionalAuth, async (req, res) => {
+app.post('/puzzle/guess-lie', optionalAuth, async (req, res) => {
   const { puzzleDate, factId, giveUp } = req.body || {}
   const date  = puzzleDate
   const today = todayDateStr()
@@ -394,7 +394,7 @@ async function requireAdmin(req, res, next) {
 }
 
 // POST /puzzle/result recomputes score server side
-app.post('/puzzle/result', optionalAuth, puzzleLimiter, async (req, res) => {
+app.post('/puzzle/result', optionalAuth, async (req, res) => {
   const { selectedLieId, lieAttempts, playerGuess } = req.body || {}
   const puzzleDate = req.body?.puzzleDate || todayDateStr()
   if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)) return res.status(400).json({ error: 'Invalid result' })
