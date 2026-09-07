@@ -104,6 +104,19 @@ function signSession(userId) {
   return jwt.sign({ uid: userId }, JWT_SECRET, { expiresIn: `${SESSION_DAYS}d` })
 }
 
+function signPortrait(date) {
+  return jwt.sign({ d: date, k: 'portrait' }, JWT_SECRET, { noTimestamp: true })
+}
+
+function verifyPortrait(token) {
+  try {
+    const p = jwt.verify(token, JWT_SECRET)
+    return p.k === 'portrait' ? p.d : null
+  } catch {
+    return null
+  }
+}
+
 function verifySession(token) {
   try {
     return jwt.verify(token, JWT_SECRET).uid
@@ -139,6 +152,8 @@ function requireAuth(req, res, next) {
 
 module.exports = {
   COOKIE_NAME,
+  signPortrait,
+  verifyPortrait,
   cookieOptions,
   ensureAuthSchema,
   verifyGoogleCredential,

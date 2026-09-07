@@ -9,11 +9,12 @@ const {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
+  headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
   upsertUser, setUsername, signSession, optionalAuth, requireAuth, isAdminEmail,
+  signPortrait, verifyPortrait,
 } = require('./auth')
 
 const app = express()
@@ -22,7 +23,7 @@ app.set('trust proxy', 1)
 app.use(compression())
 
 app.use(helmet({
-  contentSecurityPolicy: false,   // API-only; no HTML served
+  contentSecurityPolicy: false,   // API-only
   crossOriginEmbedderPolicy: false,
 }))
 
@@ -51,8 +52,8 @@ const RATE_LIMITING_ENABLED = process.env.NODE_ENV === 'production'
 const noopLimiter = (req, res, next) => next()
 
 const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
-  windowMs: 60 * 1000,          // 1 minute
-  max: 60,                       // 60 requests/min per IP
+  windowMs: 60 * 1000,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please slow down.' },
@@ -159,6 +160,34 @@ async function fetchProgress(userId, date) {
   return { lieAttempts: row.lie_attempts, wrongIds: row.wrong_ids, lieFound: row.lie_found }
 }
 
+// warms the reveal image while the user is still playing
+function warmHeadshotFor(puzzle) {
+  if (puzzle && puzzle.headshotUrl) loadPortrait(puzzle.headshotUrl).catch(() => {})
+}
+
+// reveal portraits come from our cache so they are already warm
+function portraitUrl(req, date, headshotUrl) {
+  if (!headshotUrl) return null
+  return `${req.protocol}://${req.get('host')}/puzzle/portrait/${signPortrait(date)}`
+}
+
+// serves the cached reveal image, token proves the puzzle was finished
+app.get('/puzzle/portrait/:token', async (req, res) => {
+  const date = verifyPortrait(req.params.token)
+  if (!date) return res.status(403).json({ error: 'Not available yet' })
+  try {
+    const puzzle = date === todayDateStr() ? await getDailyCurrentPuzzle() : await getPuzzleForDate(date)
+    const img = await loadPortrait(puzzle.headshotUrl)
+    if (!img) return res.status(404).json({ error: 'No portrait' })
+    res.set('Content-Type', img.type)
+    res.set('Cache-Control', 'private, max-age=86400, immutable')
+    res.send(img.buf)
+  } catch (err) {
+    console.error('Portrait failed:', err.message)
+    res.status(500).json({ error: 'Could not load portrait' })
+  }
+})
+
 // strips answer fields until safe to show
 function withReveal(puzzle, { lie = false, player = false } = {}) {
   const { falseFactId, falseExplanation, trueText, playerName, headshotUrl, ...safe } = puzzle
@@ -178,8 +207,11 @@ app.get('/puzzle/today/current', optionalAuth, async (req, res) => {
     const date   = todayDateStr()
     const result = await fetchSavedResult(req.userId, date)
     if (result) {
-      return res.json({ ...withReveal(puzzle, { lie: true, player: true }), date, result, progress: null })
+      const revealed = withReveal(puzzle, { lie: true, player: true })
+      revealed.headshotUrl = portraitUrl(req, date, revealed.headshotUrl)
+      return res.json({ ...revealed, date, result, progress: null })
     }
+    warmHeadshotFor(puzzle)
     const progress = await fetchProgress(req.userId, date)
     const liePhaseComplete = !!progress && (progress.lieFound || progress.lieAttempts >= 3)
     res.json({ ...withReveal(puzzle, { lie: liePhaseComplete }), date, result: null, progress })
@@ -197,8 +229,11 @@ app.get('/puzzle/date/:date', optionalAuth, async (req, res) => {
     const puzzle = await getPuzzleForDate(date)
     const result = await fetchSavedResult(req.userId, date)
     if (result) {
-      return res.json({ ...withReveal(puzzle, { lie: true, player: true }), date, result, progress: null })
+      const revealed = withReveal(puzzle, { lie: true, player: true })
+      revealed.headshotUrl = portraitUrl(req, date, revealed.headshotUrl)
+      return res.json({ ...revealed, date, result, progress: null })
     }
+    warmHeadshotFor(puzzle)
     const progress = await fetchProgress(req.userId, date)
     const liePhaseComplete = !!progress && (progress.lieFound || progress.lieAttempts >= 3)
     res.json({ ...withReveal(puzzle, { lie: liePhaseComplete }), date, result: null, progress })
@@ -440,7 +475,7 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
       lieFound, lieAttempts: attempts, playerCorrect, score, saved,
       playerName: puzzle.playerName, falseFactId: puzzle.falseFactId,
       trueText: puzzle.trueText, falseExplanation: puzzle.falseExplanation,
-      headshotUrl: puzzle.headshotUrl,
+      headshotUrl: portraitUrl(req, puzzleDate, puzzle.headshotUrl),
     })
   } catch (err) {
     console.error('Save result failed:', err.message)

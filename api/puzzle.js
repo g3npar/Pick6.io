@@ -168,11 +168,11 @@ function initialsOf(name) {
   return stripped.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
 }
 
-// lie uses a real teammates initials
-function initialsFact(p, teammateNames) {
-  if (!teammateNames.length) return null
+// lie uses the initials of a real player at the same position
+function initialsFact(p, peerNames) {
+  if (!peerNames.length) return null
   const realInitials = initialsOf(p.name)
-  const candidates = teammateNames.filter(n => initialsOf(n) !== realInitials)
+  const candidates = peerNames.filter(n => initialsOf(n) !== realInitials)
   if (!candidates.length) return null
   return {
     cat: 'initials',
@@ -551,7 +551,7 @@ function csvAwardFact(p, csvAwards) {
 }
 
 // assembles fact pool
-function buildFactPool(player, seasons, dbAwards, rng, teammateNames) {
+function buildFactPool(player, seasons, dbAwards, rng, samePositionNames) {
   // csv awards
   const csvAwards = lookupAwards(player.name)
 
@@ -577,7 +577,7 @@ function buildFactPool(player, seasons, dbAwards, rng, teammateNames) {
     draftFact(player),
     jerseyFact(player),
     birthYearFact(player),
-    initialsFact(player, teammateNames),
+    initialsFact(player, samePositionNames),
     allPro  > 0 ? allProFact(player, allPro)     : null,
     proBowl > 0 ? proBowlFact(player, proBowl)   : null,
     superBowlFact(player, sbWins),
@@ -612,16 +612,39 @@ function headshotThumb(url) {
   return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
 }
 
-// pre warms the cdn cache
+// browsers ask for webp so warm that derivative not the png one
+const BROWSER_ACCEPT = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
+const PORTRAIT_TTL   = 24 * 60 * 60 * 1000
+const PORTRAIT_MAX   = 40
+const portraitCache  = new Map()
+
+// keeps reveal bytes in memory so the reveal is not a cold cdn transform
+async function loadPortrait(url) {
+  if (!url) return null
+  const hit = portraitCache.get(url)
+  if (hit && Date.now() - hit.at < PORTRAIT_TTL) return hit
+  const res = await fetch(url, { headers: { Accept: BROWSER_ACCEPT } })
+  if (!res.ok) return null
+  const entry = {
+    buf:  Buffer.from(await res.arrayBuffer()),
+    type: res.headers.get('content-type') || 'image/webp',
+    at:   Date.now(),
+  }
+  portraitCache.set(url, entry)
+  if (portraitCache.size > PORTRAIT_MAX) portraitCache.delete(portraitCache.keys().next().value)
+  return entry
+}
+
+// pre warms the cdn cache and our own
 function warmHeadshot(url) {
   if (!url) return
-  fetch(url).catch(() => {})
+  loadPortrait(url).catch(() => {})
 }
 
 // builds one puzzle
-function buildPuzzle(id, player, seasons, awards, seed, teammateNames = []) {
+function buildPuzzle(id, player, seasons, awards, seed, samePositionNames = []) {
   const rng  = seedRng(seed)
-  const pool = buildFactPool(player, seasons, awards, rng, teammateNames)
+  const pool = buildFactPool(player, seasons, awards, rng, samePositionNames)
   if (pool.length < 6) return null
 
   const statFacts    = seededShuffle(pool.filter(f =>  STAT_CATS.has(f.cat)), rng)
@@ -691,17 +714,15 @@ async function fetchEligibleIds() {
   return { era1, era2, era3 }
 }
 
-const MULTI_TEAM_CODE = /^\d+TM$/
-
-// teammates same team same season same position
-async function fetchTeammateNames(player, seasons) {
-  const latest = [...seasons].reverse().find(s => s.team && !MULTI_TEAM_CODE.test(s.team))
+// same position that season on any team
+async function fetchSamePositionNames(player, seasons) {
+  const latest = seasons[seasons.length - 1]
   if (!latest) return []
   const res = await pool.query(
     `SELECT DISTINCT p.name FROM players p
      JOIN player_seasons ps ON ps.player_id = p.id
-     WHERE ps.team = $1 AND ps.season_year = $2 AND p.position = $3 AND p.id != $4`,
-    [latest.team, latest.season_year, player.position, player.id]
+     WHERE ps.season_year = $1 AND p.position = $2 AND p.id != $3`,
+    [latest.season_year, player.position, player.id]
   )
   return res.rows.map(r => r.name)
 }
@@ -714,8 +735,8 @@ async function fetchPlayerData(playerId) {
   ])
   const player  = pRes.rows[0]
   const seasons = sRes.rows
-  const teammateNames = await fetchTeammateNames(player, seasons)
-  return { player, seasons, awards: aRes.rows, teammateNames }
+  const samePositionNames = await fetchSamePositionNames(player, seasons)
+  return { player, seasons, awards: aRes.rows, samePositionNames }
 }
 
 async function fetchPlayerDataByName(name, draftYear) {
@@ -738,17 +759,17 @@ async function fetchPlayerDataByName(name, draftYear) {
 }
 
 async function generatePlayerPuzzle(name, draftYear) {
-  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(name, draftYear)
-  const puzzle = buildPuzzle(1, player, seasons, awards, Date.now(), teammateNames)
+  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(name, draftYear)
+  const puzzle = buildPuzzle(1, player, seasons, awards, Date.now(), samePositionNames)
   if (!puzzle) throw new Error(`Could not build puzzle for ${name} (insufficient facts)`)
   return puzzle
 }
 
 // unused facts from this players pool, for the admin swap menu
 async function listFactAlternatives(candidate) {
-  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
   const rng   = seedRng(Date.now())
-  const facts = buildFactPool(player, seasons, awards, rng, teammateNames)
+  const facts = buildFactPool(player, seasons, awards, rng, samePositionNames)
   const used  = new Set(candidate.facts.map(f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)))
   return facts.filter(f => !used.has(f.text)).map(f => ({ cat: f.cat, text: f.text }))
 }
@@ -757,9 +778,9 @@ async function listFactAlternatives(candidate) {
 async function swapPuzzleFact(candidate, factId, replacementText) {
   if (!candidate.facts.some(f => f.id === factId)) throw new Error('Invalid fact')
 
-  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
   const rng   = seedRng(Date.now())
-  const entry = buildFactPool(player, seasons, awards, rng, teammateNames).find(f => f.text === replacementText)
+  const entry = buildFactPool(player, seasons, awards, rng, samePositionNames).find(f => f.text === replacementText)
   if (!entry) throw new Error('That fact is not available for this player')
 
   // swapping the lie itself needs a fresh fake for the replacement
@@ -780,9 +801,9 @@ async function setPuzzleLie(candidate, factId) {
   const target = candidate.facts.find(f => f.id === factId)
   if (!target) throw new Error('Invalid fact')
 
-  const { player, seasons, awards, teammateNames } = await fetchPlayerDataByName(candidate.playerName)
+  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
   const rng  = seedRng(Date.now())
-  const pool = buildFactPool(player, seasons, awards, rng, teammateNames)
+  const pool = buildFactPool(player, seasons, awards, rng, samePositionNames)
 
   const trueTextOf = f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)
   const wanted = trueTextOf(target)
@@ -830,15 +851,15 @@ async function pickOneFromBucket(bucket, rng, seed, pid, attempted, recentlyUsed
     if (attempted.has(id)) continue
     if (recentlyUsed.has(id)) { skipped.push(id); continue }
     attempted.add(id)
-    const { player, seasons, awards, teammateNames } = await fetchPlayerData(id)
-    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, teammateNames)
+    const { player, seasons, awards, samePositionNames } = await fetchPlayerData(id)
+    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, samePositionNames)
     if (puzzle) return puzzle
   }
   // fallback allow a recent repeat
   for (const id of skipped) {
     attempted.add(id)
-    const { player, seasons, awards, teammateNames } = await fetchPlayerData(id)
-    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, teammateNames)
+    const { player, seasons, awards, samePositionNames } = await fetchPlayerData(id)
+    const puzzle = buildPuzzle(pid, player, seasons, awards, seed * 100 + pid, samePositionNames)
     if (puzzle) return puzzle
   }
   return null
@@ -1081,5 +1102,5 @@ module.exports = {
   getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
-  headshotThumb, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
+  headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
 }

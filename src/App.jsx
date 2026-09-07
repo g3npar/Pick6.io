@@ -34,6 +34,9 @@ const readSessionUI = () => {
 const writeSessionUI = data => {
   try { sessionStorage.setItem(SESSION_UI_KEY, JSON.stringify(data)) } catch {}
 }
+const clearSessionUI = () => {
+  try { sessionStorage.removeItem(SESSION_UI_KEY) } catch {}
+}
 
 function preloadLogos(puzzles) {
   const urls = new Set()
@@ -226,12 +229,9 @@ function App() {
     fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
       .catch(() => {})
       .finally(() => {
-        setUser(null)
-        // clear board on sign out
-        setTodayResultSaved(false); setTodayState({})
-        setArchiveResultSaved(false); setArchiveState({})
-        loadTodayPuzzle()
-        if (viewingArchivePuzzle && archivePuzzle?.date) handlePlayArchiveDate(archivePuzzle.date)
+        // drop the cached board so the puzzles must be solved again
+        clearSessionUI()
+        window.location.reload()
       })
   }
   const handleUserUpdated = u => setUser(u)
