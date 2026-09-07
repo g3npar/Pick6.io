@@ -670,6 +670,7 @@ body {
   top: 50%;
   transform: translate(-50%, -50%) scale(0.95);
   width: 42%;
+  height: 42%;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   border: 2px solid rgba(255, 34, 68, 0.55);
@@ -864,6 +865,8 @@ body {
   height: 100%;
   border-radius: 50%;
   overflow: hidden;
+  -webkit-clip-path: circle(50%);
+  clip-path: circle(50%);
 }
 
 /* full width banner covers the photo gap */
@@ -1658,6 +1661,13 @@ kbd {
   .circle-game        { max-width: 340px; }
   .circle-center      { padding: 8px; gap: 5px; }
   .helmet-silhouette  { width: 28px; }
+
+  /* expansion tracks the smaller padding so the clip matches the ring */
+  .player-reveal-photo {
+    margin: -8px;
+    width: calc(100% + 16px);
+    height: calc(100% + 16px);
+  }
 
   /* the wheel is 63% of desktop here so these need to come down with it */
   .puzzle-date-big    { font-size: 21px; }
