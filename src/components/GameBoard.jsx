@@ -36,7 +36,8 @@ function getFactPath(i) {
 function getFactCentroid(i) {
   const cx = 50, cy = 50
   const mid = (-90 + i * DEG + DEG / 2) * (Math.PI / 180)
-  const r = 33
+  // keeps tall revealed labels clear of the center circle
+  const r = 35.5
   return { x: cx + r * Math.cos(mid), y: cy + r * Math.sin(mid) }
 }
 

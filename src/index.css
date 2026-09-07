@@ -529,7 +529,7 @@ body {
 }
 
 .fl-num {
-  font-size: clamp(8px, 2.1cqw, 11px);
+  font-size: clamp(7px, 2.1cqw, 11px);
   font-weight: 800;
   letter-spacing: 0.1em;
   color: var(--text-muted);
@@ -552,7 +552,7 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: clamp(2px, 0.75cqw, 4px);
 }
 .fl-logo,
 .fl-logo-college {
@@ -603,17 +603,20 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: clamp(2px, 0.55cqw, 3px);
 }
 .fl-wrong-line {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: clamp(2px, 0.75cqw, 4px);
   opacity: 0.55;
   filter: grayscale(0.4);
 }
-.fl-wrong-line .fl-logo { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
+.fl-wrong-line .fl-logo {
+  width: clamp(16px, 4.8cqw, 26px); height: clamp(16px, 4.8cqw, 26px);
+  min-width: clamp(16px, 4.8cqw, 26px); min-height: clamp(16px, 4.8cqw, 26px);
+}
 .fl-wrong-line::after {
   content: '';
   position: absolute;
@@ -650,11 +653,12 @@ body {
 .fl-selected .fl-tag { color: var(--red); }
 
 .fl-verdict {
-  font-size: 9px;
+  font-size: clamp(7px, 1.75cqw, 9px);
   font-weight: 800;
   letter-spacing: 0.1em;
-  padding: 2px 6px;
+  padding: clamp(1px, 0.4cqw, 2px) clamp(3px, 1.15cqw, 6px);
   border: 1px solid;
+  line-height: 1.2;
 }
 .flv-true  { color: var(--green); border-color: var(--green); }
 .flv-false { color: #ef4444;      border-color: #ef4444; }
