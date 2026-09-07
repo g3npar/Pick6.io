@@ -180,6 +180,7 @@ app.get('/puzzle/portrait/:token', async (req, res) => {
     const img = await loadPortrait(puzzle.headshotUrl)
     if (!img) return res.status(404).json({ error: 'No portrait' })
     res.set('Content-Type', img.type)
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin')
     res.set('Cache-Control', 'private, max-age=86400, immutable')
     res.send(img.buf)
   } catch (err) {
