@@ -191,11 +191,14 @@ app.get('/puzzle/portrait/:token', async (req, res) => {
 
 // strips answer fields until safe to show
 function withReveal(puzzle, { lie = false, player = false } = {}) {
-  const { falseFactId, falseExplanation, trueText, playerName, headshotUrl, ...safe } = puzzle
+  // playerId and seed are admin internals, they would give the answer away
+  const { falseFactId, falseExplanation, trueText, playerName, headshotUrl,
+          playerId, seed, team, position, ...safe } = puzzle
   return {
     ...safe,
     ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
-    ...(player ? { playerName, headshotUrl } : {}),
+    // team and position narrow the answer so they wait for the reveal too
+    ...(player ? { playerName, headshotUrl, team, position } : {}),
   }
 }
 

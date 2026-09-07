@@ -238,7 +238,10 @@ function allProFact(p, count) {
     text: `Was named AP First-Team All-Pro ${count} time${pl}`,
     makeLie(rng) {
       const delta = 1 + Math.floor(rng() * 2)
-      const fake  = rng() < 0.5 ? count + delta : Math.max(1, count - delta)
+      // avoid zero or same value
+      const fake  = (count - delta) >= 1 && rng() < 0.5
+        ? count - delta
+        : count + delta
       const fpl   = fake > 1 ? 's' : ''
       return {
         text: `Was named AP First-Team All-Pro ${fake} time${fpl}`,
@@ -671,6 +674,8 @@ function buildPuzzle(id, player, seasons, awards, seed, samePositionNames = []) 
 
   return {
     id,
+    playerId:         player.id,
+    seed,
     playerName:       player.name,
     position:         player.position,
     team:             teamStr,
@@ -765,10 +770,17 @@ async function generatePlayerPuzzle(name, draftYear) {
   return puzzle
 }
 
+// candidates carry the id so a shared name cannot pick the wrong player
+async function fetchCandidatePlayer(candidate) {
+  return candidate.playerId
+    ? fetchPlayerData(candidate.playerId)
+    : fetchPlayerDataByName(candidate.playerName)
+}
+
 // unused facts from this players pool, for the admin swap menu
 async function listFactAlternatives(candidate) {
-  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
-  const rng   = seedRng(Date.now())
+  const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
+  const rng   = seedRng(candidate.seed ?? Date.now())
   const facts = buildFactPool(player, seasons, awards, rng, samePositionNames)
   const used  = new Set(candidate.facts.map(f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)))
   return facts.filter(f => !used.has(f.text)).map(f => ({ cat: f.cat, text: f.text }))
@@ -778,8 +790,8 @@ async function listFactAlternatives(candidate) {
 async function swapPuzzleFact(candidate, factId, replacementText) {
   if (!candidate.facts.some(f => f.id === factId)) throw new Error('Invalid fact')
 
-  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
-  const rng   = seedRng(Date.now())
+  const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
+  const rng   = seedRng(candidate.seed ?? Date.now())
   const entry = buildFactPool(player, seasons, awards, rng, samePositionNames).find(f => f.text === replacementText)
   if (!entry) throw new Error('That fact is not available for this player')
 
@@ -801,8 +813,8 @@ async function setPuzzleLie(candidate, factId) {
   const target = candidate.facts.find(f => f.id === factId)
   if (!target) throw new Error('Invalid fact')
 
-  const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(candidate.playerName)
-  const rng  = seedRng(Date.now())
+  const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
+  const rng  = seedRng(candidate.seed ?? Date.now())
   const pool = buildFactPool(player, seasons, awards, rng, samePositionNames)
 
   const trueTextOf = f => (f.id === candidate.falseFactId ? candidate.trueText : f.text)
