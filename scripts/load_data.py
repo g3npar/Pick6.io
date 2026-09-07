@@ -138,19 +138,33 @@ new_2025 = seasonal_2025[~seasonal_2025["player_id"].isin(existing_ids)][
     ["player_id", "player_display_name", "position"]
 ].drop_duplicates(subset="player_id")
 new_2025 = new_2025.rename(columns={"player_display_name": "display_name"})
-new_2025["birth_date"] = None
+# newest season entrants still have a birth date in the players file, pull it in
+# instead of leaving it null or their birth year fact never builds
+new_2025 = new_2025.merge(
+    players_df[["gsis_id", "birth_date"]],
+    left_on="player_id", right_on="gsis_id", how="left"
+).drop(columns=["gsis_id"])
 
 all_players = pd.concat([unique_old, new_2025], ignore_index=True).dropna(subset=["display_name"])
+
+def birth_year_of(value):
+    if value is None:
+        return None
+    text = str(value)
+    if not text or text == "nan":
+        return None
+    try:
+        year = int(text[:4])
+    except ValueError:
+        return None
+    # guards against placeholder dates in the source
+    return year if 1900 <= year <= 2015 else None
+
 
 player_id_map = {}
 player_rows   = []
 for _, row in all_players.iterrows():
-    birth_year = None
-    if row["birth_date"] and str(row["birth_date"]) != "nan":
-        try:
-            birth_year = int(str(row["birth_date"])[:4])
-        except Exception:
-            pass
+    birth_year = birth_year_of(row["birth_date"])
     meta = player_meta.get(str(row["player_id"]), {})
     player_rows.append((
         row["player_id"], row["display_name"], row.get("position"), birth_year,
@@ -164,7 +178,7 @@ results = execute_values(cur, """
     ON CONFLICT (nfl_id) DO UPDATE
       SET name         = EXCLUDED.name,
           position     = EXCLUDED.position,
-          birth_year   = EXCLUDED.birth_year,
+          birth_year   = COALESCE(EXCLUDED.birth_year, players.birth_year),
           college      = COALESCE(EXCLUDED.college,      players.college),
           draft_year   = COALESCE(EXCLUDED.draft_year,   players.draft_year),
           draft_round  = COALESCE(EXCLUDED.draft_round,  players.draft_round),
@@ -175,6 +189,29 @@ for db_id, nfl_id in results:
     player_id_map[nfl_id] = db_id
 conn.commit()
 print(f"  {len(player_id_map)} players upserted")
+
+# any player the merges missed still has a birth date in the players file, so
+# fill the gaps directly rather than leaving their birth year fact unavailable
+birth_by_id = {}
+for gsis_id, birth_date in zip(players_df["gsis_id"], players_df["birth_date"]):
+    year = birth_year_of(birth_date)
+    if gsis_id and year:
+        birth_by_id[str(gsis_id)] = year
+
+cur.execute("SELECT nfl_id FROM players WHERE birth_year IS NULL AND nfl_id IS NOT NULL")
+gaps = [(nfl_id, birth_by_id[str(nfl_id)])
+        for (nfl_id,) in cur.fetchall() if str(nfl_id) in birth_by_id]
+if gaps:
+    execute_values(cur, """
+        UPDATE players AS p SET birth_year = v.birth_year
+        FROM (VALUES %s) AS v(nfl_id, birth_year)
+        WHERE p.nfl_id = v.nfl_id
+    """, gaps, template="(%s, %s::int)")
+    conn.commit()
+
+cur.execute("SELECT COUNT(*), COUNT(birth_year) FROM players")
+total_players, with_birth = cur.fetchone()
+print(f"  birth years: {with_birth}/{total_players} ({len(gaps)} backfilled)")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 4 — Season rows 1980–2025  (includes passing / receiving / pro_bowl)
