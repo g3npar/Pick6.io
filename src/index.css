@@ -270,18 +270,18 @@ body {
 
 /* attempt dots */
 .attempt-label {
-  font-size: 10px;
+  font-size: clamp(8px, 1.85cqw, 10px);
   font-weight: 800;
   letter-spacing: 0.14em;
   color: var(--text-muted);
 }
 .attempt-dots {
   display: flex;
-  gap: 8px;
+  gap: clamp(5px, 1.48cqw, 8px);
 }
 .attempt-dot {
-  width: 14px;
-  height: 14px;
+  width: clamp(10px, 2.59cqw, 14px);
+  height: clamp(10px, 2.59cqw, 14px);
   border-radius: 50%;
   border: 2px solid var(--border-bright);
   background: transparent;
@@ -701,8 +701,8 @@ body {
   margin-top: -22px;
 }
 .circle-guess-btn {
-  padding: 12px 18px;
-  font-size: 13px;
+  padding: clamp(8px, 2.22cqw, 12px) clamp(11px, 3.33cqw, 18px);
+  font-size: clamp(10px, 2.41cqw, 13px);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -753,9 +753,9 @@ body {
 .search-input-container:focus-within { border-color: var(--red); }
 
 .search-icon {
-  padding: 0 8px;
+  padding: 0 clamp(5px, 1.48cqw, 8px);
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: clamp(11px, 2.78cqw, 15px);
   line-height: 1;
   flex-shrink: 0;
   user-select: none;
@@ -766,8 +766,8 @@ body {
   background: none;
   border: none;
   color: var(--text);
-  font-size: 13px;
-  padding: 8px 6px;
+  font-size: clamp(10px, 2.41cqw, 13px);
+  padding: clamp(6px, 1.48cqw, 8px) clamp(4px, 1.11cqw, 6px);
   outline: none;
   min-width: 0;
   font-family: inherit;
@@ -1654,6 +1654,12 @@ kbd {
   .circle-game        { max-width: 340px; }
   .circle-center      { padding: 8px; gap: 5px; }
   .helmet-silhouette  { width: 28px; }
+
+  /* the wheel is 63% of desktop here so these need to come down with it */
+  .puzzle-date-big    { font-size: 21px; }
+  .puzzle-number-label { font-size: 11px; }
+  .reveal-headshot    { width: 68%; height: 68%; }
+  .reveal-guess-label { padding: 13% 10% 4%; }
 
   .circle-nav-row { flex-direction: column; }
   .circle-side {

@@ -39,7 +39,6 @@ const COLLEGE_SLUG = {
   'Minnesota':                  'minnesota',
   'Mississippi':                'ole-miss',
   'Mississippi State':          'mississippi-state',
-  'Mississippi Valley State':   'mississippi-valley-state',
   'Missouri':                   'missouri',
   'N.C. State':                 'nc-state',
   'NC State':                   'nc-state',
@@ -149,7 +148,6 @@ const COLLEGE_SLUG = {
   'Southern Illinois':          'southern-illinois',
   'Southern Miss':              'southern-miss',
   'Southern Mississippi':       'southern-miss',
-  'South Carolina State':       'south-carolina-state',
   'Stephen F. Austin State':    'stephen-f-austin',
   'Temple':                     'temple',
   'Toledo':                     'toledo',
@@ -164,12 +162,11 @@ const COLLEGE_SLUG = {
   'University of South Florida':'south-florida',
   'UTEP':                       'utep',
   'Texas-El Paso':              'utep',
-  'Villanova':                  'villanova',
-  'Western Carolina':           'western-carolina',
+  'Villanova':                  'villanova-2',
   'Western Kentucky':           'western-kentucky',
   'Western Michigan':           'western-michigan',
   'Wyoming':                    'wyoming',
-  'Youngstown State':           'youngstown-state',
+  'Youngstown State':           'youngstown-state-2',
   // hbcus
   'Grambling':                  'grambling',
   'Grambling State':            'grambling',
@@ -309,11 +306,11 @@ export function collegeLogo(collegeName) {
   if (!collegeName) return null
   // exact match
   const slug = COLLEGE_SLUG[collegeName]
-  if (slug) return `/logos/colleges/${slug}.png`
+  if (slug) return `/logos/colleges/${slug}.webp`
   // case insensitive fallback
   const lower = collegeName.toLowerCase()
   for (const [name, s] of Object.entries(COLLEGE_SLUG)) {
-    if (name.toLowerCase() === lower) return `/logos/colleges/${s}.png`
+    if (name.toLowerCase() === lower) return `/logos/colleges/${s}.webp`
   }
   return null
 }

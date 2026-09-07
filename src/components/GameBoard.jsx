@@ -206,7 +206,7 @@ function GameBoard({
   const handleShare = async () => {
     const lieScore    = lieFound ? Math.max(1, 3 - lieAttempts) : 0
     const playerScore = playerCorrect ? 3 : 0
-    const lieEmoji    = lieScore === 3 ? '🟩' : lieScore > 0 ? '🟨' : '🟥'
+    const lieEmoji    = lieScore === 3 ? '🟩' : lieScore === 2 ? '🟥🟩' : lieScore === 1 ? '🟥🟥🟩' : '🟥🟥🟥'
     const playerEmoji = playerScore === 3 ? '🟩' : '🟥'
     const num = puzzle.date ? ` #${puzzleNumber(puzzle.date)}` : ''
     const text = `Pick6 Daily${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
@@ -390,7 +390,7 @@ function GameBoard({
                       <li key={item.id} className={`dropdown-item${i === tabIdx ? ' dropdown-item-active' : ''}`} onMouseDown={() => handleSelect(item)}>
                         <span className="dropdown-player-name">{item.name}</span>
                         <span className="dropdown-player-meta">
-                          {item.position}{item.draft_year ? ` · ${item.draft_year}` : ''}
+                          {item.position}
                         </span>
                       </li>
                     ))}

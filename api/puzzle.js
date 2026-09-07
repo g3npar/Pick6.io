@@ -147,6 +147,22 @@ function jerseyFact(p) {
   }
 }
 
+function birthYearFact(p) {
+  if (!p.birth_year) return null
+  return {
+    cat: 'birth',
+    text: `Was born in ${p.birth_year}`,
+    makeLie(rng) {
+      const delta = 1 + Math.floor(rng() * 3)
+      const fake  = rng() < 0.5 ? p.birth_year + delta : p.birth_year - delta
+      return {
+        text: `Was born in ${fake}`,
+        explanation: `${p.name} was born in ${p.birth_year}, not ${fake}.`,
+      }
+    },
+  }
+}
+
 function initialsOf(name) {
   const stripped = name.trim().replace(/\s+(jr|sr|ii|iii|iv|v)\.?$/i, '')
   return stripped.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('.') + '.'
@@ -560,6 +576,7 @@ function buildFactPool(player, seasons, dbAwards, rng, teammateNames) {
     collegeFact(player),
     draftFact(player),
     jerseyFact(player),
+    birthYearFact(player),
     initialsFact(player, teammateNames),
     allPro  > 0 ? allProFact(player, allPro)     : null,
     proBowl > 0 ? proBowlFact(player, proBowl)   : null,
