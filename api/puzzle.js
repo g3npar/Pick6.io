@@ -188,6 +188,9 @@ function initialsFact(p, peerNames) {
   }
 }
 
+// nominal draft slots per round, comp picks stretch later rounds a little
+const PICKS_PER_ROUND = 32
+
 function draftFact(p) {
   if (!p.draft_number || !p.draft_year || !p.draft_round) return null
   return {
@@ -216,10 +219,13 @@ function draftFact(p) {
         fakeYear = rng() < 0.5 ? p.draft_year + delta : p.draft_year - delta
       }
 
+      // overall pick determines the round so it has to move with it
       let fakePick = p.draft_number
-      if (changePick) {
+      if (changeRound) {
+        fakePick = (fakeRound - 1) * PICKS_PER_ROUND + 1 + Math.floor(rng() * PICKS_PER_ROUND)
+      } else if (changePick) {
         // stays within round 1 so the pick alone is what's being tested
-        do { fakePick = 1 + Math.floor(rng() * 32) } while (fakePick === p.draft_number)
+        do { fakePick = 1 + Math.floor(rng() * PICKS_PER_ROUND) } while (fakePick === p.draft_number)
       }
 
       return {
