@@ -40,7 +40,7 @@ app.use(cors({
     cb(new Error('CORS: origin not allowed'))
   },
   credentials: true,   // required so the browser sends/accepts the session cookie
-  methods: ['GET', 'POST', 'PUT'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 }))
 
@@ -422,6 +422,20 @@ app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
     res.json({ user: toUserJSON(user) })
   } catch (err) {
     res.status(409).json({ error: err.message })
+  }
+})
+
+// DELETE /auth/account
+// user_results and puzzle_progress cascade off users so one delete clears it all
+app.delete('/auth/account', requireAuth, authLimiter, async (req, res) => {
+  try {
+    const r = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.userId])
+    if (!r.rows.length) return res.status(404).json({ error: 'Account not found' })
+    res.clearCookie(COOKIE_NAME, cookieOptions)
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Account delete failed:', err.message)
+    res.status(500).json({ error: 'Could not delete account' })
   }
 })
 

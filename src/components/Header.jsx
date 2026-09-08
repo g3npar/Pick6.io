@@ -1,12 +1,7 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
 import SignInButton from './SignInButton'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
-  const [editing, setEditing] = useState(false)
-  const [name,    setName]    = useState('')
-  const [saving,  setSaving]  = useState(false)
+function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const logoWrapRef = useRef(null)
 
@@ -36,28 +31,6 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
-
-  const startEditing = () => { setName(user.displayName); setEditing(true) }
-
-  const saveUsername = () => {
-    const trimmed = name.trim()
-    if (!trimmed || trimmed === user.displayName) { setEditing(false); return }
-    setSaving(true)
-    fetch(`${API}/auth/username`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ username: trimmed }),
-    })
-      .then(async r => {
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.error || 'Could not save username')
-        onUserUpdated(data.user)
-        setEditing(false)
-      })
-      .catch(err => alert(err.message))
-      .finally(() => setSaving(false))
-  }
 
   return (
     <header className="header">
@@ -106,26 +79,14 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut, onUserUpdated }) {
         <div className="header-right">
           {user ? (
             <div className="user-chip">
-              {editing ? (
-                <>
-                  <input
-                    className="username-edit-input"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && saveUsername()}
-                    autoFocus
-                    maxLength={20}
-                  />
-                  <button className="header-icon-btn" disabled={saving} onClick={saveUsername}>Save</button>
-                  <button className="header-icon-btn" onClick={() => setEditing(false)}>✕</button>
-                </>
-              ) : (
-                <>
-                  <span className="user-name">{user.displayName}</span>
-                  <button className="header-icon-btn" onClick={startEditing} aria-label="Edit username">✎</button>
-                  <button className="header-icon-btn header-icon-btn--danger" onClick={onSignOut}>Sign out</button>
-                </>
-              )}
+              <button
+                className={`user-name-btn${screen === 'profile' ? ' user-name-btn--active' : ''}`}
+                onClick={() => onNav('profile')}
+                aria-label="Open profile"
+              >
+                {user.displayName}
+              </button>
+              <button className="header-icon-btn header-icon-btn--danger" onClick={onSignOut}>Sign out</button>
             </div>
           ) : (
             <SignInButton onSignedIn={onSignedIn} />

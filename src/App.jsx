@@ -8,6 +8,7 @@ import TermsOfService from './components/TermsOfService'
 import Leaderboard from './components/Leaderboard'
 import Archive from './components/Archive'
 import Admin from './components/Admin'
+import Profile from './components/Profile'
 import SignInPrompt from './components/SignInPrompt'
 import WheelSpinner from './components/WheelSpinner'
 import { parseFact } from './utils/factDisplay'
@@ -236,6 +237,11 @@ function App() {
   }
   const handleUserUpdated = u => setUser(u)
 
+  const handleAccountDeleted = () => {
+    clearSessionUI()
+    window.location.reload()
+  }
+
   // loads archive puzzle to play
   const handlePlayArchiveDate = date => {
     fetch(`${API}/puzzle/date/${date}`, { credentials: 'include' })
@@ -264,7 +270,7 @@ function App() {
   if (!todayPuzzle || dailyPending || archivePending) {
     return (
       <div className="app">
-        <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
+        <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', marginTop: '6rem' }}>
           {(dailyPending || archivePending) && (
             <div className="loading-wheel-wrap">
@@ -278,6 +284,7 @@ function App() {
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
           {screen === 'admin'       && <Admin />}
+          {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         </main>
         <Footer onNav={handleNav} />
       </div>
@@ -362,7 +369,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} onUserUpdated={handleUserUpdated} />
+      <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
       <main className="main-content">
         {screen === 'how-to-play' && <HowToPlay />}
         {screen === 'archive' && !viewingArchivePuzzle && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
@@ -370,6 +377,7 @@ function App() {
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'admin'       && <Admin />}
+        {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         {showBoard && puzzle && (
         <GameBoard
           puzzle={puzzle}
