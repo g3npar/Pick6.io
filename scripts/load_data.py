@@ -82,10 +82,7 @@ print("  Done")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 1b — Incremental load  (--rosters-only / --current-season)
-# ════════════════════════════════════════════════════════════════════════════════
-# Everything before CURRENT_SEASON is immutable, so a scheduled refresh has no
-# reason to re-download 45 years of it. This touches three small files and only
-# ever writes rows for CURRENT_SEASON.
+# ════════════════════════════════════════════════════════════════════════════════.
 if INCREMENTAL:
     mode = "current-season" if CURRENT_ONLY else "rosters-only"
     print(f"\n── 1b. Incremental load — {mode} ({CURRENT_SEASON}) ──")
