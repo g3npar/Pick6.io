@@ -79,9 +79,11 @@ function fmt(n) {
   return Number(n).toLocaleString('en-US')
 }
 
+const LATEST_SEASON = 2026
+
 function fakeYear(year, rng) {
   const delta = 1 + Math.floor(rng() * 3)
-  const sign  = (year + delta > 2025) ? -1 : (year - delta < 1970) ? 1 : (rng() < 0.5 ? 1 : -1)
+  const sign  = (year + delta > LATEST_SEASON) ? -1 : (year - delta < 1970) ? 1 : (rng() < 0.5 ? 1 : -1)
   return year + sign * delta
 }
 

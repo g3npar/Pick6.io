@@ -7,10 +7,13 @@ separate script — see scripts/scrape_awards.py — since nfl_data_py has no
 working source for it (see the note near the bottom of this file).
 
 Run:
-  python3 scripts/load_data.py
+  python3 scripts/load_data.py                    # full load (rare, ~45yr of history)
+  python3 scripts/load_data.py --rosters-only     # rosters + jerseys, no stats
+  python3 scripts/load_data.py --current-season   # weekly cron: rosters + this season's stats
 """
 
 import os
+import sys
 import nfl_data_py as nfl
 import nflreadpy
 import polars as pl
@@ -18,6 +21,19 @@ import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 import pandas as pd
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 0 — Season configuration
+# ════════════════════════════════════════════════════════════════════════════════
+NFLDATAPY_MAX_SEASON = 2024
+CURRENT_SEASON       = 2026
+HISTORY_START        = 1980
+
+MODERN_SEASONS = list(range(NFLDATAPY_MAX_SEASON + 1, CURRENT_SEASON + 1))
+
+ROSTERS_ONLY   = "--rosters-only"   in sys.argv
+CURRENT_ONLY   = "--current-season" in sys.argv   # weekly cron target
+INCREMENTAL    = ROSTERS_ONLY or CURRENT_ONLY
 
 load_dotenv()
 
@@ -39,7 +55,6 @@ for stmt in [
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS draft_number SMALLINT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS heisman_year SMALLINT",
     "ALTER TABLE players ADD COLUMN IF NOT EXISTS jersey_number SMALLINT",
-    # player_seasons (existing cols are harmless to retry)
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS sacks             SMALLINT",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS def_ints          SMALLINT",
     "ALTER TABLE player_seasons ADD COLUMN IF NOT EXISTS super_bowl_winner BOOLEAN DEFAULT FALSE",
@@ -66,35 +81,175 @@ conn.commit()
 print("  Done")
 
 # ════════════════════════════════════════════════════════════════════════════════
+# 1b — Incremental load  (--rosters-only / --current-season)
+# ════════════════════════════════════════════════════════════════════════════════
+# Everything before CURRENT_SEASON is immutable, so a scheduled refresh has no
+# reason to re-download 45 years of it. This touches three small files and only
+# ever writes rows for CURRENT_SEASON.
+if INCREMENTAL:
+    mode = "current-season" if CURRENT_ONLY else "rosters-only"
+    print(f"\n── 1b. Incremental load — {mode} ({CURRENT_SEASON}) ──")
+    roster     = nfl.import_seasonal_rosters([CURRENT_SEASON])
+    players_df = nfl.import_players()
+    print(f"  {len(roster)} roster rows across {roster['team'].nunique()} teams")
+
+    birth = (
+        players_df[["gsis_id", "birth_date"]]
+        .dropna(subset=["gsis_id"]).drop_duplicates("gsis_id")
+        .set_index("gsis_id")["birth_date"].to_dict()
+    )
+
+    def _birth_year(value):
+        text = str(value or "")
+        try:
+            year = int(text[:4])
+        except ValueError:
+            return None
+        return year if 1920 < year < CURRENT_SEASON else None
+
+    # rookies won't exist in players yet — insert them before their season rows
+    entrants = roster[["player_id", "player_name", "position"]].dropna(
+        subset=["player_id", "player_name"]).drop_duplicates("player_id")
+    execute_values(cur, """
+        INSERT INTO players (nfl_id, name, position, birth_year)
+        VALUES %s
+        ON CONFLICT (nfl_id) DO UPDATE
+          SET name       = EXCLUDED.name,
+              position   = COALESCE(EXCLUDED.position,   players.position),
+              birth_year = COALESCE(EXCLUDED.birth_year, players.birth_year)
+    """, [
+        (r["player_id"], r["player_name"], r["position"],
+         _birth_year(birth.get(r["player_id"])))
+        for _, r in entrants.iterrows()
+    ])
+    conn.commit()
+
+    cur.execute("SELECT nfl_id, id FROM players WHERE nfl_id = ANY(%s)",
+                (entrants["player_id"].tolist(),))
+    id_map = dict(cur.fetchall())
+    print(f"  {len(id_map)} players resolved")
+
+    # NULL stats here must never clobber real numbers from a full load
+    execute_values(cur, """
+        INSERT INTO player_seasons (player_id, team, season_year)
+        VALUES %s
+        ON CONFLICT (player_id, season_year) DO UPDATE
+          SET team = COALESCE(EXCLUDED.team, player_seasons.team)
+    """, [
+        (id_map[r["player_id"]], str(r["team"]) if pd.notna(r["team"]) else None, CURRENT_SEASON)
+        for _, r in roster.iterrows() if r["player_id"] in id_map
+    ])
+    conn.commit()
+
+    jerseys = roster[["player_id", "jersey_number"]].dropna().drop_duplicates("player_id")
+    jersey_count = 0
+    for _, r in jerseys.iterrows():
+        db_id = id_map.get(r["player_id"])
+        if db_id:
+            cur.execute("UPDATE players SET jersey_number = %s WHERE id = %s",
+                        (int(r["jersey_number"]), db_id))
+            jersey_count += 1
+    conn.commit()
+    print(f"  {jersey_count} jersey numbers updated")
+
+    if CURRENT_ONLY:
+        weekly = nflreadpy.load_player_stats(seasons=[CURRENT_SEASON])
+        if not weekly.height:
+            print(f"  no {CURRENT_SEASON} stats published yet")
+        else:
+            cols  = weekly.columns
+            stats = (
+                weekly
+                .filter(pl.col("season_type") == "REG")
+                .group_by(["player_id"])
+                .agg([
+                    pl.col("team").mode().first().alias("recent_team"),
+                    pl.sum("fantasy_points_ppr").alias("fpts"),
+                    pl.sum("rushing_yards").alias("rush_yards"),
+                    pl.sum("receiving_tds").alias("rec_tds"),
+                    *([ pl.sum("sacks").alias("sacks") ] if "sacks" in cols else []),
+                ])
+                .to_pandas()
+            )
+            if "sacks" not in stats.columns:
+                stats["sacks"] = None
+
+            def _num(value, cast):
+                return None if pd.isna(value) else cast(value)
+
+            stat_rows = [
+                (id_map[r["player_id"]],
+                 str(r["recent_team"]) if pd.notna(r["recent_team"]) else None,
+                 CURRENT_SEASON,
+                 round(float(r["fpts"] or 0), 1),
+                 _num(r["rush_yards"], int), _num(r["rec_tds"], int), _num(r["sacks"], int))
+                for _, r in stats.iterrows() if r["player_id"] in id_map
+            ]
+            if stat_rows:
+                execute_values(cur, """
+                    INSERT INTO player_seasons
+                      (player_id, team, season_year, fpts, rush_yards, rec_tds, sacks)
+                    VALUES %s
+                    ON CONFLICT (player_id, season_year) DO UPDATE
+                      SET team       = COALESCE(EXCLUDED.team, player_seasons.team),
+                          fpts       = EXCLUDED.fpts,
+                          rush_yards = EXCLUDED.rush_yards,
+                          rec_tds    = EXCLUDED.rec_tds,
+                          sacks      = EXCLUDED.sacks
+                """, stat_rows)
+                conn.commit()
+            print(f"  {len(stat_rows)} stat rows upserted")
+
+    cur.close()
+    conn.close()
+    print(f"\n════ Incremental load complete — {mode} ({CURRENT_SEASON}) ════")
+    sys.exit(0)
+
+# ════════════════════════════════════════════════════════════════════════════════
 # 2 — Fetch source data
 # ════════════════════════════════════════════════════════════════════════════════
 print("\n── 2. Fetching source data ──")
 
-print("  Seasonal stats 1980–2025...")
-stats_old = nfl.import_seasonal_data(list(range(1980, 2025)))
+print(f"  Seasonal stats {HISTORY_START}–{NFLDATAPY_MAX_SEASON}...")
+stats_old = nfl.import_seasonal_data(list(range(HISTORY_START, NFLDATAPY_MAX_SEASON + 1)))
 
 print("  Player info...")
 players_df = nfl.import_players()
 
-print("  2025 weekly stats (nflreadpy)...")
-weekly_2025 = nflreadpy.load_player_stats(seasons=[2025])
-_2025_cols  = weekly_2025.columns
-seasonal_2025 = (
-    weekly_2025
-    .filter(pl.col("season_type") == "REG")
-    .group_by(["player_id", "player_display_name", "position"])
-    .agg([
-        pl.lit(2025).alias("season"),
-        pl.col("team").mode().first().alias("recent_team"),
-        pl.sum("fantasy_points_ppr").alias("fantasy_points_ppr"),
-        pl.sum("rushing_yards").alias("rushing_yards"),
-        pl.sum("receiving_tds").alias("receiving_tds"),
-        *([ pl.sum("sacks").alias("sacks") ] if "sacks" in _2025_cols else []),
-    ])
-    .to_pandas()
+# seasons past nfl_data_py's ceiling
+modern_frames = []
+for season in MODERN_SEASONS:
+    print(f"  {season} weekly stats (nflreadpy)...")
+    weekly = nflreadpy.load_player_stats(seasons=[season])
+    if not weekly.height:
+        print(f"    no rows yet for {season}, skipping")
+        continue
+    cols  = weekly.columns
+    frame = (
+        weekly
+        .filter(pl.col("season_type") == "REG")
+        .group_by(["player_id", "player_display_name", "position"])
+        .agg([
+            pl.lit(season).alias("season"),
+            pl.col("team").mode().first().alias("recent_team"),
+            pl.sum("fantasy_points_ppr").alias("fantasy_points_ppr"),
+            pl.sum("rushing_yards").alias("rushing_yards"),
+            pl.sum("receiving_tds").alias("receiving_tds"),
+            *([ pl.sum("sacks").alias("sacks") ] if "sacks" in cols else []),
+        ])
+        .to_pandas()
+    )
+    if "sacks" not in frame.columns:
+        frame["sacks"] = None
+    print(f"    {len(frame)} players")
+    modern_frames.append(frame)
+
+seasonal_modern = (
+    pd.concat(modern_frames, ignore_index=True) if modern_frames
+    else pd.DataFrame(columns=["player_id", "player_display_name", "position", "season",
+                               "recent_team", "fantasy_points_ppr", "rushing_yards",
+                               "receiving_tds", "sacks"])
 )
-if "sacks" not in seasonal_2025.columns:
-    seasonal_2025["sacks"] = None
 
 # Build a gsis_id → college/draft lookup from players_df
 # NB: nfl_data_py's import_players() calls the overall-pick column
@@ -134,18 +289,18 @@ unique_old = (
 )
 
 existing_ids = set(unique_old["player_id"])
-new_2025 = seasonal_2025[~seasonal_2025["player_id"].isin(existing_ids)][
+new_modern = seasonal_modern[~seasonal_modern["player_id"].isin(existing_ids)][
     ["player_id", "player_display_name", "position"]
 ].drop_duplicates(subset="player_id")
-new_2025 = new_2025.rename(columns={"player_display_name": "display_name"})
+new_modern = new_modern.rename(columns={"player_display_name": "display_name"})
 # newest season entrants still have a birth date in the players file, pull it in
 # instead of leaving it null or their birth year fact never builds
-new_2025 = new_2025.merge(
+new_modern = new_modern.merge(
     players_df[["gsis_id", "birth_date"]],
     left_on="player_id", right_on="gsis_id", how="left"
 ).drop(columns=["gsis_id"])
 
-all_players = pd.concat([unique_old, new_2025], ignore_index=True).dropna(subset=["display_name"])
+all_players = pd.concat([unique_old, new_modern], ignore_index=True).dropna(subset=["display_name"])
 
 def birth_year_of(value):
     if value is None:
@@ -214,11 +369,11 @@ total_players, with_birth = cur.fetchone()
 print(f"  birth years: {with_birth}/{total_players} ({len(gaps)} backfilled)")
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 4 — Season rows 1980–2025  (includes passing / receiving / pro_bowl)
+# 4 — Season rows HISTORY_START–NFLDATAPY_MAX_SEASON  (passing / receiving / pro_bowl)
 # ════════════════════════════════════════════════════════════════════════════════
-print("\n── 4. Inserting player seasons (1980–2025) ──")
+print(f"\n── 4. Inserting player seasons ({HISTORY_START}–{NFLDATAPY_MAX_SEASON}) ──")
 print("  Building team map from weekly data...")
-weekly   = nfl.import_weekly_data(list(range(1980, 2025)), columns=['player_id', 'season', 'recent_team'])
+weekly   = nfl.import_weekly_data(list(range(HISTORY_START, NFLDATAPY_MAX_SEASON + 1)), columns=['player_id', 'season', 'recent_team'])
 team_map = (
     weekly.groupby(['player_id', 'season'])['recent_team']
     .agg(lambda x: x.mode().iloc[0] if len(x) > 0 else None)
@@ -273,16 +428,16 @@ conn.commit()
 print(f"  {len(season_rows)} rows upserted")
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 5 — Season rows 2025
+# 5 — Season rows past nfl_data_py's ceiling
 # ════════════════════════════════════════════════════════════════════════════════
-print("\n── 5. Inserting player seasons (2025) ──")
-season_rows_2025 = []
-for _, row in seasonal_2025.iterrows():
+print(f"\n── 5. Inserting player seasons ({'/'.join(map(str, MODERN_SEASONS))}) ──")
+season_rows_modern = []
+for _, row in seasonal_modern.iterrows():
     db_id = player_id_map.get(row["player_id"])
     if not db_id:
         continue
-    season_rows_2025.append((
-        db_id, str(row.get("recent_team")) if row.get("recent_team") else None, 2025,
+    season_rows_modern.append((
+        db_id, str(row.get("recent_team")) if row.get("recent_team") else None, int(row["season"]),
         round(float(row["fantasy_points_ppr"] or 0), 1),
         safe_int(row, "rushing_yards"),
         safe_int(row, "receiving_tds"),
@@ -290,24 +445,25 @@ for _, row in seasonal_2025.iterrows():
         None, None, None, None, False,  # passing/receiving not in nflreadpy weekly agg
     ))
 
-execute_values(cur, """
-    INSERT INTO player_seasons
-      (player_id, team, season_year, fpts,
-       rush_yards, rec_tds, sacks,
-       passing_yards, passing_tds, passing_ints, receiving_yards, pro_bowl)
-    VALUES %s
-    ON CONFLICT (player_id, season_year) DO UPDATE
-      SET team       = EXCLUDED.team,
-          fpts       = EXCLUDED.fpts,
-          rush_yards = EXCLUDED.rush_yards,
-          rec_tds    = EXCLUDED.rec_tds,
-          sacks      = EXCLUDED.sacks
-""", season_rows_2025)
-conn.commit()
-print(f"  {len(season_rows_2025)} rows upserted")
+if season_rows_modern:
+    execute_values(cur, """
+        INSERT INTO player_seasons
+          (player_id, team, season_year, fpts,
+           rush_yards, rec_tds, sacks,
+           passing_yards, passing_tds, passing_ints, receiving_yards, pro_bowl)
+        VALUES %s
+        ON CONFLICT (player_id, season_year) DO UPDATE
+          SET team       = EXCLUDED.team,
+              fpts       = EXCLUDED.fpts,
+              rush_yards = EXCLUDED.rush_yards,
+              rec_tds    = EXCLUDED.rec_tds,
+              sacks      = EXCLUDED.sacks
+    """, season_rows_modern)
+    conn.commit()
+print(f"  {len(season_rows_modern)} rows upserted")
 
 # ════════════════════════════════════════════════════════════════════════════════
-# 6 — PFR defensive stats  (2018–2025)
+# 6 — PFR defensive stats
 # ════════════════════════════════════════════════════════════════════════════════
 print("\n── 6. PFR defensive stats ──")
 pfr_def = nflreadpy.load_pfr_advstats(seasons=True, stat_type='def', summary_level='season').to_pandas()
@@ -392,9 +548,8 @@ SB_WINNERS_PRE1999 = {
     1985: 'CHI', 1986: 'NYG', 1987: 'WAS', 1988: 'SF',  1989: 'SF',
     1990: 'NYG', 1991: 'WAS', 1992: 'DAL', 1993: 'DAL', 1994: 'SF',
     1995: 'DAL', 1996: 'GB',  1997: 'DEN', 1998: 'DEN',
-    2025: 'SEA',  # hardcoded fallback if import_schedules lacks 2025 data
 }
-schedules  = nfl.import_schedules(list(range(1999, 2026)))
+schedules  = nfl.import_schedules(list(range(1999, CURRENT_SEASON + 1)))
 sb_games   = schedules[schedules["game_type"] == "SB"][
     ["season", "home_team", "away_team", "home_score", "away_score"]
 ]
@@ -567,7 +722,7 @@ if heisman_ambiguous:
 # 10. Jersey numbers (most recent season on record)
 # ════════════════════════════════════════════════════════════════════════════════
 print("\n── 10. Jersey numbers ──")
-current_roster = nfl.import_seasonal_rosters([2025])
+current_roster = nfl.import_seasonal_rosters([CURRENT_SEASON])
 jersey_rows = (
     current_roster[["player_id", "jersey_number"]]
     .dropna()

@@ -21,3 +21,19 @@ services:
         sync: false
       - key: ADMIN_EMAILS
         sync: false
+
+  # Weekly in-season data refresh. Tuesdays 12:00 UTC (8am ET) — after Monday
+  # Night Football has settled and nflverse has published the week's stats.
+  # Runs the incremental path only: rosters, jerseys, and CURRENT_SEASON stats.
+  # A full historical load stays manual — see scripts/load_data.py.
+  - type: cron
+    name: pick6-data-refresh
+    runtime: python
+    schedule: "0 12 * * 2"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scripts/load_data.py --current-season
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.13.3
