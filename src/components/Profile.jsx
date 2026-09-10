@@ -63,8 +63,6 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
   return (
     <div className="htp-page">
       <div className="htp-card">
-        <h2 className="htp-section-title">Profile</h2>
-
         <div className="profile-row">
           <span className="profile-label">Signed in as</span>
           <span className="profile-value">{user.email}</span>

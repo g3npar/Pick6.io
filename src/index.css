@@ -179,20 +179,21 @@ body {
 }
 
 .user-chip { display: flex; align-items: center; gap: 8px; }
+/* matches .nav-link — the username is a nav destination like any other */
 .user-name-btn {
+  padding: 4px 12px;
+  border-radius: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-sec);
-  max-width: 120px;
+  max-width: 136px;   /* 120 + the 16px the wider nav padding takes from the text */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 7px 4px;
-  border-bottom: 1px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
-.user-name-btn:hover { color: var(--text); border-bottom-color: var(--border-bright); }
-.user-name-btn--active { color: var(--text); border-bottom-color: var(--red); }
+.user-name-btn:hover      { color: var(--text); background: var(--bg-hover); }
+.user-name-btn--active    { color: #fff; background: var(--red); font-weight: 700; border-left: 3px solid #fff; }
 
 
 
