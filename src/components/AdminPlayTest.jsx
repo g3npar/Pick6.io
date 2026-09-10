@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import GameBoard from './GameBoard'
+import { normalizePlayerName } from '../utils/normalizePlayerName'
 
 export default function AdminPlayTest({ puzzle, date, onClose }) {
   const [state, setState] = useState({})
@@ -16,8 +17,6 @@ export default function AdminPlayTest({ puzzle, date, onClose }) {
   const gaveUp           = state.gaveUp ?? false
   const liePhaseComplete = lieFound || lieAttempts >= 3 || submitted
 
-  const norm = s => String(s || '').trim().toLowerCase()
-
   const onGuessLie = () => {
     if (!selectedLieId || liePhaseComplete) return
     const correct = selectedLieId === puzzle.falseFactId
@@ -32,7 +31,7 @@ export default function AdminPlayTest({ puzzle, date, onClose }) {
 
   const onSubmit = () => {
     if (!selectedPlayer.trim() || !liePhaseComplete || submitted) return
-    update({ submitted: true, playerCorrect: norm(selectedPlayer) === norm(puzzle.playerName) })
+    update({ submitted: true, playerCorrect: normalizePlayerName(selectedPlayer) === normalizePlayerName(puzzle.playerName) })
   }
 
   const onGiveUp = () => {

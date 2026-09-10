@@ -9,9 +9,13 @@ types.setTypeParser(1082, val => val)
 // awards csv loaded at startup
 const _awardsIdx = new Map()  // normalized name to awards
 
+// Suffix- and punctuation-insensitive. "Antoine Winfield Jr", "Antoine Winfield
+// Jr." and "antoine  winfield" all collapse to the same key, which matters for
+// grading a typed guess as much as for the awards lookup — the reveal renders
+// uppercase, so a missing period looks identical on screen but wouldn't match.
 function _normName(n) {
   return String(n).toLowerCase()
-    .replace(/\bj\.?r\.?\b|\bii\b|\biii\b|\biv\b/g, '')
+    .replace(/\bj\.?r\.?\b|\bs\.?r\.?\b|\bii\b|\biii\b|\biv\b|\bv\b/g, '')
     .replace(/[^a-z ]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -1123,4 +1127,5 @@ module.exports = {
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
+  normalizePlayerName: _normName,
 }

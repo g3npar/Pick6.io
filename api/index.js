@@ -10,6 +10,7 @@ const {
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
+  normalizePlayerName,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
@@ -471,8 +472,7 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
       lieFound = Number.isInteger(selectedLieId) && selectedLieId === puzzle.falseFactId
     }
 
-    const normName = s => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9 .\-]/g, '')
-    const playerCorrect = normName(playerGuess) === normName(puzzle.playerName)
+    const playerCorrect = normalizePlayerName(playerGuess) === normalizePlayerName(puzzle.playerName)
     const score = (lieFound ? Math.max(1, 3 - attempts) : 0) + (playerCorrect ? 3 : 0)
 
     let saved = false
