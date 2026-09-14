@@ -97,7 +97,6 @@ export default function Admin() {
   }
 
   const selectLie = factId => {
-    if (factId === candidate.falseFactId) return
     setBusy(true)
     postJSON('/admin/preview/lie', { candidate, factId })
       .then(d => setCandidate(d.puzzle))

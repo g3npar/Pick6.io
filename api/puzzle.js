@@ -826,6 +826,7 @@ async function setPuzzleLie(candidate, factId) {
   if (!target) throw new Error('Invalid fact')
 
   const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
+  // pool stays on the puzzle seed, true texts like played-for depend on it
   const rng  = seedRng(candidate.seed ?? Date.now())
   const pool = buildFactPool(player, seasons, awards, rng, samePositionNames)
 
@@ -833,7 +834,12 @@ async function setPuzzleLie(candidate, factId) {
   const wanted = trueTextOf(target)
   const entry  = pool.find(e => e && e.text === wanted)
   if (!entry) throw new Error('Could not regenerate a lie for that fact')
-  const lie = entry.makeLie(rng)
+
+  // fresh randomness per click so re-picking the same fact rolls a new lie
+  const lieRng  = seedRng(Math.floor(Math.random() * 0x7fffffff))
+  const current = candidate.facts.find(f => f.id === candidate.falseFactId)?.text
+  let lie = entry.makeLie(lieRng)
+  for (let i = 0; i < 10 && lie.text === current; i++) lie = entry.makeLie(lieRng)
 
   return {
     ...candidate,
