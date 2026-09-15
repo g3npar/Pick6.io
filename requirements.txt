@@ -6,6 +6,7 @@ nfl-data-py==0.3.2
 nflreadpy==0.1.5
 numpy==2.2.6          # transitive, but it's the package that broke the build
 polars==1.41.1
+pyarrow==25.0.0       # polars .to_pandas() needs it at runtime; polars doesn't declare it
 psycopg2-binary==2.9.12
 python-dotenv==1.2.2
 pandas==2.3.2
