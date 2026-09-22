@@ -6,7 +6,7 @@ const helmet       = require('helmet')
 const rateLimit    = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
 const {
-  getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
+  generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
@@ -58,15 +58,6 @@ const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please slow down.' },
-}) : noopLimiter
-
-// tighter limit for puzzle generation only
-const puzzleLimiter = RATE_LIMITING_ENABLED ? rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many puzzle requests, please wait a moment.' },
 }) : noopLimiter
 
 // tighter limit for auth
@@ -123,92 +114,13 @@ app.get('/players/search', async (req, res) => {
   res.json(results)
 })
 
-// GET /puzzle/today
-app.get('/puzzle/today', async (req, res) => {
-  try {
-    const puzzles = await getDailyPuzzles()
-    res.json(puzzles)
-  } catch (err) {
-    console.error('Puzzle generation failed:', err.message)
-    res.status(500).json({ error: 'Could not generate puzzles' })
-  }
-})
-
-// saved result for a puzzle date
-async function fetchSavedResult(userId, date) {
-  if (!userId) return null
-  const r = await pool.query(
-    'SELECT lie_found, lie_attempts, player_correct, player_guess, score FROM user_results WHERE user_id = $1 AND puzzle_date = $2',
-    [userId, date]
-  )
-  if (!r.rows.length) return null
-  const row = r.rows[0]
-  return {
-    lieFound: row.lie_found, lieAttempts: row.lie_attempts,
-    playerGuess: row.player_guess, playerCorrect: row.player_correct, score: row.score,
-  }
-}
-
-// in progress lie guess state
-async function fetchProgress(userId, date) {
-  if (!userId) return null
-  const r = await pool.query(
-    'SELECT lie_attempts, wrong_ids, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
-    [userId, date]
-  )
-  if (!r.rows.length) return null
-  const row = r.rows[0]
-  return { lieAttempts: row.lie_attempts, wrongIds: row.wrong_ids, lieFound: row.lie_found }
-}
-
-// warms the reveal image while the user is still playing
-function warmHeadshotFor(puzzle) {
-  if (puzzle && puzzle.headshotUrl) loadPortrait(puzzle.headshotUrl).catch(() => {})
-}
-
-// reveal portraits come from our cache so they are already warm
-function portraitUrl(req, date, headshotUrl) {
-  if (!headshotUrl) return null
-  return `${req.protocol}://${req.get('host')}/puzzle/portrait/${signPortrait(date)}`
-}
-
-// serves the cached reveal image, token proves the puzzle was finished
-app.get('/puzzle/portrait/:token', async (req, res) => {
-  const date = verifyPortrait(req.params.token)
-  if (!date) return res.status(403).json({ error: 'Not available yet' })
-  try {
-    const puzzle = date === todayDateStr() ? await getDailyCurrentPuzzle() : await getPuzzleForDate(date)
-    const img = await loadPortrait(puzzle.headshotUrl)
-    if (!img) return res.status(404).json({ error: 'No portrait' })
-    res.set('Content-Type', img.type)
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin')
-    res.set('Cache-Control', 'private, max-age=86400, immutable')
-    res.send(img.buf)
-  } catch (err) {
-    console.error('Portrait failed:', err.message)
-    res.status(500).json({ error: 'Could not load portrait' })
-  }
-})
-
-// strips answer fields until safe to show
-function withReveal(puzzle, { lie = false, player = false } = {}) {
-  // playerId and seed are admin internals, they would give the answer away
-  const { falseFactId, falseExplanation, trueText, playerName, headshotUrl,
-          playerId, seed, team, position, ...safe } = puzzle
-  return {
-    ...safe,
-    ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
-    // team and position narrow the answer so they wait for the reveal too
-    ...(player ? { playerName, headshotUrl, team, position } : {}),
-  }
-}
+// GET /health cheap check for Render, never touches the database
+app.get('/health', (_req, res) => res.json({ ok: true }))
 
 // GET /puzzle/today/current
 app.get('/puzzle/today/current', optionalAuth, async (req, res) => {
   try {
-    const fresh  = req.query.fresh !== undefined
-    const puzzle = await getDailyCurrentPuzzle(fresh)
-    if (fresh) return res.json(puzzle)
+    const puzzle = await getDailyCurrentPuzzle()
     const date   = todayDateStr()
     const result = await fetchSavedResult(req.userId, date)
     if (result) {
@@ -345,35 +257,6 @@ app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Archive fetch failed:', err.message)
     res.status(500).json({ error: 'Could not load archive' })
-  }
-})
-
-// GET /puzzle/generate fresh random set
-app.get('/puzzle/generate', puzzleLimiter, async (req, res) => {
-  try {
-    const puzzles = await generateFreshPuzzles()
-    res.json(puzzles)
-  } catch (err) {
-    console.error('Puzzle generation failed:', err.message)
-    res.status(500).json({ error: 'Could not generate puzzles' })
-  }
-})
-
-// GET /puzzle/player by name
-app.get('/puzzle/player', puzzleLimiter, async (req, res) => {
-  const raw  = String(req.query.name || '').trim()
-  if (!raw || raw.length > 80) return res.status(400).json({ error: 'Invalid name' })
-  // strip disallowed characters
-  const name = raw.replace(/[^a-zA-Z .'\-]/g, '').trim()
-  if (!name) return res.status(400).json({ error: 'Invalid name' })
-  // disambiguates same name players
-  const draftYear = /^\d{4}$/.test(req.query.draftYear) ? Number(req.query.draftYear) : undefined
-  try {
-    const puzzle = await generatePlayerPuzzle(name, draftYear)
-    res.json(puzzle)
-  } catch (err) {
-    console.error('Player puzzle failed:', err.message)
-    res.status(404).json({ error: err.message })
   }
 })
 

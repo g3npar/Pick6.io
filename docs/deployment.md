@@ -30,7 +30,7 @@ The RDS security group only lets in certain IPs. It needs:
 
 - the Render web service's IPs
 - the Render cron job's IPs (different from the web service, they're on the Connect tab)
-- my own IP if I'm running stuff locally
+- my own IP if I'm running the data scripts myself
 
 If the connection **times out**, it's almost always a missing IP.
 
@@ -47,10 +47,3 @@ If I change `requirements.txt`, I should test it in a fresh virtualenv first, si
 python3 -m venv /tmp/testenv
 /tmp/testenv/bin/pip install -r requirements.txt
 ```
-
-## Problems I've already hit
-
-- **Connection timed out** → add the IP to the security group
-- **Build log says `cp314`** → `.python-version` is missing
-- **Build hangs on "Preparing metadata" then fails** → some package is trying to build numpy from source. Check the versions.
-- **`No module named 'pyarrow'`** → it's missing from requirements.txt

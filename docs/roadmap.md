@@ -41,12 +41,3 @@
 **How it works:**
 **Things to figure out:**
 ```
-
-## Known bugs / stuff to clean up
-
-- **2025+ stats are incomplete.** For seasons that come from `nflreadpy`, the loader never saves passing yards, passing TDs, or receiving yards. The weekly job also looks for a `sacks` column that's actually called `def_sacks`, so it saves sacks as empty every week.
-- **Old API routes leak answers.** `/puzzle/today`, `/puzzle/generate`, `/puzzle/player`, and `?fresh` send back the answers. The site doesn't use them, so delete them.
-- **New players don't get headshots automatically.** The cron job doesn't run `load_headshots.py`.
-- **No script to create `players` / `player_seasons`**, so I can't rebuild the database from scratch.
-- **`render.yaml` is outdated** and Render ignores it anyway.
-- **The season year is hardcoded in three places**: `load_data.py`, `api/puzzle.js`, and `scrape_awards.py`.

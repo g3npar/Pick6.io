@@ -53,9 +53,3 @@ Nothing, the cron job does it.
 2. Update `END` in `scrape_awards.py`, run it, commit the csv, and redeploy the API
 3. Run the full `load_data.py`
 4. Run `load_headshots.py`
-
-## If something breaks
-
-- **"No current eligible players found"** - run `--rosters-only`
-- **Player has no picture** - run `load_headshots.py`
-- **Database connection times out** - my IP probably changed, add it to the RDS security group

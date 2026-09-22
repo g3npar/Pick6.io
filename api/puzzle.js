@@ -700,36 +700,6 @@ function buildPuzzle(id, player, seasons, awards, seed, samePositionNames = []) 
 }
 
 // db helpers
-async function fetchEligibleIds() {
-  const res = await pool.query(`
-    SELECT p.id, p.name, p.position
-    FROM players p
-    JOIN player_seasons ps ON ps.player_id = p.id
-    GROUP BY p.id
-    HAVING COUNT(ps.id) >= 3
-    ORDER BY p.id
-  `)
-
-  const era1 = [], era2 = [], era3 = []
-  for (const r of res.rows) {
-    if (hasNoMeaningfulStats(r.position)) continue
-
-    // all pro or pro bowl places player in an era
-    const honors = lookupAwards(r.name).filter(a =>
-      (a.award === 'ALL_PRO_FIRST' || a.award === 'PRO_BOWL') && a.year > 0)
-    if (honors.length < 1) continue
-
-    // median honor year sets the era
-    const years = honors.map(a => a.year).sort((a, b) => a - b)
-    const median = years[Math.floor(years.length / 2)]
-
-    if (median <= 1995)      era1.push(r.id)
-    else if (median <= 2010) era2.push(r.id)
-    else                     era3.push(r.id)
-  }
-
-  return { era1, era2, era3 }
-}
 
 // same position that season on any team
 async function fetchSamePositionNames(player, seasons) {
@@ -868,9 +838,6 @@ async function setPuzzleLie(candidate, factId) {
   }
 }
 
-// daily puzzle cache
-let _cache = null   // { date: 'YYYY-MM-DD', puzzles: [...] }
-
 const EPOCH = new Date('2026-01-01')
 
 // avoid repeating a puzzle subject within this many weeks of another one
@@ -911,33 +878,6 @@ async function pickOneFromBucket(bucket, rng, seed, pid, attempted, recentlyUsed
     if (puzzle) return puzzle
   }
   return null
-}
-
-async function getDailyPuzzles() {
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
-  if (_cache?.date === today) return _cache.puzzles
-
-  const daySeed = Math.floor((new Date(today) - EPOCH) / 86400000)
-  const rng     = seedRng(daySeed)
-  const { era1, era2, era3 } = await fetchEligibleIds()
-
-  if (era1.length < 1 || era2.length < 1 || era3.length < 1) {
-    throw new Error(`Era buckets too small: ${era1.length}/${era2.length}/${era3.length}`)
-  }
-
-  const attempted = new Set()
-  const recentlyUsed = await fetchRecentlyUsedPlayerIds(today)
-  const p1 = await pickOneFromBucket(era1, seedRng(daySeed + 1), daySeed, 1, attempted, recentlyUsed)
-  const p2 = await pickOneFromBucket(era2, seedRng(daySeed + 2), daySeed, 2, attempted, recentlyUsed)
-  const p3 = await pickOneFromBucket(era3, seedRng(daySeed + 3), daySeed, 3, attempted, recentlyUsed)
-  const puzzles = [p1, p2, p3].filter(Boolean)
-
-  if (puzzles.length < 3) {
-    throw new Error(`Only generated ${puzzles.length}/3 puzzles`)
-  }
-
-  _cache = { date: today, puzzles }
-  return puzzles
 }
 
 // current roster daily puzzle
@@ -1088,19 +1028,8 @@ async function previewUpcomingDates(dates) {
   return results
 }
 
-async function getDailyCurrentPuzzle(fresh = false) {
+async function getDailyCurrentPuzzle() {
   const today = todayDateStr()
-
-  if (fresh) {
-    const seed      = Date.now()
-    const ids       = await fetchCurrentPlayerIds()
-    if (!ids.length) throw new Error('No current eligible players found')
-    const attempted = new Set()
-    const recentlyUsed = await fetchRecentlyUsedPlayerIds(today)
-    const puzzle    = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted, recentlyUsed)
-    if (!puzzle) throw new Error('Could not build current player puzzle')
-    return puzzle
-  }
 
   if (_currentCache?.date === today) return _currentCache.puzzle
 
@@ -1125,29 +1054,8 @@ async function listArchiveDates(limit = 60) {
   return res.rows.map(r => r.puzzle_date)
 }
 
-async function generateFreshPuzzles() {  const seed = Date.now()
-  const { era1, era2, era3 } = await fetchEligibleIds()
-
-  if (era1.length < 1 || era2.length < 1 || era3.length < 1) {
-    throw new Error(`Era buckets too small: ${era1.length}/${era2.length}/${era3.length}`)
-  }
-
-  const attempted = new Set()
-  const recentlyUsed = await fetchRecentlyUsedPlayerIds(todayDateStr())
-  const p1 = await pickOneFromBucket(era1, seedRng(seed + 1), seed, 1, attempted, recentlyUsed)
-  const p2 = await pickOneFromBucket(era2, seedRng(seed + 2), seed, 2, attempted, recentlyUsed)
-  const p3 = await pickOneFromBucket(era3, seedRng(seed + 3), seed, 3, attempted, recentlyUsed)
-  const puzzles = [p1, p2, p3].filter(Boolean)
-
-  if (puzzles.length < 3) {
-    throw new Error(`Only generated ${puzzles.length}/3 puzzles`)
-  }
-
-  return puzzles
-}
-
 module.exports = {
-  getDailyPuzzles, generateFreshPuzzles, generatePlayerPuzzle, getDailyCurrentPuzzle,
+  generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,

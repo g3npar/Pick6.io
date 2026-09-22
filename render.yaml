@@ -5,7 +5,7 @@ services:
     buildCommand: cd api && npm install
     startCommand: node api/index.js
     plan: free
-    healthCheckPath: /puzzle/today
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production

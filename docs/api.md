@@ -39,8 +39,6 @@ Only works if your email is in `ADMIN_EMAILS`.
 | `POST /admin/preview/swap` | Swaps a fact |
 | `POST /admin/set` | Saves a puzzle for a future date |
 
-## Old routes (should delete)
+`GET /health` just returns `{ ok: true }` so Render can check the server is up.
 
-`/puzzle/today`, `/puzzle/generate`, `/puzzle/player`, and `/puzzle/today/current?fresh` are left over from an older version. The site doesn't use them, and they send back the answers, so I should get rid of them.
-
-Rate limiting is only on in production (60 requests/min overall, stricter for login and puzzle generation).
+Rate limiting is only on in production (60 requests/min overall, stricter for login).
