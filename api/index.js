@@ -10,7 +10,7 @@ const {
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
-  normalizePlayerName,
+  normalizePlayerName, regeneratePuzzleFacts,
 } = require('./puzzle')
 const {
   cookieOptions, COOKIE_NAME, ensureAuthSchema, verifyGoogleCredential,
@@ -578,6 +578,17 @@ app.post('/admin/preview/lie', requireAuth, requireAdmin, adminLimiter, async (r
   try {
     const puzzle = await setPuzzleLie(candidate, factId)
     res.json({ puzzle })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+})
+
+// POST /admin/preview/regenerate same player, new facts and lie
+app.post('/admin/preview/regenerate', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
+  const { candidate } = req.body || {}
+  if (!candidate) return res.status(400).json({ error: 'Invalid request' })
+  try {
+    res.json({ puzzle: await regeneratePuzzleFacts(candidate) })
   } catch (err) {
     res.status(404).json({ error: err.message })
   }

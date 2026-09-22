@@ -775,6 +775,24 @@ async function fetchPlayerDataByName(name, draftYear) {
   return fetchPlayerData(res.rows[0].id)
 }
 
+// same player, new random pick of facts and lie
+async function regeneratePuzzleFacts(candidate) {
+  const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
+  const trueSet = p => p.facts.map(f => (f.id === p.falseFactId ? p.trueText : f.text)).sort().join('|')
+  const current = trueSet(candidate)
+
+  // players with only ~6 facts can't get a new set, so fall back to just a new lie
+  let puzzle = null
+  for (let i = 0; i < 10; i++) {
+    puzzle = buildPuzzle(candidate.id ?? 1, player, seasons, awards,
+      Math.floor(Math.random() * 0x7fffffff), samePositionNames)
+    if (!puzzle) break
+    if (trueSet(puzzle) !== current) break
+  }
+  if (!puzzle) throw new Error(`Could not build puzzle for ${player.name} (insufficient facts)`)
+  return puzzle
+}
+
 async function generatePlayerPuzzle(name, draftYear) {
   const { player, seasons, awards, samePositionNames } = await fetchPlayerDataByName(name, draftYear)
   const puzzle = buildPuzzle(1, player, seasons, awards, Date.now(), samePositionNames)
@@ -1133,5 +1151,5 @@ module.exports = {
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
   previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
-  normalizePlayerName: _normName,
+  normalizePlayerName: _normName, regeneratePuzzleFacts,
 }

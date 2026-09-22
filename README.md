@@ -45,6 +45,10 @@ Each lie is a plausible near miss rather than a wild one. A stat lie keeps the r
 
 Answers are withheld server-side: the player's name, the lie, and the reveal portrait are stripped from every response until they've been earned.
 
+## Developer docs
+
+How the code works, how to deploy it, and what's planned next live in [`docs/`](docs/README.md).
+
 ## Project structure
 
 ```
@@ -60,7 +64,7 @@ Answers are withheld server-side: the player's name, the lie, and the reveal por
 │   ├── awards.csv        # HOF, Pro Bowl, All-Pro, MVP, OPOY, DPOY, ROY, CPOY (1957–2025)
 │   ├── logos/            # NFL team + college logos
 │   └── og-image.png      # Social share preview image
-├── docs/
+├── docs/                 # developer docs — start at docs/README.md
 │   └── screenshots/      # README screenshots
 ├── scripts/              # Data loading + scraping scripts (Python)
 ├── render.yaml           # Render deployment config (API)

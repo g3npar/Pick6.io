@@ -52,6 +52,14 @@ export default function Admin() {
       .finally(() => setBusy(false))
   }
 
+  const regenerateFacts = () => {
+    setBusy(true)
+    postJSON('/admin/preview/regenerate', { candidate })
+      .then(d => { setCandidate(d.puzzle); setPlaying(false); closeSwap() })
+      .catch(e => alert(e.message))
+      .finally(() => setBusy(false))
+  }
+
   const searchPlayers = q => {
     setQuery(q)
     if (q.length < 2) { setResults([]); return }
@@ -175,6 +183,7 @@ export default function Admin() {
 
             <div className="admin-actions">
               <button className="header-icon-btn" disabled={busy} onClick={shuffle}>Shuffle</button>
+              <button className="header-icon-btn" disabled={busy} onClick={regenerateFacts}>New Facts</button>
               <button className="header-icon-btn" disabled={busy} onClick={() => setPlaying(true)}>Play</button>
               <button className="submit-btn submit-btn--green" disabled={busy} onClick={setPuzzle} style={{ flex: 1 }}>
                 Set This Puzzle
