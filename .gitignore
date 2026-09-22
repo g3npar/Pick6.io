@@ -4,3 +4,4 @@ global-bundle.pem
 dist/
 __pycache__/
 *.pyc
+.vscode/
