@@ -117,6 +117,75 @@ app.get('/players/search', async (req, res) => {
 // GET /health cheap check for Render, never touches the database
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
+// saved result for a puzzle date
+async function fetchSavedResult(userId, date) {
+  if (!userId) return null
+  const r = await pool.query(
+    'SELECT lie_found, lie_attempts, player_correct, player_guess, score FROM user_results WHERE user_id = $1 AND puzzle_date = $2',
+    [userId, date]
+  )
+  if (!r.rows.length) return null
+  const row = r.rows[0]
+  return {
+    lieFound: row.lie_found, lieAttempts: row.lie_attempts,
+    playerGuess: row.player_guess, playerCorrect: row.player_correct, score: row.score,
+  }
+}
+
+// in progress lie guess state
+async function fetchProgress(userId, date) {
+  if (!userId) return null
+  const r = await pool.query(
+    'SELECT lie_attempts, wrong_ids, lie_found FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2',
+    [userId, date]
+  )
+  if (!r.rows.length) return null
+  const row = r.rows[0]
+  return { lieAttempts: row.lie_attempts, wrongIds: row.wrong_ids, lieFound: row.lie_found }
+}
+
+// warms the reveal image while the user is still playing
+function warmHeadshotFor(puzzle) {
+  if (puzzle && puzzle.headshotUrl) loadPortrait(puzzle.headshotUrl).catch(() => {})
+}
+
+// reveal portraits come from our cache so they are already warm
+function portraitUrl(req, date, headshotUrl) {
+  if (!headshotUrl) return null
+  return `${req.protocol}://${req.get('host')}/puzzle/portrait/${signPortrait(date)}`
+}
+
+// serves the cached reveal image, token proves the puzzle was finished
+app.get('/puzzle/portrait/:token', async (req, res) => {
+  const date = verifyPortrait(req.params.token)
+  if (!date) return res.status(403).json({ error: 'Not available yet' })
+  try {
+    const puzzle = date === todayDateStr() ? await getDailyCurrentPuzzle() : await getPuzzleForDate(date)
+    const img = await loadPortrait(puzzle.headshotUrl)
+    if (!img) return res.status(404).json({ error: 'No portrait' })
+    res.set('Content-Type', img.type)
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin')
+    res.set('Cache-Control', 'private, max-age=86400, immutable')
+    res.send(img.buf)
+  } catch (err) {
+    console.error('Portrait failed:', err.message)
+    res.status(500).json({ error: 'Could not load portrait' })
+  }
+})
+
+// strips answer fields until safe to show
+function withReveal(puzzle, { lie = false, player = false } = {}) {
+  // playerId and seed are admin internals, they would give the answer away
+  const { falseFactId, falseExplanation, trueText, playerName, headshotUrl,
+          playerId, seed, team, position, ...safe } = puzzle
+  return {
+    ...safe,
+    ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
+    // team and position narrow the answer so they wait for the reveal too
+    ...(player ? { playerName, headshotUrl, team, position } : {}),
+  }
+}
+
 // GET /puzzle/today/current
 app.get('/puzzle/today/current', optionalAuth, async (req, res) => {
   try {
