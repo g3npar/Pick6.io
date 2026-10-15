@@ -370,15 +370,32 @@ app.get('/auth/me', optionalAuth, async (req, res) => {
   res.json({ user: toUserJSON(r.rows[0]) })
 })
 
-// GET /auth/history  every finished game, grouped by puzzle day, newest first.
+// GET /auth/history?end=2026-10-15&days=14  finished games for a run of days, newest
+// first, a page at a time for the profile's "Load 14 more". end defaults to today.
 // attempts are counted the way the games show them, the right guess included
+const shiftDate = (date, n) => {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
 app.get('/auth/history', requireAuth, async (req, res) => {
+  const end = /^\d{4}-\d{2}-\d{2}$/.test(req.query.end || '') ? req.query.end : todayDateStr()
+  const span = Math.min(Math.max(parseInt(req.query.days, 10) || 14, 1), 60)
+  const start = shiftDate(end, 1 - span)
   try {
     const day = "to_char(puzzle_date, 'YYYY-MM-DD') AS date"
-    const [p6, fr, ll] = await Promise.all([
-      pool.query(`SELECT ${day}, lie_found, lie_attempts, player_correct, score FROM user_results WHERE user_id = $1`, [req.userId]),
-      pool.query(`SELECT ${day}, team_found, team_attempts, year_guess, score FROM filmroom_results WHERE user_id = $1`, [req.userId]),
-      pool.query(`SELECT ${day}, slots, score FROM lineup_games WHERE user_id = $1 AND completed`, [req.userId]),
+    const inRange = 'user_id = $1 AND puzzle_date BETWEEN $2 AND $3'
+    const args = [req.userId, start, end]
+    const [p6, fr, ll, older] = await Promise.all([
+      pool.query(`SELECT ${day}, lie_found, lie_attempts, player_correct, score FROM user_results WHERE ${inRange}`, args),
+      pool.query(`SELECT ${day}, team_found, team_attempts, year_guess, score FROM filmroom_results WHERE ${inRange}`, args),
+      pool.query(`SELECT ${day}, slots, score FROM lineup_games WHERE ${inRange} AND completed`, args),
+      // is there anything before this page, so the profile knows to offer more
+      pool.query(`
+        SELECT EXISTS (SELECT 1 FROM user_results WHERE user_id = $1 AND puzzle_date < $2)
+            OR EXISTS (SELECT 1 FROM filmroom_results WHERE user_id = $1 AND puzzle_date < $2)
+            OR EXISTS (SELECT 1 FROM lineup_games WHERE user_id = $1 AND puzzle_date < $2 AND completed) AS more
+      `, [req.userId, start]),
     ])
     const days = new Map()
     const dayFor = date => days.get(date) || days.set(date, { date }).get(date)
@@ -405,7 +422,10 @@ app.get('/auth/history', requireAuth, async (req, res) => {
         logos: r.slots.map(s => ({ solved: s.solved, attempts: s.solved ? s.attempts + 1 : s.attempts })),
       }
     }
-    res.json([...days.values()].sort((a, b) => b.date.localeCompare(a.date)))
+    res.json({
+      start, end, more: older.rows[0].more,
+      days: [...days.values()].sort((a, b) => b.date.localeCompare(a.date)),
+    })
   } catch (err) {
     console.error('History fetch failed:', err.message)
     res.status(500).json({ error: 'Could not load your stats' })

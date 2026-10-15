@@ -513,6 +513,13 @@ export default function FilmRoomBoard({ date = null }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{result.score}/6</span>
               </div>
+              {/* 0/6 in any game is a Pick 6, same message as Pick 6 */}
+              {scoreTier === 'bad' && (
+                <>
+                  <p className="result-table-pick6">You scored a Pick 6.</p>
+                  <p className="result-table-pick6">Better luck next time.</p>
+                </>
+              )}
               {gotSomethingWrong && (
                 <button className="result-table-reveal-btn" onClick={() => setShowAnswer(v => !v)}>
                   {showAnswer ? 'Hide Correct Answer' : 'Show Correct Answer'}

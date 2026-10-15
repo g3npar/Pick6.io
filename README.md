@@ -2,7 +2,7 @@
 
 Three daily sports trivia games, each scored out of 6:
 
-- **Pick 6:** six facts about a mystery NFL player, one of them a lie. Spot the lie, name the player. Whiff on both and it's a Pick Six.
+- **Pick 6:** six facts about a mystery NFL player, one of them a lie. Spot the lie, name the player. Whiff on both and it's a Pick 6.
 - **Film Room:** six clues about one NFL team's season. Guess the team, then the year.
 - **Logo Lineup:** six logos zoomed way in, one each from the NFL, NBA, MLB, NHL and college, plus one old logo. Name the teams.
 
@@ -21,6 +21,7 @@ Three daily sports trivia games, each scored out of 6:
 ## How it works
 
 - A new puzzle for each game every day, max score **6 points** in each
+- Score **0/6** in any game and it's a Pick 6
 - Missed a day? Past puzzles stay playable in the archive
 - Sign in with Google to save your results across devices, appear on each game's leaderboard, and see your per day stats on your profile
 - Each game's rules are behind the **i** next to its puzzle number
@@ -29,7 +30,6 @@ Three daily sports trivia games, each scored out of 6:
 
 - Each puzzle features a currently active NFL player
 - **+3 pts** for naming the correct player · **+3 pts** for spotting the lie (drops by 1 per wrong attempt, min +1)
-- Miss both and it's a Pick Six
 
 Facts are generated from a player's real record, so the lie has to sit convincingly among them:
 

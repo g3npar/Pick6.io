@@ -305,6 +305,13 @@ export default function LineupBoard({ date = null }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{data.score}/6</span>
               </div>
+              {/* 0/6 in any game is a Pick 6, same message as Pick 6 */}
+              {scoreTier === 'bad' && (
+                <>
+                  <p className="result-table-pick6">You scored a Pick 6.</p>
+                  <p className="result-table-pick6">Better luck next time.</p>
+                </>
+              )}
               {!data.signedIn && <p className="fr-signin-hint">Sign in to save your Logo Lineup results.</p>}
               <div className="share-row">
                 <button className="share-btn" onClick={handleShare}>

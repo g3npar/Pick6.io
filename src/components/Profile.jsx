@@ -1,5 +1,6 @@
 import { useState, useEffect, Fragment } from 'react'
 import { formatDate } from '../utils/formatDate'
+import WheelSpinner from './WheelSpinner'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -20,24 +21,61 @@ function gameLines(day) {
   ]
 }
 
+const PAGE_DAYS = 14
+
+// every calendar day from end back to start, newest first, with whatever was played
+function calendar(start, end, played) {
+  const byDate = new Map(played.map(d => [d.date, d]))
+  const out = []
+  for (let d = new Date(`${end}T00:00:00Z`); ; d.setUTCDate(d.getUTCDate() - 1)) {
+    const date = d.toISOString().slice(0, 10)
+    out.push(byDate.get(date) || { date })
+    if (date <= start) break
+  }
+  return out
+}
+
 function PerDayStats() {
-  const [days, setDays] = useState(null)
+  const [days, setDays] = useState(null)       // calendar days loaded so far
+  const [oldest, setOldest] = useState(null)   // first day of the last page
+  const [more, setMore] = useState(false)      // older results exist
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
 
-  useEffect(() => {
-    fetch(`${API}/auth/history`, { credentials: 'include' })
+  // one page of 14 days ending on `end`, or ending today when there's no end yet
+  const loadPage = end => {
+    const q = new URLSearchParams({ days: PAGE_DAYS, ...(end ? { end } : {}) })
+    return fetch(`${API}/auth/history?${q}`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(setDays)
-      .catch(() => setError(true))
-  }, [])
+      .then(page => {
+        setDays(prev => [...(prev || []), ...calendar(page.start, page.end, page.days)])
+        setOldest(page.start)
+        setMore(page.more)
+      })
+  }
+
+  useEffect(() => { loadPage(null).catch(() => setError(true)) }, [])
+
+  const loadMore = () => {
+    if (loadingMore || !oldest) return
+    setLoadingMore(true)
+    const prevDay = new Date(`${oldest}T00:00:00Z`)
+    prevDay.setUTCDate(prevDay.getUTCDate() - 1)
+    loadPage(prevDay.toISOString().slice(0, 10))
+      .catch(() => alert("Couldn't load more days, try again"))
+      .finally(() => setLoadingMore(false))
+  }
 
   return (
     <div className="legal-section">
       <h2 className="htp-section-title stats-title">Per day stats</h2>
       {error && <p className="board-empty">Couldn't load your stats right now.</p>}
-      {!error && !days && <p className="profile-hint">Loading…</p>}
-      {days && days.length === 0 && <p className="board-empty">Finish a puzzle and it'll show up here.</p>}
-      {days && days.length > 0 && (
+      {!error && !days && (
+        <div className="loading-wheel-wrap" style={{ padding: '24px 0' }}>
+          <WheelSpinner size={40} />
+        </div>
+      )}
+      {days && (
         <ul className="stats-list">
           {days.map(day => (
             <li key={day.date} className="stats-day">
@@ -51,12 +89,21 @@ function PerDayStats() {
                       ? line.detail.map((d, i) => <Fragment key={i}>{i > 0 && ' · '}<span className="stats-item">{d}</span></Fragment>)
                       : 'not played'}
                   </span>
-                  <span className="stats-score">{line.detail ? `${line.score}/6` : '–'}</span>
+                  {/* same colors as a game's result table: green 6, gold in between, red 0 */}
+                  <span className={`stats-score${line.detail ? ` stats-score--${line.score === 6 ? 'good' : line.score === 0 ? 'bad' : 'mid'}` : ''}`}>
+                    {line.detail ? `${line.score}/6` : '–'}
+                  </span>
                 </div>
               ))}
             </li>
           ))}
         </ul>
+      )}
+      {/* only while there are older results to show */}
+      {days && more && (
+        <button className="profile-btn stats-more" onClick={loadMore} disabled={loadingMore}>
+          {loadingMore ? <><span className="fr-spinner" aria-hidden="true" />Loading…</> : `Load ${PAGE_DAYS} more days`}
+        </button>
       )}
     </div>
   )

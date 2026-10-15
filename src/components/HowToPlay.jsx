@@ -58,7 +58,7 @@ function Pick6Rules() {
               <span className="htp-chip-lbl">Max score per puzzle</span>
             </div>
           </div>
-          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Full +3 on your first attempt; it drops by 1 for each wrong attempt, down to a minimum of +1. Miss the lie and the player both, and it's a Pick Six.</p>
+          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Full +3 on your first attempt; it drops by 1 for each wrong attempt, down to a minimum of +1. Miss the lie and the player both, and it's a Pick 6.</p>
         </div>
 
         <div className="htp-tips">
@@ -119,7 +119,7 @@ function FilmRoomRules() {
               <span className="htp-chip-lbl">Max score per puzzle</span>
             </div>
           </div>
-          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Full +3 on your first attempt, +2 on the second, +1 on the third. Being 1 year off still gets you +1.</p>
+          <p style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'8px'}}>* Full +3 on your first attempt, +2 on the second, +1 on the third. Being 1 year off still gets you +1. Score 0 and it's a Pick 6.</p>
         </div>
 
         <div className="htp-tips">
@@ -169,6 +169,7 @@ function LineupRules() {
           <ul className="htp-tip-list">
             <li>The old logo's answer is the team today, so an old Oakland Raiders logo is just the Raiders.</li>
             <li>College is the Power 4 conferences plus Notre Dame.</li>
+            <li>Miss all six and it's a Pick 6.</li>
           </ul>
         </div>
     </>

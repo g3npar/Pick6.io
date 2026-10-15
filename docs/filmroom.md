@@ -20,7 +20,7 @@ Rows 1-3 sit above the middle row and 4-6 below it. Only the record and playoffs
 - **Round 1, the team:** you get 3 attempts. The first miss flips the top receiver, the second flips the top rusher. Getting it on the 1st attempt is 3 points, 2nd is 2, 3rd is 1. Guessing a team you already missed doesn't use up an attempt. The coach and QB never show during this round.
 - **Round 2, the year:** every clue is showing now, no matter how round 1 went (otherwise you could miss on purpose to see more clues). The exact year is 3 points, 1 year off is 1. 2 years off used to get a point too, but just guessing the middle of a QB's time with the team was getting people almost 2 points without really knowing.
 
-Max is 6, same as Pick 6.
+Max is 6, same as Pick 6. Score 0 and it's a Pick 6, the result box says so like it does in Pick 6.
 
 You pick the team from a grid of all 32 teams laid out by division, and the year from a grid of every season, so there's no scrolling. Teams are franchises, so "Rams" counts for a St. Louis Rams season. During the year round the team shows up under its current name, because the old name would give away the year ("St. Louis Rams" means 2015 or earlier). The real name for that season only shows at the end.
 
