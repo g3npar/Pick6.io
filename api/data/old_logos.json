@@ -1,0 +1,1634 @@
+[
+ {
+  "league": "nfl",
+  "team": "atl",
+  "eraName": "Atlanta Falcons",
+  "start": 1989,
+  "end": 2002,
+  "logo": "old/nfl-atl-1989.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "atl",
+  "eraName": "Atlanta Falcons",
+  "start": 1966,
+  "end": 1988,
+  "logo": "old/nfl-atl-1966.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "bal",
+  "eraName": "Baltimore Ravens",
+  "start": 1996,
+  "end": 1998,
+  "logo": "old/nfl-bal-1996.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "chi",
+  "eraName": "Chicago Bears",
+  "start": 2002,
+  "end": 2022,
+  "logo": "old/nfl-chi-2002.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "chi",
+  "eraName": "Chicago Bears",
+  "start": 1955,
+  "end": 1988,
+  "logo": "old/nfl-chi-1955.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "cin",
+  "eraName": "Cincinnati Bengals",
+  "start": 1997,
+  "end": 2003,
+  "logo": "old/nfl-cin-1997.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "cin",
+  "eraName": "Cincinnati Bengals",
+  "start": 1990,
+  "end": 1996,
+  "logo": "old/nfl-cin-1990.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "det",
+  "eraName": "Detroit Lions",
+  "start": 1964,
+  "end": 1989,
+  "logo": "old/nfl-det-1964.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "jax",
+  "eraName": "Jacksonville Jaguars",
+  "start": 2002,
+  "end": 2012,
+  "logo": "old/nfl-jax-2002.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "lac",
+  "eraName": "San Diego Chargers",
+  "start": 1988,
+  "end": 2001,
+  "logo": "old/nfl-lac-1988.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "lac",
+  "eraName": "San Diego Chargers",
+  "start": 1974,
+  "end": 1987,
+  "logo": "old/nfl-lac-1974.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "lar",
+  "eraName": "Los Angeles Rams",
+  "start": 2017,
+  "end": 2019,
+  "logo": "old/nfl-lar-2017.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "lar",
+  "eraName": "St. Louis Rams",
+  "start": 1995,
+  "end": 1999,
+  "logo": "old/nfl-lar-1995.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "mia",
+  "eraName": "Miami Dolphins",
+  "start": 2002,
+  "end": 2012,
+  "logo": "old/nfl-mia-2002.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "ne",
+  "eraName": "Boston Patriots",
+  "start": 1989,
+  "end": 1992,
+  "logo": "old/nfl-ne-1989.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "nyg",
+  "eraName": "New York Giants",
+  "start": 1976,
+  "end": 1999,
+  "logo": "old/nfl-nyg-1976.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "phi",
+  "eraName": "Philadelphia Eagles",
+  "start": 1989,
+  "end": 1995,
+  "logo": "old/nfl-phi-1989.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "phi",
+  "eraName": "Philadelphia Eagles",
+  "start": 1948,
+  "end": 1988,
+  "logo": "old/nfl-phi-1948.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "sea",
+  "eraName": "Seattle Seahawks",
+  "start": 1976,
+  "end": 2001,
+  "logo": "old/nfl-sea-1976.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "tb",
+  "eraName": "Tampa Bay Buccaneers",
+  "start": 1976,
+  "end": 1996,
+  "logo": "old/nfl-tb-1976.webp"
+ },
+ {
+  "league": "nfl",
+  "team": "ten",
+  "eraName": "Tennessee Titans",
+  "start": 2002,
+  "end": 2025,
+  "logo": "old/nfl-ten-2002.webp"
+ },
+ {
+  "league": "nba",
+  "team": "atl",
+  "eraName": "Atlanta Hawks",
+  "start": 2008,
+  "end": 2015,
+  "logo": "old/nba-atl-2008.webp"
+ },
+ {
+  "league": "nba",
+  "team": "atl",
+  "eraName": "Atlanta Hawks",
+  "start": 1973,
+  "end": 1995,
+  "logo": "old/nba-atl-1973.webp"
+ },
+ {
+  "league": "nba",
+  "team": "bos",
+  "eraName": "Boston Celtics",
+  "start": 1970,
+  "end": 1996,
+  "logo": "old/nba-bos-1970.webp"
+ },
+ {
+  "league": "nba",
+  "team": "bkn",
+  "eraName": "Brooklyn Nets",
+  "start": 2013,
+  "end": 2024,
+  "logo": "old/nba-bkn-2013.webp"
+ },
+ {
+  "league": "nba",
+  "team": "bkn",
+  "eraName": "New Jersey Nets",
+  "start": 1998,
+  "end": 2012,
+  "logo": "old/nba-bkn-1998.webp"
+ },
+ {
+  "league": "nba",
+  "team": "cha",
+  "eraName": "Charlotte Hornets",
+  "start": 1989,
+  "end": 2002,
+  "logo": "old/nba-cha-1989.webp"
+ },
+ {
+  "league": "nba",
+  "team": "cle",
+  "eraName": "Cleveland Cavaliers",
+  "start": 2011,
+  "end": 2017,
+  "logo": "old/nba-cle-2011.webp"
+ },
+ {
+  "league": "nba",
+  "team": "cle",
+  "eraName": "Cleveland Cavaliers",
+  "start": 1995,
+  "end": 2003,
+  "logo": "old/nba-cle-1995.webp"
+ },
+ {
+  "league": "nba",
+  "team": "dal",
+  "eraName": "Dallas Mavericks",
+  "start": 1994,
+  "end": 2001,
+  "logo": "old/nba-dal-1994.webp"
+ },
+ {
+  "league": "nba",
+  "team": "den",
+  "eraName": "Denver Nuggets",
+  "start": 2009,
+  "end": 2018,
+  "logo": "old/nba-den-2009.webp"
+ },
+ {
+  "league": "nba",
+  "team": "den",
+  "eraName": "Denver Nuggets",
+  "start": 1994,
+  "end": 2003,
+  "logo": "old/nba-den-1994.webp"
+ },
+ {
+  "league": "nba",
+  "team": "det",
+  "eraName": "Detroit Pistons",
+  "start": 2006,
+  "end": 2017,
+  "logo": "old/nba-det-2006.webp"
+ },
+ {
+  "league": "nba",
+  "team": "det",
+  "eraName": "Detroit Pistons",
+  "start": 2002,
+  "end": 2005,
+  "logo": "old/nba-det-2002.webp"
+ },
+ {
+  "league": "nba",
+  "team": "gs",
+  "eraName": "Golden State Warriors",
+  "start": 1998,
+  "end": 2010,
+  "logo": "old/nba-gs-1998.webp"
+ },
+ {
+  "league": "nba",
+  "team": "gs",
+  "eraName": "Golden State Warriors",
+  "start": 1989,
+  "end": 1997,
+  "logo": "old/nba-gs-1989.webp"
+ },
+ {
+  "league": "nba",
+  "team": "hou",
+  "eraName": "Houston Rockets",
+  "start": 2020,
+  "end": 2026,
+  "logo": "old/nba-hou-2020.webp"
+ },
+ {
+  "league": "nba",
+  "team": "hou",
+  "eraName": "Houston Rockets",
+  "start": 1996,
+  "end": 2003,
+  "logo": "old/nba-hou-1996.webp"
+ },
+ {
+  "league": "nba",
+  "team": "ind",
+  "eraName": "Indiana Pacers",
+  "start": 1991,
+  "end": 2005,
+  "logo": "old/nba-ind-1991.webp"
+ },
+ {
+  "league": "nba",
+  "team": "ind",
+  "eraName": "Indiana Pacers",
+  "start": 1977,
+  "end": 1990,
+  "logo": "old/nba-ind-1977.webp"
+ },
+ {
+  "league": "nba",
+  "team": "lac",
+  "eraName": "Los Angeles Clippers",
+  "start": 2019,
+  "end": 2024,
+  "logo": "old/nba-lac-2019.webp"
+ },
+ {
+  "league": "nba",
+  "team": "lac",
+  "eraName": "Los Angeles Clippers",
+  "start": 2011,
+  "end": 2015,
+  "logo": "old/nba-lac-2011.webp"
+ },
+ {
+  "league": "nba",
+  "team": "mem",
+  "eraName": "Memphis Grizzlies",
+  "start": 2005,
+  "end": 2018,
+  "logo": "old/nba-mem-2005.webp"
+ },
+ {
+  "league": "nba",
+  "team": "mem",
+  "eraName": "Memphis Grizzlies",
+  "start": 2002,
+  "end": 2004,
+  "logo": "old/nba-mem-2002.webp"
+ },
+ {
+  "league": "nba",
+  "team": "mia",
+  "eraName": "Miami Heat",
+  "start": 1989,
+  "end": 1999,
+  "logo": "old/nba-mia-1989.webp"
+ },
+ {
+  "league": "nba",
+  "team": "mil",
+  "eraName": "Milwaukee Bucks",
+  "start": 2007,
+  "end": 2015,
+  "logo": "old/nba-mil-2007.webp"
+ },
+ {
+  "league": "nba",
+  "team": "mil",
+  "eraName": "Milwaukee Bucks",
+  "start": 1969,
+  "end": 1993,
+  "logo": "old/nba-mil-1969.webp"
+ },
+ {
+  "league": "nba",
+  "team": "min",
+  "eraName": "Minnesota Timberwolves",
+  "start": 2018,
+  "end": 2026,
+  "logo": "old/nba-min-2018.webp"
+ },
+ {
+  "league": "nba",
+  "team": "min",
+  "eraName": "Minnesota Timberwolves",
+  "start": 2009,
+  "end": 2017,
+  "logo": "old/nba-min-2009.webp"
+ },
+ {
+  "league": "nba",
+  "team": "no",
+  "eraName": "New Orleans Pelicans",
+  "start": 2014,
+  "end": 2023,
+  "logo": "old/nba-no-2014.webp"
+ },
+ {
+  "league": "nba",
+  "team": "ny",
+  "eraName": "New York Knicks",
+  "start": 1990,
+  "end": 1992,
+  "logo": "old/nba-ny-1990.webp"
+ },
+ {
+  "league": "nba",
+  "team": "orl",
+  "eraName": "Orlando Magic",
+  "start": 2011,
+  "end": 2025,
+  "logo": "old/nba-orl-2011.webp"
+ },
+ {
+  "league": "nba",
+  "team": "orl",
+  "eraName": "Orlando Magic",
+  "start": 2001,
+  "end": 2010,
+  "logo": "old/nba-orl-2001.webp"
+ },
+ {
+  "league": "nba",
+  "team": "phi",
+  "eraName": "Philadelphia 76ers",
+  "start": 2010,
+  "end": 2015,
+  "logo": "old/nba-phi-2010.webp"
+ },
+ {
+  "league": "nba",
+  "team": "phi",
+  "eraName": "Philadelphia 76ers",
+  "start": 1998,
+  "end": 2009,
+  "logo": "old/nba-phi-1998.webp"
+ },
+ {
+  "league": "nba",
+  "team": "phx",
+  "eraName": "Phoenix Suns",
+  "start": 2001,
+  "end": 2013,
+  "logo": "old/nba-phx-2001.webp"
+ },
+ {
+  "league": "nba",
+  "team": "phx",
+  "eraName": "Phoenix Suns",
+  "start": 1969,
+  "end": 1992,
+  "logo": "old/nba-phx-1969.webp"
+ },
+ {
+  "league": "nba",
+  "team": "por",
+  "eraName": "Portland Trail Blazers",
+  "start": 2005,
+  "end": 2017,
+  "logo": "old/nba-por-2005.webp"
+ },
+ {
+  "league": "nba",
+  "team": "por",
+  "eraName": "Portland Trail Blazers",
+  "start": 2003,
+  "end": 2003,
+  "logo": "old/nba-por-2003.webp"
+ },
+ {
+  "league": "nba",
+  "team": "sac",
+  "eraName": "Sacramento Kings",
+  "start": 1995,
+  "end": 2016,
+  "logo": "old/nba-sac-1995.webp"
+ },
+ {
+  "league": "nba",
+  "team": "sac",
+  "eraName": "Sacramento Kings",
+  "start": 1986,
+  "end": 1994,
+  "logo": "old/nba-sac-1986.webp"
+ },
+ {
+  "league": "nba",
+  "team": "sa",
+  "eraName": "San Antonio Spurs",
+  "start": 2003,
+  "end": 2017,
+  "logo": "old/nba-sa-2003.webp"
+ },
+ {
+  "league": "nba",
+  "team": "sa",
+  "eraName": "San Antonio Spurs",
+  "start": 1990,
+  "end": 2002,
+  "logo": "old/nba-sa-1990.webp"
+ },
+ {
+  "league": "nba",
+  "team": "tor",
+  "eraName": "Toronto Raptors",
+  "start": 2009,
+  "end": 2015,
+  "logo": "old/nba-tor-2009.webp"
+ },
+ {
+  "league": "nba",
+  "team": "utah",
+  "eraName": "Utah Jazz",
+  "start": 2023,
+  "end": 2025,
+  "logo": "old/nba-utah-2023.webp"
+ },
+ {
+  "league": "nba",
+  "team": "utah",
+  "eraName": "Utah Jazz",
+  "start": 2017,
+  "end": 2022,
+  "logo": "old/nba-utah-2017.webp"
+ },
+ {
+  "league": "nba",
+  "team": "wsh",
+  "eraName": "Washington Wizards",
+  "start": 2012,
+  "end": 2015,
+  "logo": "old/nba-wsh-2012.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "ari",
+  "eraName": "Arizona Diamondbacks",
+  "start": 2007,
+  "end": 2011,
+  "logo": "old/mlb-ari-2007.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "ari",
+  "eraName": "Arizona Diamondbacks",
+  "start": 1998,
+  "end": 2006,
+  "logo": "old/mlb-ari-1998.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "bal",
+  "eraName": "Baltimore Orioles",
+  "start": 2009,
+  "end": 2018,
+  "logo": "old/mlb-bal-2009.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "bal",
+  "eraName": "Baltimore Orioles",
+  "start": 1999,
+  "end": 2008,
+  "logo": "old/mlb-bal-1999.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "bos",
+  "eraName": "Boston Red Sox",
+  "start": 1976,
+  "end": 2008,
+  "logo": "old/mlb-bos-1976.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "chw",
+  "eraName": "Chicago White Sox",
+  "start": 1987,
+  "end": 1990,
+  "logo": "old/mlb-chw-1987.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "cin",
+  "eraName": "Cincinnati Reds",
+  "start": 1968,
+  "end": 1992,
+  "logo": "old/mlb-cin-1968.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "col",
+  "eraName": "Colorado Rockies",
+  "start": 1993,
+  "end": 2016,
+  "logo": "old/mlb-col-1993.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "det",
+  "eraName": "Detroit Tigers",
+  "start": 2006,
+  "end": 2015,
+  "logo": "old/mlb-det-2006.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "det",
+  "eraName": "Detroit Tigers",
+  "start": 1994,
+  "end": 2005,
+  "logo": "old/mlb-det-1994.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "hou",
+  "eraName": "Houston Astros",
+  "start": 2000,
+  "end": 2012,
+  "logo": "old/mlb-hou-2000.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "hou",
+  "eraName": "Houston Astros",
+  "start": 1995,
+  "end": 1999,
+  "logo": "old/mlb-hou-1995.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "kc",
+  "eraName": "Kansas City Royals",
+  "start": 2002,
+  "end": 2018,
+  "logo": "old/mlb-kc-2002.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "kc",
+  "eraName": "Kansas City Royals",
+  "start": 1979,
+  "end": 1985,
+  "logo": "old/mlb-kc-1979.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "laa",
+  "eraName": "Anaheim Angels",
+  "start": 2002,
+  "end": 2004,
+  "logo": "old/mlb-laa-2002.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "laa",
+  "eraName": "Anaheim Angels",
+  "start": 1997,
+  "end": 2001,
+  "logo": "old/mlb-laa-1997.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "mia",
+  "eraName": "Miami Marlins",
+  "start": 2017,
+  "end": 2018,
+  "logo": "old/mlb-mia-2017.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "mia",
+  "eraName": "Miami Marlins",
+  "start": 2012,
+  "end": 2016,
+  "logo": "old/mlb-mia-2012.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "mil",
+  "eraName": "Milwaukee Brewers",
+  "start": 2018,
+  "end": 2019,
+  "logo": "old/mlb-mil-2018.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "mil",
+  "eraName": "Milwaukee Brewers",
+  "start": 2000,
+  "end": 2017,
+  "logo": "old/mlb-mil-2000.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "min",
+  "eraName": "Minnesota Twins",
+  "start": 2010,
+  "end": 2022,
+  "logo": "old/mlb-min-2010.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "min",
+  "eraName": "Minnesota Twins",
+  "start": 1994,
+  "end": 2009,
+  "logo": "old/mlb-min-1994.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "phi",
+  "eraName": "Philadelphia Phillies",
+  "start": 1992,
+  "end": 2018,
+  "logo": "old/mlb-phi-1992.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "phi",
+  "eraName": "Philadelphia Phillies",
+  "start": 1984,
+  "end": 1991,
+  "logo": "old/mlb-phi-1984.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "pit",
+  "eraName": "Pittsburgh Pirates",
+  "start": 1997,
+  "end": 2013,
+  "logo": "old/mlb-pit-1997.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "pit",
+  "eraName": "Pittsburgh Pirates",
+  "start": 1987,
+  "end": 1996,
+  "logo": "old/mlb-pit-1987.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sd",
+  "eraName": "San Diego Padres",
+  "start": 2011,
+  "end": 2011,
+  "logo": "old/mlb-sd-2011.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sd",
+  "eraName": "San Diego Padres",
+  "start": 1992,
+  "end": 2003,
+  "logo": "old/mlb-sd-1992.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sf",
+  "eraName": "San Francisco Giants",
+  "start": 1983,
+  "end": 1993,
+  "logo": "old/mlb-sf-1983.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sf",
+  "eraName": "San Francisco Giants",
+  "start": 1973,
+  "end": 1982,
+  "logo": "old/mlb-sf-1973.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sea",
+  "eraName": "Seattle Mariners",
+  "start": 1987,
+  "end": 1992,
+  "logo": "old/mlb-sea-1987.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "sea",
+  "eraName": "Seattle Mariners",
+  "start": 1981,
+  "end": 1986,
+  "logo": "old/mlb-sea-1981.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "stl",
+  "eraName": "St. Louis Cardinals",
+  "start": 1966,
+  "end": 1997,
+  "logo": "old/mlb-stl-1966.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tb",
+  "eraName": "Tampa Bay Rays",
+  "start": 2008,
+  "end": 2018,
+  "logo": "old/mlb-tb-2008.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tb",
+  "eraName": "Tampa Bay Devil Rays",
+  "start": 2001,
+  "end": 2007,
+  "logo": "old/mlb-tb-2001.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tex",
+  "eraName": "Texas Rangers",
+  "start": 2003,
+  "end": 2023,
+  "logo": "old/mlb-tex-2003.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tex",
+  "eraName": "Texas Rangers",
+  "start": 1994,
+  "end": 2002,
+  "logo": "old/mlb-tex-1994.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tor",
+  "eraName": "Toronto Blue Jays",
+  "start": 2012,
+  "end": 2019,
+  "logo": "old/mlb-tor-2012.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "tor",
+  "eraName": "Toronto Blue Jays",
+  "start": 2004,
+  "end": 2011,
+  "logo": "old/mlb-tor-2004.webp"
+ },
+ {
+  "league": "mlb",
+  "team": "wsh",
+  "eraName": "Washington Nationals",
+  "start": 2005,
+  "end": 2010,
+  "logo": "old/mlb-wsh-2005.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "ana",
+  "eraName": "Anaheim Ducks",
+  "start": 2014,
+  "end": 2024,
+  "logo": "old/nhl-ana-2014.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "ana",
+  "eraName": "Anaheim Ducks",
+  "start": 2011,
+  "end": 2013,
+  "logo": "old/nhl-ana-2011.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "buf",
+  "eraName": "Buffalo Sabres",
+  "start": 2007,
+  "end": 2010,
+  "logo": "old/nhl-buf-2007.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "buf",
+  "eraName": "Buffalo Sabres",
+  "start": 2000,
+  "end": 2006,
+  "logo": "old/nhl-buf-2000.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "cgy",
+  "eraName": "Atlanta Flames",
+  "start": 1973,
+  "end": 1980,
+  "logo": "old/nhl-cgy-1973.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "cbj",
+  "eraName": "Columbus Blue Jackets",
+  "start": 2001,
+  "end": 2007,
+  "logo": "old/nhl-cbj-2001.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "dal",
+  "eraName": "Dallas Stars",
+  "start": 1995,
+  "end": 2013,
+  "logo": "old/nhl-dal-1995.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "fla",
+  "eraName": "Florida Panthers",
+  "start": 2000,
+  "end": 2016,
+  "logo": "old/nhl-fla-2000.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "la",
+  "eraName": "Los Angeles Kings",
+  "start": 2020,
+  "end": 2024,
+  "logo": "old/nhl-la-2020.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "la",
+  "eraName": "Los Angeles Kings",
+  "start": 2012,
+  "end": 2013,
+  "logo": "old/nhl-la-2012.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "nyi",
+  "eraName": "New York Islanders",
+  "start": 1996,
+  "end": 1997,
+  "logo": "old/nhl-nyi-1996.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "ott",
+  "eraName": "Ottawa Senators",
+  "start": 2008,
+  "end": 2020,
+  "logo": "old/nhl-ott-2008.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "pit",
+  "eraName": "Pittsburgh Penguins",
+  "start": 2000,
+  "end": 2002,
+  "logo": "old/nhl-pit-2000.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "sj",
+  "eraName": "San Jose Sharks",
+  "start": 1999,
+  "end": 2007,
+  "logo": "old/nhl-sj-1999.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "stl",
+  "eraName": "St. Louis Blues",
+  "start": 1985,
+  "end": 1987,
+  "logo": "old/nhl-stl-1985.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "tb",
+  "eraName": "Tampa Bay Lightning",
+  "start": 2008,
+  "end": 2011,
+  "logo": "old/nhl-tb-2008.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "tb",
+  "eraName": "Tampa Bay Lightning",
+  "start": 2002,
+  "end": 2007,
+  "logo": "old/nhl-tb-2002.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "utah",
+  "eraName": "Utah Hockey Club",
+  "start": 2025,
+  "end": 2025,
+  "logo": "old/nhl-utah-2025.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "van",
+  "eraName": "Vancouver Canucks",
+  "start": 2008,
+  "end": 2019,
+  "logo": "old/nhl-van-2008.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "van",
+  "eraName": "Vancouver Canucks",
+  "start": 1993,
+  "end": 1997,
+  "logo": "old/nhl-van-1993.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "wsh",
+  "eraName": "Washington Capitals",
+  "start": 2003,
+  "end": 2007,
+  "logo": "old/nhl-wsh-2003.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "wsh",
+  "eraName": "Washington Capitals",
+  "start": 1998,
+  "end": 2002,
+  "logo": "old/nhl-wsh-1998.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "wpg",
+  "eraName": "Winnipeg Jets",
+  "start": 1991,
+  "end": 1996,
+  "logo": "old/nhl-wpg-1991.webp"
+ },
+ {
+  "league": "nhl",
+  "team": "wpg",
+  "eraName": "Winnipeg Jets",
+  "start": 1974,
+  "end": 1990,
+  "logo": "old/nhl-wpg-1974.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ala",
+  "eraName": "Alabama Crimson Tide",
+  "start": 1998,
+  "end": 2004,
+  "logo": "old/ncaa-ala-1998.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ala",
+  "eraName": "Alabama Crimson Tide",
+  "start": 1973,
+  "end": 1998,
+  "logo": "old/ncaa-ala-1973.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "asu",
+  "eraName": "Arizona State Sun Devils",
+  "start": 1967,
+  "end": 2011,
+  "logo": "old/ncaa-asu-1967.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ariz",
+  "eraName": "Arizona Wildcats",
+  "start": 1981,
+  "end": 1989,
+  "logo": "old/ncaa-ariz-1981.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ariz",
+  "eraName": "Arizona Wildcats",
+  "start": 1970,
+  "end": 1981,
+  "logo": "old/ncaa-ariz-1970.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "byu",
+  "eraName": "Brigham Young Cougars",
+  "start": 1999,
+  "end": 2010,
+  "logo": "old/ncaa-byu-1999.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "byu",
+  "eraName": "Brigham Young Cougars",
+  "start": 1982,
+  "end": 1999,
+  "logo": "old/ncaa-byu-1982.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "bay",
+  "eraName": "Baylor Bears",
+  "start": 1997,
+  "end": 2005,
+  "logo": "old/ncaa-bay-1997.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "bc",
+  "eraName": "Boston College Eagles",
+  "start": 1977,
+  "end": 2000,
+  "logo": "old/ncaa-bc-1977.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "cin",
+  "eraName": "Cincinnati Bearcats",
+  "start": 1988,
+  "end": 1990,
+  "logo": "old/ncaa-cin-1988.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "cin",
+  "eraName": "Cincinnati Bearcats",
+  "start": 1983,
+  "end": 1988,
+  "logo": "old/ncaa-cin-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "colo",
+  "eraName": "Colorado Buffaloes",
+  "start": 1981,
+  "end": 1985,
+  "logo": "old/ncaa-colo-1981.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "fla",
+  "eraName": "Florida Gators",
+  "start": 1979,
+  "end": 1994,
+  "logo": "old/ncaa-fla-1979.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "fsu",
+  "eraName": "Florida State Seminoles",
+  "start": 1990,
+  "end": 2013,
+  "logo": "old/ncaa-fsu-1990.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "hou",
+  "eraName": "Houston Cougars",
+  "start": 1996,
+  "end": 2000,
+  "logo": "old/ncaa-hou-1996.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ill",
+  "eraName": "Illinois Fighting Illini",
+  "start": 1995,
+  "end": 2014,
+  "logo": "old/ncaa-ill-1995.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "iu",
+  "eraName": "Indiana Hoosiers",
+  "start": 1997,
+  "end": 2002,
+  "logo": "old/ncaa-iu-1997.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "isu",
+  "eraName": "Iowa State Cyclones",
+  "start": 1995,
+  "end": 2007,
+  "logo": "old/ncaa-isu-1995.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "isu",
+  "eraName": "Iowa State Cyclones",
+  "start": 1983,
+  "end": 1995,
+  "logo": "old/ncaa-isu-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ksu",
+  "eraName": "Kansas State Wildcats",
+  "start": 1972,
+  "end": 1989,
+  "logo": "old/ncaa-ksu-1972.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "uk",
+  "eraName": "Kentucky Wildcats",
+  "start": 1986,
+  "end": 2005,
+  "logo": "old/ncaa-uk-1986.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "uk",
+  "eraName": "Kentucky Wildcats",
+  "start": 1973,
+  "end": 1986,
+  "logo": "old/ncaa-uk-1973.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "lsu",
+  "eraName": "LSU Tigers",
+  "start": 2006,
+  "end": 2014,
+  "logo": "old/ncaa-lsu-2006.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "lsu",
+  "eraName": "LSU Tigers",
+  "start": 2002,
+  "end": 2006,
+  "logo": "old/ncaa-lsu-2002.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "lou",
+  "eraName": "Louisville Cardinals",
+  "start": 2000,
+  "end": 2013,
+  "logo": "old/ncaa-lou-2000.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "lou",
+  "eraName": "Louisville Cardinals",
+  "start": 1978,
+  "end": 2000,
+  "logo": "old/ncaa-lou-1978.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "md",
+  "eraName": "Maryland Terrapins",
+  "start": 2006,
+  "end": 2012,
+  "logo": "old/ncaa-md-2006.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "md",
+  "eraName": "Maryland Terrapins",
+  "start": 1996,
+  "end": 2005,
+  "logo": "old/ncaa-md-1996.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "msst",
+  "eraName": "Mississippi State Bulldogs",
+  "start": 1995,
+  "end": 2009,
+  "logo": "old/ncaa-msst-1995.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "msst",
+  "eraName": "Mississippi State Bulldogs",
+  "start": 1986,
+  "end": 1995,
+  "logo": "old/ncaa-msst-1986.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "miz",
+  "eraName": "Missouri Tigers",
+  "start": 1999,
+  "end": 2014,
+  "logo": "old/ncaa-miz-1999.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "miz",
+  "eraName": "Missouri Tigers",
+  "start": 1995,
+  "end": 1999,
+  "logo": "old/ncaa-miz-1995.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ncsu",
+  "eraName": "North Carolina State Wolfpack",
+  "start": 1967,
+  "end": 1997,
+  "logo": "old/ncaa-ncsu-1967.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "unc",
+  "eraName": "North Carolina Tar Heels",
+  "start": 1996,
+  "end": 2004,
+  "logo": "old/ncaa-unc-1996.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "unc",
+  "eraName": "North Carolina Tar Heels",
+  "start": 1983,
+  "end": 1996,
+  "logo": "old/ncaa-unc-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "nu",
+  "eraName": "Northwestern Wildcats",
+  "start": 1981,
+  "end": 2011,
+  "logo": "old/ncaa-nu-1981.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "osu",
+  "eraName": "Ohio State Buckeyes",
+  "start": 1987,
+  "end": 1991,
+  "logo": "old/ncaa-osu-1987.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "osu",
+  "eraName": "Ohio State Buckeyes",
+  "start": 1968,
+  "end": 1987,
+  "logo": "old/ncaa-osu-1968.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ou",
+  "eraName": "Oklahoma Sooners",
+  "start": 1979,
+  "end": 2000,
+  "logo": "old/ncaa-ou-1979.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "okst",
+  "eraName": "Oklahoma State Cowboys",
+  "start": 1973,
+  "end": 2000,
+  "logo": "old/ncaa-okst-1973.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "miss",
+  "eraName": "Mississippi Rebels",
+  "start": 2007,
+  "end": 2020,
+  "logo": "old/ncaa-miss-2007.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ore",
+  "eraName": "Oregon Ducks",
+  "start": 1994,
+  "end": 1998,
+  "logo": "old/ncaa-ore-1994.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ore",
+  "eraName": "Oregon Ducks",
+  "start": 1974,
+  "end": 1993,
+  "logo": "old/ncaa-ore-1974.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "psu",
+  "eraName": "Penn State Nittany Lions",
+  "start": 1983,
+  "end": 1996,
+  "logo": "old/ncaa-psu-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "pitt",
+  "eraName": "Pittsburgh Panthers",
+  "start": 2005,
+  "end": 2016,
+  "logo": "old/ncaa-pitt-2005.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "pitt",
+  "eraName": "Pittsburgh Panthers",
+  "start": 1997,
+  "end": 2005,
+  "logo": "old/ncaa-pitt-1997.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "pur",
+  "eraName": "Purdue Boilermakers",
+  "start": 1996,
+  "end": 2012,
+  "logo": "old/ncaa-pur-1996.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "pur",
+  "eraName": "Purdue Boilermakers",
+  "start": 1994,
+  "end": 1996,
+  "logo": "old/ncaa-pur-1994.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "rutg",
+  "eraName": "Rutgers Scarlet Knights",
+  "start": 1997,
+  "end": 2001,
+  "logo": "old/ncaa-rutg-1997.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "rutg",
+  "eraName": "Rutgers Scarlet Knights",
+  "start": 1981,
+  "end": 1997,
+  "logo": "old/ncaa-rutg-1981.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "smu",
+  "eraName": "SMU Mustangs",
+  "start": 1982,
+  "end": 2007,
+  "logo": "old/ncaa-smu-1982.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "syr",
+  "eraName": "Syracuse Orange",
+  "start": 2006,
+  "end": 2009,
+  "logo": "old/ncaa-syr-2006.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "syr",
+  "eraName": "Syracuse Orange",
+  "start": 2004,
+  "end": 2006,
+  "logo": "old/ncaa-syr-2004.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "tcu",
+  "eraName": "TCU Horned Frogs",
+  "start": 1977,
+  "end": 1994,
+  "logo": "old/ncaa-tcu-1977.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "tenn",
+  "eraName": "Tennessee Volunteers",
+  "start": 1987,
+  "end": 1997,
+  "logo": "old/ncaa-tenn-1987.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "tenn",
+  "eraName": "Tennessee Volunteers",
+  "start": 1983,
+  "end": 1987,
+  "logo": "old/ncaa-tenn-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ttu",
+  "eraName": "Texas Tech Red Raiders",
+  "start": 2003,
+  "end": 2007,
+  "logo": "old/ncaa-ttu-2003.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ucf",
+  "eraName": "UCF Knights",
+  "start": 2007,
+  "end": 2012,
+  "logo": "old/ncaa-ucf-2007.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ucf",
+  "eraName": "UCF Knights",
+  "start": 2003,
+  "end": 2007,
+  "logo": "old/ncaa-ucf-2003.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ucla",
+  "eraName": "UCLA Bruins",
+  "start": 1996,
+  "end": 2017,
+  "logo": "old/ncaa-ucla-1996.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "ucla",
+  "eraName": "UCLA Bruins",
+  "start": 1991,
+  "end": 1996,
+  "logo": "old/ncaa-ucla-1991.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "usc",
+  "eraName": "USC Trojans",
+  "start": 2001,
+  "end": 2016,
+  "logo": "old/ncaa-usc-2001.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "usc",
+  "eraName": "USC Trojans",
+  "start": 1983,
+  "end": 1993,
+  "logo": "old/ncaa-usc-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "van",
+  "eraName": "Vanderbilt Commodores",
+  "start": 2012,
+  "end": 2022,
+  "logo": "old/ncaa-van-2012.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "van",
+  "eraName": "Vanderbilt Commodores",
+  "start": 2004,
+  "end": 2008,
+  "logo": "old/ncaa-van-2004.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "uva",
+  "eraName": "Virginia Cavaliers",
+  "start": 1983,
+  "end": 1994,
+  "logo": "old/ncaa-uva-1983.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "vt",
+  "eraName": "Virginia Tech Hokies",
+  "start": 1974,
+  "end": 1983,
+  "logo": "old/ncaa-vt-1974.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wake",
+  "eraName": "Wake Forest Demon Deacons",
+  "start": 1993,
+  "end": 2006,
+  "logo": "old/ncaa-wake-1993.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wake",
+  "eraName": "Wake Forest Demon Deacons",
+  "start": 1968,
+  "end": 1992,
+  "logo": "old/ncaa-wake-1968.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wash",
+  "eraName": "Washington Huskies",
+  "start": 1991,
+  "end": 2001,
+  "logo": "old/ncaa-wash-1991.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wash",
+  "eraName": "Washington Huskies",
+  "start": 1979,
+  "end": 1983,
+  "logo": "old/ncaa-wash-1979.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wvu",
+  "eraName": "West Virginia Mountaineers",
+  "start": 1980,
+  "end": 2016,
+  "logo": "old/ncaa-wvu-1980.webp"
+ },
+ {
+  "league": "ncaa",
+  "team": "wvu",
+  "eraName": "West Virginia Mountaineers",
+  "start": 1970,
+  "end": 1980,
+  "logo": "old/ncaa-wvu-1970.webp"
+ }
+]

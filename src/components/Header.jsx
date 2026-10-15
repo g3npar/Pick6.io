@@ -5,11 +5,13 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const logoWrapRef = useRef(null)
 
+  // archive and leaderboard have their own game switch, so no dropdowns here
   const links = [
-    { id: 'daily',       label: 'Daily' },
+    { id: 'daily',       label: 'Pick 6' },
+    { id: 'filmroom',    label: 'Film Room' },
+    { id: 'lineup',      label: 'Logo Lineup' },
     { id: 'archive',     label: 'Archive' },
     { id: 'leaderboard', label: 'Leaderboard' },
-    { id: 'how-to-play', label: 'How to Play' },
     ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
 

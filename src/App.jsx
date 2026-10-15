@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import GameBoard from './components/GameBoard'
-import HowToPlay from './components/HowToPlay'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import Leaderboard from './components/Leaderboard'
 import Archive from './components/Archive'
 import Admin from './components/Admin'
+import FilmRoomBoard from './components/FilmRoomBoard'
+import LineupBoard from './components/LineupBoard'
 import Profile from './components/Profile'
 import SignInPrompt from './components/SignInPrompt'
 import WheelSpinner from './components/WheelSpinner'
@@ -55,7 +56,18 @@ function preloadLogos(puzzles) {
 }
 
 function App() {
-  const [screen, setScreen] = useState(() => readSessionUI().screen || 'daily')
+  // How to Play used to be its own page, it's an "i" button in each game now
+  const [screen, setScreen] = useState(() => {
+    const saved = readSessionUI().screen
+    return saved && saved !== 'how-to-play' ? saved : 'daily'
+  })
+  // the leaderboard opens on whichever game you were last on
+  const [lastGame, setLastGame] = useState(() => readSessionUI().lastGame || 'pick6')
+  useEffect(() => {
+    if (screen === 'daily') setLastGame('pick6')
+    if (screen === 'filmroom') setLastGame('filmroom')
+    if (screen === 'lineup') setLastGame('lineup')
+  }, [screen])
   const [user,   setUser]   = useState(null)
 
   // daily puzzle kept separate from archive
@@ -69,6 +81,9 @@ function App() {
 
   // true when viewing an archive puzzle
   const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(() => !!readSessionUI().viewingArchivePuzzle)
+  // a past Film Room or Logo Lineup day opened from the archive, { game, date }.
+  // those boards load it themselves, Pick 6 archive days go through archivePuzzle
+  const [archiveDay, setArchiveDay] = useState(() => readSessionUI().archiveDay || null)
 
   // frozen cache snapshot avoids write race
   const initialCachedUI = useRef(readSessionUI())
@@ -112,7 +127,13 @@ function App() {
   }, [activePuzzle?.date])
 
   // nav leaves archive view
-  const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false) }
+  const handleNav = s => { setScreen(s); setViewingArchivePuzzle(false); setArchiveDay(null) }
+
+  const handleArchivePlay = (game, date) => {
+    setLastGame(game)
+    if (game === 'pick6') handlePlayArchiveDate(date)
+    else setArchiveDay({ game, date })
+  }
 
   // rebuild state from server
   const restoredState = (result, progress) => {
@@ -164,13 +185,15 @@ function App() {
   useEffect(() => {
     writeSessionUI({
       screen,
+      lastGame,
+      archiveDay,
       viewingArchivePuzzle,
       archiveDate: viewingArchivePuzzle ? (archivePuzzle?.date ?? null) : null,
       todayDate: todayPuzzle?.date ?? null,
       todayState,
       archiveState,
     })
-  }, [screen, viewingArchivePuzzle, archivePuzzle?.date, todayPuzzle?.date, todayState, archiveState])
+  }, [screen, lastGame, archiveDay, viewingArchivePuzzle, archivePuzzle?.date, todayPuzzle?.date, todayState, archiveState])
 
   // sends result to server
   const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
@@ -267,7 +290,9 @@ function App() {
   // nothing shows until fully loaded
   const dailyPending   = screen === 'daily' && (!todayPuzzle || !logosReady)
   const archivePending = viewingArchive && (!archivePuzzle || !logosReady)
-  if (!todayPuzzle || dailyPending || archivePending) {
+  // film room loads its own puzzle, so it never waits on (or breaks with) Pick 6's
+  // the other games don't need the Pick 6 puzzle, so they skip its loading screen
+  if (screen !== 'filmroom' && screen !== 'lineup' && (!todayPuzzle || dailyPending || archivePending)) {
     return (
       <div className="app">
         <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
@@ -278,9 +303,10 @@ function App() {
               <span className="loading-label">Loading puzzle…</span>
             </div>
           )}
-          {screen === 'how-to-play' && <HowToPlay />}
-          {screen === 'archive' && !viewingArchivePuzzle && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
-          {screen === 'leaderboard' && <Leaderboard />}
+          {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
+          {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} />}
+          {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} />}
+          {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
           {screen === 'admin'       && <Admin />}
@@ -371,12 +397,15 @@ function App() {
     <div className="app">
       <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
       <main className="main-content">
-        {screen === 'how-to-play' && <HowToPlay />}
-        {screen === 'archive' && !viewingArchivePuzzle && <Archive user={user} onPlayDate={handlePlayArchiveDate} />}
-        {screen === 'leaderboard' && <Leaderboard />}
+        {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
+        {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} />}
+        {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} />}
+        {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'admin'       && <Admin />}
+        {screen === 'filmroom'    && <FilmRoomBoard />}
+        {screen === 'lineup'      && <LineupBoard />}
         {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         {showBoard && puzzle && (
         <GameBoard

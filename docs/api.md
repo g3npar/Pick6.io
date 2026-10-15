@@ -13,7 +13,27 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `GET /puzzle/archive` | List of past puzzles and whether you've done them |
 | `GET /puzzle/portrait/:token` | The player's headshot for the reveal |
 | `GET /players/search?q=` | Player name autocomplete |
-| `GET /leaderboard` | Top 50 players by total score |
+| `GET /leaderboard` | Top 50 Pick 6 players by total score |
+
+## Film Room stuff
+
+| Route | What it does |
+|---|---|
+| `GET /filmroom/today` | Today's Film Room puzzle (hidden clues stay hidden) |
+| `GET /filmroom/date/:date` | A past Film Room puzzle from the archive |
+| `GET /filmroom/archive` | Every past Film Room day, with your score if you played it |
+| `POST /filmroom/guess-team` | Checks your team guess and flips the next clue if you miss |
+| `POST /filmroom/result` | Submits your year guess and gets your score |
+| `GET /filmroom/leaderboard` | Top 50 Film Room players by total score |
+
+## Logo Lineup stuff
+
+| Route | What it does |
+|---|---|
+| `POST /lineup/day` | Today's logos, or an archive day if you send a date. Signed out players send the progress their browser kept. |
+| `POST /lineup/guess` | Checks a guess on one logo and zooms out if you miss, or gives up on just that logo |
+| `GET /lineup/archive` | Every past Logo Lineup day, with your score if you finished it |
+| `GET /lineup/leaderboard` | Top 50 Logo Lineup players by total score |
 
 ## Account stuff
 
@@ -23,6 +43,7 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `POST /auth/logout` | Sign out |
 | `GET /auth/me` | Who's signed in |
 | `PUT /auth/username` | Change your username |
+| `GET /auth/history` | Your finished games from all three, grouped by day, for the "Per day stats" on your profile |
 | `DELETE /auth/account` | Delete your account and all your results |
 
 ## Admin stuff

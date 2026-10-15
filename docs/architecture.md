@@ -7,10 +7,14 @@ There are basically four parts:
   - `index.js` has all the routes
   - `puzzle.js` has the puzzle logic and the database connection
   - `auth.js` handles Google sign in and sessions
+  - `filmroom.js` is everything for Film Room, the second game (see [filmroom.md](filmroom.md))
+  - `lineup.js` is everything for Logo Lineup, the third game (see [lineup.md](lineup.md))
 - **Database** - Postgres on AWS RDS.
 - **Scripts** (`scripts/`) - Python scripts that pull NFL data into the database. One of them runs every week on a Render cron job.
 
 ## How the daily puzzle works
+
+This is for Pick 6. Film Room and Logo Lineup work the same way but load their own puzzles (`/filmroom/today` and `/lineup/day`), so they still work even if Pick 6 doesn't load.
 
 1. The site calls `GET /puzzle/today/current`.
 2. The API checks if it already has today's puzzle in memory. If not, it checks the `daily_puzzles` table.
@@ -29,5 +33,5 @@ Either way, your in-progress game is saved in `sessionStorage` so a refresh does
 
 ## Heads up
 
-- There are two "epoch" dates. `EPOCH` in `api/puzzle.js` is used to generate puzzles, so **don't change it** or every future puzzle changes. `PUZZLE_EPOCH` in `GameBoard.jsx` is just for the "Daily #N" number.
+- There are two "epoch" dates. `EPOCH` in `api/puzzle.js` is used to generate puzzles, so **don't change it** or every future puzzle changes. `PUZZLE_EPOCH` in `GameBoard.jsx` is just for the "Pick 6 #N" number.
 - `public/awards.csv` only gets read when the API starts, so redeploy after updating it.

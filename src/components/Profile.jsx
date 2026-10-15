@@ -1,6 +1,74 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+const LINEUP_LOGOS = ['NFL', 'NBA', 'MLB', 'NHL', 'College', 'Old']
+
+// one line per game, points plus how the attempts went
+function gameLines(day) {
+  const lines = []
+  if (day.pick6) {
+    const p = day.pick6
+    lines.push({
+      game: 'Pick 6', score: p.score,
+      detail: [p.lieFound ? `lie on attempt ${p.lieAttempts}` : 'lie missed', p.playerCorrect ? 'player ✓' : 'player ✗'],
+    })
+  }
+  if (day.filmroom) {
+    const f = day.filmroom
+    const year = f.yearScore === 3 ? 'exact year' : f.yearScore === 1 ? 'year 1 off' : f.gaveUp ? 'gave up' : 'year missed'
+    lines.push({
+      game: 'Film Room', score: f.score,
+      detail: [f.teamFound ? `team on attempt ${f.teamAttempts}` : 'team missed', year],
+    })
+  }
+  if (day.lineup) {
+    lines.push({
+      game: 'Logo Lineup', score: day.lineup.score,
+      // attempt it was solved on, or ✗
+      detail: day.lineup.logos.map((l, i) => `${LINEUP_LOGOS[i]} ${l.solved ? l.attempts : '✗'}`),
+    })
+  }
+  return lines
+}
+
+function PerDayStats() {
+  const [days, setDays] = useState(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API}/auth/history`, { credentials: 'include' })
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then(setDays)
+      .catch(() => setError(true))
+  }, [])
+
+  return (
+    <div className="legal-section">
+      <h2 className="htp-section-title">Per day stats</h2>
+      {error && <p className="board-empty">Couldn't load your stats right now.</p>}
+      {!error && !days && <p className="profile-hint">Loading…</p>}
+      {days && days.length === 0 && <p className="board-empty">Finish a puzzle and it'll show up here.</p>}
+      {days && days.length > 0 && (
+        <ul className="stats-list">
+          {days.map(day => (
+            <li key={day.date} className="stats-day">
+              <span className="stats-date">{formatDate(day.date)}</span>
+              {gameLines(day).map(line => (
+                <div key={line.game} className="stats-game">
+                  <span className="stats-game-name">{line.game}</span>
+                  <span className="stats-detail">{line.detail.join(' · ')}</span>
+                  <span className="stats-score">{line.score}/6</span>
+                </div>
+              ))}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 const CONFIRM_WORD = 'DELETE'
 
@@ -89,6 +157,8 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
           </p>
           {savedAt && <p className="profile-ok">Username updated</p>}
         </div>
+
+        <PerDayStats />
 
         <div className="legal-section">
           <h2 className="htp-section-title">Delete account</h2>

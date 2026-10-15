@@ -9,7 +9,9 @@
 - `user_results` - everyone's scores
 - `puzzle_progress` - lie guesses for a puzzle you haven't finished yet
 
-The API creates the last four itself when it starts. The `players` and `player_seasons` tables were made by hand, so there's no script in the repo that creates them.
+Film Room has its own three tables too (see [filmroom.md](filmroom.md)), and Logo Lineup has two (see [lineup.md](lineup.md)).
+
+The API creates everything except `players` and `player_seasons` itself when it starts. Those two were made by hand, so there's no script in the repo that creates them.
 
 ## Where the data comes from
 
@@ -18,6 +20,8 @@ The API creates the last four itself when it starts. The `players` and `player_s
 - **Awards** (Pro Bowl, All-Pro, OPOY, Hall of Fame, etc): `scripts/scrape_awards.py` scrapes these into `public/awards.csv`
 - **MVP and Heisman:** typed out by hand in `load_data.py`
 - **Headshots:** `scripts/load_headshots.py`
+- **Film Room answers:** `scripts/build_team_seasons.py` makes `api/data/team_seasons.json`. This one isn't in the database and doesn't need updating every week.
+- **Logo Lineup logos:** `scripts/build_logo_teams.py` and `scripts/build_old_logos.py` make `api/data/logo_teams.json` and `api/data/old_logos.json` and download the images. Same deal, not in the database, only rerun when teams change logos.
 
 ## load_data.py
 
@@ -53,3 +57,4 @@ Nothing, the cron job does it.
 2. Update `END` in `scrape_awards.py`, run it, commit the csv, and redeploy the API
 3. Run the full `load_data.py`
 4. Run `load_headshots.py`
+5. Bump `LAST_SEASON` in `scripts/build_team_seasons.py`, run it, and commit `api/data/team_seasons.json` so the season that just ended can be a Film Room answer

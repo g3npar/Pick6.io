@@ -24,6 +24,10 @@ The cron job settings:
 
 You can hit "Trigger Run" to test it without waiting for Tuesday.
 
+The web service can also have `FILMROOM_SECRET` and `LINEUP_SECRET` environment variables. They decide the order of Film Room answers and Logo Lineup logos. If they're not set, they use `JWT_SECRET`.
+
+Logo Lineup cuts its zoomed crops on the server with `sharp`, which reads the logo images from `public/logos/leagues/`. So the API needs the whole repo, not just the `api` folder.
+
 ## Database access
 
 The RDS security group only lets in certain IPs. It needs:

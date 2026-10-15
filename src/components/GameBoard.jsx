@@ -3,6 +3,7 @@ import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
 import { formatDate } from '../utils/formatDate'
+import RulesButton from './HowToPlay'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -210,7 +211,7 @@ function GameBoard({
     const lieEmoji    = lieScore === 3 ? '🟩' : lieScore === 2 ? '🟥🟩' : lieScore === 1 ? '🟥🟥🟩' : '🟥🟥🟥'
     const playerEmoji = playerScore === 3 ? '🟩' : '🟥'
     const num = puzzle.date ? ` #${puzzleNumber(puzzle.date)}` : ''
-    const text = `Pick6 Daily${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
+    const text = `Pick 6${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
 
     let copied = false
     try {
@@ -244,7 +245,12 @@ function GameBoard({
 
         <div className="circle-side circle-side--left">
           {puzzle.date && <span className="puzzle-date-big">{formatDate(puzzle.date)}</span>}
-          {puzzle.date && <span className="puzzle-number-label">Daily #{puzzleNumber(puzzle.date)}</span>}
+          {puzzle.date && (
+            <span className="puzzle-number-row">
+              <span className="puzzle-number-label">Pick 6 #{puzzleNumber(puzzle.date)}</span>
+              <RulesButton game="pick6" />
+            </span>
+          )}
         </div>
 
         <div className="circle-game">
@@ -453,7 +459,8 @@ function GameBoard({
                     {lieFound ? '✓' : '✗'}
                   </span>
                   Lie
-                  <span className="result-table-attempts">used {lieAttempts}/3 attempts</span>
+                  {/* lieAttempts only counts misses, so add the one that found it */}
+                  <span className="result-table-attempts">used {lieFound ? lieAttempts + 1 : lieAttempts}/3 attempts</span>
                 </span>
                 <span className="result-table-value">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>
               </div>

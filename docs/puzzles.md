@@ -35,7 +35,7 @@ One of the 6 facts gets changed into a lie. The lie is supposed to be believable
 
 ## Scoring
 
-- **Finding the lie:** 3 points on your first try, 2 on your second, 1 on your third, 0 if you miss all 3.
+- **Finding the lie:** 3 points on your first attempt, 2 on your second, 1 on your third, 0 if you miss all 3.
 - **Naming the player:** 3 points.
 
 Max is 6.

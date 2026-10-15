@@ -3,23 +3,47 @@ import WheelSpinner from './WheelSpinner'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// survives remounts to avoid loading flash
-let cachedRows = null
+const GAMES = {
+  pick6:    { title: 'Pick 6',    path: '/leaderboard',          empty: 'a daily puzzle' },
+  filmroom: { title: 'Film Room', path: '/filmroom/leaderboard', empty: 'a Film Room' },
+  lineup:   { title: 'Logo Lineup', path: '/lineup/leaderboard', empty: 'a Logo Lineup' },
+}
 
-export default function Leaderboard() {
-  const [rows,    setRows]    = useState(cachedRows)
+// survives remounts to avoid loading flash, one per game
+const cachedRows = {}
+
+// opens on the game you last played, the switch at the top flips between them
+export default function Leaderboard({ defaultGame = 'pick6' }) {
+  const [game, setGame] = useState(defaultGame)
+  const { path, empty } = GAMES[game]
+  const [rows,    setRows]    = useState(cachedRows[game] ?? null)
   const [error,   setError]   = useState(false)
 
   useEffect(() => {
-    fetch(`${API}/leaderboard`)
+    // switching games reuses this component, so reset first
+    setRows(cachedRows[game] ?? null); setError(false)
+    fetch(`${API}${path}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(data => { cachedRows = data; setRows(data) })
+      .then(data => { cachedRows[game] = data; setRows(data) })
       .catch(() => setError(true))
-  }, [])
+  }, [game, path])
 
   return (
     <div className="htp-page">
       <div className="htp-card">
+        <div className="mode-toggle" role="tablist">
+          {Object.entries(GAMES).map(([id, g]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={game === id}
+              className={`mode-btn${game === id ? ' mode-btn--active' : ''}`}
+              onClick={() => setGame(id)}
+            >
+              {g.title}
+            </button>
+          ))}
+        </div>
 
         {error && <p className="board-empty">Couldn't load the leaderboard right now.</p>}
         {!error && !rows && (
@@ -27,7 +51,7 @@ export default function Leaderboard() {
             <WheelSpinner size={40} />
           </div>
         )}
-        {rows && rows.length === 0 && <p className="board-empty">No results yet, be the first to finish a daily puzzle.</p>}
+        {rows && rows.length === 0 && <p className="board-empty">No results yet, be the first to finish {empty}.</p>}
 
         {rows && rows.length > 0 && (
           <ul className="board-list">

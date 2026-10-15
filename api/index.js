@@ -17,6 +17,8 @@ const {
   upsertUser, setUsername, signSession, optionalAuth, requireAuth, isAdminEmail,
   signPortrait, verifyPortrait,
 } = require('./auth')
+const { filmroomRouter, ensureFilmroomSchema } = require('./filmroom')
+const { lineupRouter, ensureLineupSchema } = require('./lineup')
 
 const app = express()
 
@@ -45,7 +47,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type'],
 }))
 
-ensureAuthSchema(pool).catch(err => console.error('Auth schema init failed:', err.message))
+// the game tables point at users, so they wait for the auth schema
+ensureAuthSchema(pool)
+  .then(() => ensureFilmroomSchema(pool).catch(err => console.error('Film Room schema init failed:', err.message)))
+  .then(() => ensureLineupSchema(pool).catch(err => console.error('Logo Lineup schema init failed:', err.message)))
+  .catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
 // rate limiting only in production
@@ -364,6 +370,48 @@ app.get('/auth/me', optionalAuth, async (req, res) => {
   res.json({ user: toUserJSON(r.rows[0]) })
 })
 
+// GET /auth/history  every finished game, grouped by puzzle day, newest first.
+// attempts are counted the way the games show them, the right guess included
+app.get('/auth/history', requireAuth, async (req, res) => {
+  try {
+    const day = "to_char(puzzle_date, 'YYYY-MM-DD') AS date"
+    const [p6, fr, ll] = await Promise.all([
+      pool.query(`SELECT ${day}, lie_found, lie_attempts, player_correct, score FROM user_results WHERE user_id = $1`, [req.userId]),
+      pool.query(`SELECT ${day}, team_found, team_attempts, year_guess, score FROM filmroom_results WHERE user_id = $1`, [req.userId]),
+      pool.query(`SELECT ${day}, slots, score FROM lineup_games WHERE user_id = $1 AND completed`, [req.userId]),
+    ])
+    const days = new Map()
+    const dayFor = date => days.get(date) || days.set(date, { date }).get(date)
+
+    for (const r of p6.rows) {
+      dayFor(r.date).pick6 = {
+        score: r.score, playerCorrect: r.player_correct, lieFound: r.lie_found,
+        // lie_attempts only counts misses
+        lieAttempts: r.lie_found ? r.lie_attempts + 1 : r.lie_attempts,
+      }
+    }
+    for (const r of fr.rows) {
+      const teamScore = r.team_found ? Math.max(1, 3 - r.team_attempts) : 0
+      dayFor(r.date).filmroom = {
+        score: r.score, teamFound: r.team_found,
+        teamAttempts: r.team_found ? r.team_attempts + 1 : r.team_attempts,
+        // what's left after the team points: 3 exact, 1 a year off, 0 missed
+        yearScore: r.score - teamScore, gaveUp: r.year_guess === null,
+      }
+    }
+    for (const r of ll.rows) {
+      dayFor(r.date).lineup = {
+        score: r.score,
+        logos: r.slots.map(s => ({ solved: s.solved, attempts: s.solved ? s.attempts + 1 : s.attempts })),
+      }
+    }
+    res.json([...days.values()].sort((a, b) => b.date.localeCompare(a.date)))
+  } catch (err) {
+    console.error('History fetch failed:', err.message)
+    res.status(500).json({ error: 'Could not load your stats' })
+  }
+})
+
 // PUT /auth/username
 app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
   const raw = String(req.body?.username || '').trim()
@@ -583,6 +631,9 @@ app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res)
     res.status(400).json({ error: err.message })
   }
 })
+
+app.use('/filmroom', filmroomRouter)
+app.use('/lineup', lineupRouter)
 
 // 404 unmatched route
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))

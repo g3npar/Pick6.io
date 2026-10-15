@@ -5,6 +5,8 @@ Notes on how the code works and what I want to build next. For what the game act
 - [architecture.md](architecture.md) - how the frontend, API, and database connect
 - [api.md](api.md) - list of API endpoints
 - [puzzles.md](puzzles.md) - how the daily puzzle gets made
+- [filmroom.md](filmroom.md) - Film Room, the second game, guessing a team and a year
+- [lineup.md](lineup.md) - Logo Lineup, the third game, naming six zoomed in logos
 - [data-pipeline.md](data-pipeline.md) - the database and the scripts that load NFL data into it
 - [deployment.md](deployment.md) - where everything is hosted
 - [roadmap.md](roadmap.md) - new features I want to add

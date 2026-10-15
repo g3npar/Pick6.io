@@ -2,34 +2,24 @@
 
 ## Features I want to add
 
-### Yearbook (new game mode)
+### Film Room (new game mode)
 
-**Status:** planned, not started
+**Status:** built, not launched yet. How it works is in [filmroom.md](filmroom.md).
 
-**Idea:** Pick 6 is hard if you don't know a lot of players, so this mode is for more casual fans. You guess an NFL team **and** a season (like "2015 Seahawks") from clues that get easier as you go:
+**Still to do:**
 
-1. Record and point differential
-2. How far they got in the playoffs
-3. Head coach
-4. Starting QB
-5. Team colors
+- set `FILMROOM_EPOCH` in `api/filmroom.js` to launch day so it starts at Film Room #1
+- admin tools for Film Room, like Pick 6 has
+- a real sign in prompt after you finish, right now it's just a line of text
 
-**Scoring:** 3 points for the team and 3 for the year (2 if you're 1 year off, 1 if you're 2 years off).
+### Logo Lineup (new game mode)
 
-**Data:** all of it comes from `nfl_data_py.import_schedules()`, which I already use. It goes back to 1999.
+**Status:** built, not launched yet. How it works is in [lineup.md](lineup.md).
 
-**Things to figure out:**
+**Still to do:**
 
-- Which seasons to use as answers. Playoff teams + 12 win teams gives about 300 seasons, which is around 10 months of daily puzzles.
-- Use the QB who started most of the regular season, not the playoff one. Otherwise the 2014 Cardinals answer is Ryan Lindley.
-- Teams that moved (St. Louis Rams, San Diego Chargers, Oakland Raiders) need their old names, and I only have current logos.
-- How to show Washington's old name.
-- How the "fewer clues = more points" idea fits with the 3 + 3 scoring.
-
-**Before I can build it:**
-
-- Add a `mode` column to `user_results` and `puzzle_progress`. Right now there can only be one result per user per day, and the leaderboard adds everything together.
-- Rename "Daily" in the nav to "Pick 6".
+- set `LINEUP_EPOCH` in `api/lineup.js` to launch day so it starts at Logo Lineup #1
+- pick a final name, "Logo Lineup" is a placeholder
 
 ### New feature template
 

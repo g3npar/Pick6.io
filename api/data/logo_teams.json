@@ -1,0 +1,1346 @@
+[
+ {
+  "league": "nfl",
+  "id": "ari",
+  "name": "Arizona Cardinals",
+  "nickname": "Cardinals",
+  "logo": "nfl/ari.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "atl",
+  "name": "Atlanta Falcons",
+  "nickname": "Falcons",
+  "logo": "nfl/atl.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "bal",
+  "name": "Baltimore Ravens",
+  "nickname": "Ravens",
+  "logo": "nfl/bal.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "buf",
+  "name": "Buffalo Bills",
+  "nickname": "Bills",
+  "logo": "nfl/buf.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "car",
+  "name": "Carolina Panthers",
+  "nickname": "Panthers",
+  "logo": "nfl/car.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "chi",
+  "name": "Chicago Bears",
+  "nickname": "Bears",
+  "logo": "nfl/chi.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "cin",
+  "name": "Cincinnati Bengals",
+  "nickname": "Bengals",
+  "logo": "nfl/cin.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "cle",
+  "name": "Cleveland Browns",
+  "nickname": "Browns",
+  "logo": "nfl/cle.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "dal",
+  "name": "Dallas Cowboys",
+  "nickname": "Cowboys",
+  "logo": "nfl/dal.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "den",
+  "name": "Denver Broncos",
+  "nickname": "Broncos",
+  "logo": "nfl/den.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "det",
+  "name": "Detroit Lions",
+  "nickname": "Lions",
+  "logo": "nfl/det.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "gb",
+  "name": "Green Bay Packers",
+  "nickname": "Packers",
+  "logo": "nfl/gb.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "hou",
+  "name": "Houston Texans",
+  "nickname": "Texans",
+  "logo": "nfl/hou.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "ind",
+  "name": "Indianapolis Colts",
+  "nickname": "Colts",
+  "logo": "nfl/ind.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "jax",
+  "name": "Jacksonville Jaguars",
+  "nickname": "Jaguars",
+  "logo": "nfl/jax.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "kc",
+  "name": "Kansas City Chiefs",
+  "nickname": "Chiefs",
+  "logo": "nfl/kc.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "lv",
+  "name": "Las Vegas Raiders",
+  "nickname": "Raiders",
+  "logo": "nfl/lv.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "lac",
+  "name": "Los Angeles Chargers",
+  "nickname": "Chargers",
+  "logo": "nfl/lac.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "lar",
+  "name": "Los Angeles Rams",
+  "nickname": "Rams",
+  "logo": "nfl/lar.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "mia",
+  "name": "Miami Dolphins",
+  "nickname": "Dolphins",
+  "logo": "nfl/mia.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "min",
+  "name": "Minnesota Vikings",
+  "nickname": "Vikings",
+  "logo": "nfl/min.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "ne",
+  "name": "New England Patriots",
+  "nickname": "Patriots",
+  "logo": "nfl/ne.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "no",
+  "name": "New Orleans Saints",
+  "nickname": "Saints",
+  "logo": "nfl/no.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "nyg",
+  "name": "New York Giants",
+  "nickname": "Giants",
+  "logo": "nfl/nyg.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "nyj",
+  "name": "New York Jets",
+  "nickname": "Jets",
+  "logo": "nfl/nyj.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "phi",
+  "name": "Philadelphia Eagles",
+  "nickname": "Eagles",
+  "logo": "nfl/phi.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "pit",
+  "name": "Pittsburgh Steelers",
+  "nickname": "Steelers",
+  "logo": "nfl/pit.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "sf",
+  "name": "San Francisco 49ers",
+  "nickname": "49ers",
+  "logo": "nfl/sf.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "sea",
+  "name": "Seattle Seahawks",
+  "nickname": "Seahawks",
+  "logo": "nfl/sea.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "tb",
+  "name": "Tampa Bay Buccaneers",
+  "nickname": "Buccaneers",
+  "logo": "nfl/tb.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "ten",
+  "name": "Tennessee Titans",
+  "nickname": "Titans",
+  "logo": "nfl/ten.svg"
+ },
+ {
+  "league": "nfl",
+  "id": "wsh",
+  "name": "Washington Commanders",
+  "nickname": "Commanders",
+  "logo": "nfl/wsh.svg"
+ },
+ {
+  "league": "nba",
+  "id": "atl",
+  "name": "Atlanta Hawks",
+  "nickname": "Hawks",
+  "logo": "nba/atl.svg"
+ },
+ {
+  "league": "nba",
+  "id": "bos",
+  "name": "Boston Celtics",
+  "nickname": "Celtics",
+  "logo": "nba/bos.svg"
+ },
+ {
+  "league": "nba",
+  "id": "bkn",
+  "name": "Brooklyn Nets",
+  "nickname": "Nets",
+  "logo": "nba/bkn.svg"
+ },
+ {
+  "league": "nba",
+  "id": "cha",
+  "name": "Charlotte Hornets",
+  "nickname": "Hornets",
+  "logo": "nba/cha.svg"
+ },
+ {
+  "league": "nba",
+  "id": "chi",
+  "name": "Chicago Bulls",
+  "nickname": "Bulls",
+  "logo": "nba/chi.svg"
+ },
+ {
+  "league": "nba",
+  "id": "cle",
+  "name": "Cleveland Cavaliers",
+  "nickname": "Cavaliers",
+  "logo": "nba/cle.svg"
+ },
+ {
+  "league": "nba",
+  "id": "dal",
+  "name": "Dallas Mavericks",
+  "nickname": "Mavericks",
+  "logo": "nba/dal.svg"
+ },
+ {
+  "league": "nba",
+  "id": "den",
+  "name": "Denver Nuggets",
+  "nickname": "Nuggets",
+  "logo": "nba/den.svg"
+ },
+ {
+  "league": "nba",
+  "id": "det",
+  "name": "Detroit Pistons",
+  "nickname": "Pistons",
+  "logo": "nba/det.svg"
+ },
+ {
+  "league": "nba",
+  "id": "gs",
+  "name": "Golden State Warriors",
+  "nickname": "Warriors",
+  "logo": "nba/gs.svg"
+ },
+ {
+  "league": "nba",
+  "id": "hou",
+  "name": "Houston Rockets",
+  "nickname": "Rockets",
+  "logo": "nba/hou.svg"
+ },
+ {
+  "league": "nba",
+  "id": "ind",
+  "name": "Indiana Pacers",
+  "nickname": "Pacers",
+  "logo": "nba/ind.svg"
+ },
+ {
+  "league": "nba",
+  "id": "lac",
+  "name": "LA Clippers",
+  "nickname": "Clippers",
+  "logo": "nba/lac.svg"
+ },
+ {
+  "league": "nba",
+  "id": "lal",
+  "name": "Los Angeles Lakers",
+  "nickname": "Lakers",
+  "logo": "nba/lal.svg"
+ },
+ {
+  "league": "nba",
+  "id": "mem",
+  "name": "Memphis Grizzlies",
+  "nickname": "Grizzlies",
+  "logo": "nba/mem.svg"
+ },
+ {
+  "league": "nba",
+  "id": "mia",
+  "name": "Miami Heat",
+  "nickname": "Heat",
+  "logo": "nba/mia.svg"
+ },
+ {
+  "league": "nba",
+  "id": "mil",
+  "name": "Milwaukee Bucks",
+  "nickname": "Bucks",
+  "logo": "nba/mil.svg"
+ },
+ {
+  "league": "nba",
+  "id": "min",
+  "name": "Minnesota Timberwolves",
+  "nickname": "Timberwolves",
+  "logo": "nba/min.svg"
+ },
+ {
+  "league": "nba",
+  "id": "no",
+  "name": "New Orleans Pelicans",
+  "nickname": "Pelicans",
+  "logo": "nba/no.svg"
+ },
+ {
+  "league": "nba",
+  "id": "ny",
+  "name": "New York Knicks",
+  "nickname": "Knicks",
+  "logo": "nba/ny.svg"
+ },
+ {
+  "league": "nba",
+  "id": "okc",
+  "name": "Oklahoma City Thunder",
+  "nickname": "Thunder",
+  "logo": "nba/okc.svg"
+ },
+ {
+  "league": "nba",
+  "id": "orl",
+  "name": "Orlando Magic",
+  "nickname": "Magic",
+  "logo": "nba/orl.svg"
+ },
+ {
+  "league": "nba",
+  "id": "phi",
+  "name": "Philadelphia 76ers",
+  "nickname": "76ers",
+  "logo": "nba/phi.svg"
+ },
+ {
+  "league": "nba",
+  "id": "phx",
+  "name": "Phoenix Suns",
+  "nickname": "Suns",
+  "logo": "nba/phx.svg"
+ },
+ {
+  "league": "nba",
+  "id": "por",
+  "name": "Portland Trail Blazers",
+  "nickname": "Trail Blazers",
+  "logo": "nba/por.svg"
+ },
+ {
+  "league": "nba",
+  "id": "sac",
+  "name": "Sacramento Kings",
+  "nickname": "Kings",
+  "logo": "nba/sac.svg"
+ },
+ {
+  "league": "nba",
+  "id": "sa",
+  "name": "San Antonio Spurs",
+  "nickname": "Spurs",
+  "logo": "nba/sa.svg"
+ },
+ {
+  "league": "nba",
+  "id": "tor",
+  "name": "Toronto Raptors",
+  "nickname": "Raptors",
+  "logo": "nba/tor.svg"
+ },
+ {
+  "league": "nba",
+  "id": "utah",
+  "name": "Utah Jazz",
+  "nickname": "Jazz",
+  "logo": "nba/utah.svg"
+ },
+ {
+  "league": "nba",
+  "id": "wsh",
+  "name": "Washington Wizards",
+  "nickname": "Wizards",
+  "logo": "nba/wsh.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "ari",
+  "name": "Arizona Diamondbacks",
+  "nickname": "Diamondbacks",
+  "logo": "mlb/ari.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "ath",
+  "name": "Athletics",
+  "nickname": "Athletics",
+  "logo": "mlb/ath.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "atl",
+  "name": "Atlanta Braves",
+  "nickname": "Braves",
+  "logo": "mlb/atl.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "bal",
+  "name": "Baltimore Orioles",
+  "nickname": "Orioles",
+  "logo": "mlb/bal.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "bos",
+  "name": "Boston Red Sox",
+  "nickname": "Red Sox",
+  "logo": "mlb/bos.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "chc",
+  "name": "Chicago Cubs",
+  "nickname": "Cubs",
+  "logo": "mlb/chc.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "chw",
+  "name": "Chicago White Sox",
+  "nickname": "White Sox",
+  "logo": "mlb/chw.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "cin",
+  "name": "Cincinnati Reds",
+  "nickname": "Reds",
+  "logo": "mlb/cin.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "cle",
+  "name": "Cleveland Guardians",
+  "nickname": "Guardians",
+  "logo": "mlb/cle.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "col",
+  "name": "Colorado Rockies",
+  "nickname": "Rockies",
+  "logo": "mlb/col.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "det",
+  "name": "Detroit Tigers",
+  "nickname": "Tigers",
+  "logo": "mlb/det.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "hou",
+  "name": "Houston Astros",
+  "nickname": "Astros",
+  "logo": "mlb/hou.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "kc",
+  "name": "Kansas City Royals",
+  "nickname": "Royals",
+  "logo": "mlb/kc.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "laa",
+  "name": "Los Angeles Angels",
+  "nickname": "Angels",
+  "logo": "mlb/laa.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "lad",
+  "name": "Los Angeles Dodgers",
+  "nickname": "Dodgers",
+  "logo": "mlb/lad.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "mia",
+  "name": "Miami Marlins",
+  "nickname": "Marlins",
+  "logo": "mlb/mia.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "mil",
+  "name": "Milwaukee Brewers",
+  "nickname": "Brewers",
+  "logo": "mlb/mil.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "min",
+  "name": "Minnesota Twins",
+  "nickname": "Twins",
+  "logo": "mlb/min.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "nym",
+  "name": "New York Mets",
+  "nickname": "Mets",
+  "logo": "mlb/nym.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "nyy",
+  "name": "New York Yankees",
+  "nickname": "Yankees",
+  "logo": "mlb/nyy.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "phi",
+  "name": "Philadelphia Phillies",
+  "nickname": "Phillies",
+  "logo": "mlb/phi.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "pit",
+  "name": "Pittsburgh Pirates",
+  "nickname": "Pirates",
+  "logo": "mlb/pit.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "sd",
+  "name": "San Diego Padres",
+  "nickname": "Padres",
+  "logo": "mlb/sd.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "sf",
+  "name": "San Francisco Giants",
+  "nickname": "Giants",
+  "logo": "mlb/sf.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "sea",
+  "name": "Seattle Mariners",
+  "nickname": "Mariners",
+  "logo": "mlb/sea.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "stl",
+  "name": "St. Louis Cardinals",
+  "nickname": "Cardinals",
+  "logo": "mlb/stl.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "tb",
+  "name": "Tampa Bay Rays",
+  "nickname": "Rays",
+  "logo": "mlb/tb.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "tex",
+  "name": "Texas Rangers",
+  "nickname": "Rangers",
+  "logo": "mlb/tex.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "tor",
+  "name": "Toronto Blue Jays",
+  "nickname": "Blue Jays",
+  "logo": "mlb/tor.svg"
+ },
+ {
+  "league": "mlb",
+  "id": "wsh",
+  "name": "Washington Nationals",
+  "nickname": "Nationals",
+  "logo": "mlb/wsh.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "ana",
+  "name": "Anaheim Ducks",
+  "nickname": "Ducks",
+  "logo": "nhl/ana.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "bos",
+  "name": "Boston Bruins",
+  "nickname": "Bruins",
+  "logo": "nhl/bos.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "buf",
+  "name": "Buffalo Sabres",
+  "nickname": "Sabres",
+  "logo": "nhl/buf.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "cgy",
+  "name": "Calgary Flames",
+  "nickname": "Flames",
+  "logo": "nhl/cgy.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "car",
+  "name": "Carolina Hurricanes",
+  "nickname": "Hurricanes",
+  "logo": "nhl/car.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "chi",
+  "name": "Chicago Blackhawks",
+  "nickname": "Blackhawks",
+  "logo": "nhl/chi.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "col",
+  "name": "Colorado Avalanche",
+  "nickname": "Avalanche",
+  "logo": "nhl/col.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "cbj",
+  "name": "Columbus Blue Jackets",
+  "nickname": "Blue Jackets",
+  "logo": "nhl/cbj.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "dal",
+  "name": "Dallas Stars",
+  "nickname": "Stars",
+  "logo": "nhl/dal.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "det",
+  "name": "Detroit Red Wings",
+  "nickname": "Red Wings",
+  "logo": "nhl/det.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "edm",
+  "name": "Edmonton Oilers",
+  "nickname": "Oilers",
+  "logo": "nhl/edm.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "fla",
+  "name": "Florida Panthers",
+  "nickname": "Panthers",
+  "logo": "nhl/fla.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "la",
+  "name": "Los Angeles Kings",
+  "nickname": "Kings",
+  "logo": "nhl/la.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "min",
+  "name": "Minnesota Wild",
+  "nickname": "Wild",
+  "logo": "nhl/min.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "mtl",
+  "name": "Montreal Canadiens",
+  "nickname": "Canadiens",
+  "logo": "nhl/mtl.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "nsh",
+  "name": "Nashville Predators",
+  "nickname": "Predators",
+  "logo": "nhl/nsh.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "nj",
+  "name": "New Jersey Devils",
+  "nickname": "Devils",
+  "logo": "nhl/nj.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "nyi",
+  "name": "New York Islanders",
+  "nickname": "Islanders",
+  "logo": "nhl/nyi.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "nyr",
+  "name": "New York Rangers",
+  "nickname": "Rangers",
+  "logo": "nhl/nyr.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "ott",
+  "name": "Ottawa Senators",
+  "nickname": "Senators",
+  "logo": "nhl/ott.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "phi",
+  "name": "Philadelphia Flyers",
+  "nickname": "Flyers",
+  "logo": "nhl/phi.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "pit",
+  "name": "Pittsburgh Penguins",
+  "nickname": "Penguins",
+  "logo": "nhl/pit.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "sj",
+  "name": "San Jose Sharks",
+  "nickname": "Sharks",
+  "logo": "nhl/sj.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "sea",
+  "name": "Seattle Kraken",
+  "nickname": "Kraken",
+  "logo": "nhl/sea.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "stl",
+  "name": "St. Louis Blues",
+  "nickname": "Blues",
+  "logo": "nhl/stl.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "tb",
+  "name": "Tampa Bay Lightning",
+  "nickname": "Lightning",
+  "logo": "nhl/tb.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "tor",
+  "name": "Toronto Maple Leafs",
+  "nickname": "Maple Leafs",
+  "logo": "nhl/tor.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "utah",
+  "name": "Utah Mammoth",
+  "nickname": "Mammoth",
+  "logo": "nhl/utah.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "van",
+  "name": "Vancouver Canucks",
+  "nickname": "Canucks",
+  "logo": "nhl/van.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "vgk",
+  "name": "Vegas Golden Knights",
+  "nickname": "Golden Knights",
+  "logo": "nhl/vgk.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "wsh",
+  "name": "Washington Capitals",
+  "nickname": "Capitals",
+  "logo": "nhl/wsh.svg"
+ },
+ {
+  "league": "nhl",
+  "id": "wpg",
+  "name": "Winnipeg Jets",
+  "nickname": "Jets",
+  "logo": "nhl/wpg.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ala",
+  "name": "Alabama Crimson Tide",
+  "nickname": "Crimson Tide",
+  "logo": "ncaa/ala.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "asu",
+  "name": "Arizona State Sun Devils",
+  "nickname": "Sun Devils",
+  "logo": "ncaa/asu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ariz",
+  "name": "Arizona Wildcats",
+  "nickname": "Wildcats",
+  "logo": "ncaa/ariz.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ark",
+  "name": "Arkansas Razorbacks",
+  "nickname": "Razorbacks",
+  "logo": "ncaa/ark.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "aub",
+  "name": "Auburn Tigers",
+  "nickname": "Tigers",
+  "logo": "ncaa/aub.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "byu",
+  "name": "BYU Cougars",
+  "nickname": "Cougars",
+  "logo": "ncaa/byu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "bay",
+  "name": "Baylor Bears",
+  "nickname": "Bears",
+  "logo": "ncaa/bay.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "bc",
+  "name": "Boston College Eagles",
+  "nickname": "Eagles",
+  "logo": "ncaa/bc.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "cal",
+  "name": "California Golden Bears",
+  "nickname": "Golden Bears",
+  "logo": "ncaa/cal.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "cin",
+  "name": "Cincinnati Bearcats",
+  "nickname": "Bearcats",
+  "logo": "ncaa/cin.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "clem",
+  "name": "Clemson Tigers",
+  "nickname": "Tigers",
+  "logo": "ncaa/clem.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "colo",
+  "name": "Colorado Buffaloes",
+  "nickname": "Buffaloes",
+  "logo": "ncaa/colo.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "duke",
+  "name": "Duke Blue Devils",
+  "nickname": "Blue Devils",
+  "logo": "ncaa/duke.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "fla",
+  "name": "Florida Gators",
+  "nickname": "Gators",
+  "logo": "ncaa/fla.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "fsu",
+  "name": "Florida State Seminoles",
+  "nickname": "Seminoles",
+  "logo": "ncaa/fsu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "uga",
+  "name": "Georgia Bulldogs",
+  "nickname": "Bulldogs",
+  "logo": "ncaa/uga.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "gt",
+  "name": "Georgia Tech Yellow Jackets",
+  "nickname": "Yellow Jackets",
+  "logo": "ncaa/gt.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "hou",
+  "name": "Houston Cougars",
+  "nickname": "Cougars",
+  "logo": "ncaa/hou.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ill",
+  "name": "Illinois Fighting Illini",
+  "nickname": "Fighting Illini",
+  "logo": "ncaa/ill.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "iu",
+  "name": "Indiana Hoosiers",
+  "nickname": "Hoosiers",
+  "logo": "ncaa/iu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "iowa",
+  "name": "Iowa Hawkeyes",
+  "nickname": "Hawkeyes",
+  "logo": "ncaa/iowa.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "isu",
+  "name": "Iowa State Cyclones",
+  "nickname": "Cyclones",
+  "logo": "ncaa/isu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ku",
+  "name": "Kansas Jayhawks",
+  "nickname": "Jayhawks",
+  "logo": "ncaa/ku.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ksu",
+  "name": "Kansas State Wildcats",
+  "nickname": "Wildcats",
+  "logo": "ncaa/ksu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "uk",
+  "name": "Kentucky Wildcats",
+  "nickname": "Wildcats",
+  "logo": "ncaa/uk.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "lsu",
+  "name": "LSU Tigers",
+  "nickname": "Tigers",
+  "logo": "ncaa/lsu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "lou",
+  "name": "Louisville Cardinals",
+  "nickname": "Cardinals",
+  "logo": "ncaa/lou.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "md",
+  "name": "Maryland Terrapins",
+  "nickname": "Terrapins",
+  "logo": "ncaa/md.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "mia",
+  "name": "Miami Hurricanes",
+  "nickname": "Hurricanes",
+  "logo": "ncaa/mia.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "msu",
+  "name": "Michigan State Spartans",
+  "nickname": "Spartans",
+  "logo": "ncaa/msu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "mich",
+  "name": "Michigan Wolverines",
+  "nickname": "Wolverines",
+  "logo": "ncaa/mich.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "minn",
+  "name": "Minnesota Golden Gophers",
+  "nickname": "Golden Gophers",
+  "logo": "ncaa/minn.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "msst",
+  "name": "Mississippi State Bulldogs",
+  "nickname": "Bulldogs",
+  "logo": "ncaa/msst.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "miz",
+  "name": "Missouri Tigers",
+  "nickname": "Tigers",
+  "logo": "ncaa/miz.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ncsu",
+  "name": "NC State Wolfpack",
+  "nickname": "Wolfpack",
+  "logo": "ncaa/ncsu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "neb",
+  "name": "Nebraska Cornhuskers",
+  "nickname": "Cornhuskers",
+  "logo": "ncaa/neb.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "unc",
+  "name": "North Carolina Tar Heels",
+  "nickname": "Tar Heels",
+  "logo": "ncaa/unc.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "nu",
+  "name": "Northwestern Wildcats",
+  "nickname": "Wildcats",
+  "logo": "ncaa/nu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "nd",
+  "name": "Notre Dame Fighting Irish",
+  "nickname": "Fighting Irish",
+  "logo": "ncaa/nd.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "osu",
+  "name": "Ohio State Buckeyes",
+  "nickname": "Buckeyes",
+  "logo": "ncaa/osu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ou",
+  "name": "Oklahoma Sooners",
+  "nickname": "Sooners",
+  "logo": "ncaa/ou.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "okst",
+  "name": "Oklahoma State Cowboys",
+  "nickname": "Cowboys",
+  "logo": "ncaa/okst.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "miss",
+  "name": "Ole Miss Rebels",
+  "nickname": "Rebels",
+  "logo": "ncaa/miss.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ore",
+  "name": "Oregon Ducks",
+  "nickname": "Ducks",
+  "logo": "ncaa/ore.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "psu",
+  "name": "Penn State Nittany Lions",
+  "nickname": "Nittany Lions",
+  "logo": "ncaa/psu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "pitt",
+  "name": "Pittsburgh Panthers",
+  "nickname": "Panthers",
+  "logo": "ncaa/pitt.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "pur",
+  "name": "Purdue Boilermakers",
+  "nickname": "Boilermakers",
+  "logo": "ncaa/pur.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "rutg",
+  "name": "Rutgers Scarlet Knights",
+  "nickname": "Scarlet Knights",
+  "logo": "ncaa/rutg.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "smu",
+  "name": "SMU Mustangs",
+  "nickname": "Mustangs",
+  "logo": "ncaa/smu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "sc",
+  "name": "South Carolina Gamecocks",
+  "nickname": "Gamecocks",
+  "logo": "ncaa/sc.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "stan",
+  "name": "Stanford Cardinal",
+  "nickname": "Cardinal",
+  "logo": "ncaa/stan.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "syr",
+  "name": "Syracuse Orange",
+  "nickname": "Orange",
+  "logo": "ncaa/syr.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "tcu",
+  "name": "TCU Horned Frogs",
+  "nickname": "Horned Frogs",
+  "logo": "ncaa/tcu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "tenn",
+  "name": "Tennessee Volunteers",
+  "nickname": "Volunteers",
+  "logo": "ncaa/tenn.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "tam",
+  "name": "Texas A&M Aggies",
+  "nickname": "Aggies",
+  "logo": "ncaa/tam.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "tex",
+  "name": "Texas Longhorns",
+  "nickname": "Longhorns",
+  "logo": "ncaa/tex.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ttu",
+  "name": "Texas Tech Red Raiders",
+  "nickname": "Red Raiders",
+  "logo": "ncaa/ttu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ucf",
+  "name": "UCF Knights",
+  "nickname": "Knights",
+  "logo": "ncaa/ucf.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "ucla",
+  "name": "UCLA Bruins",
+  "nickname": "Bruins",
+  "logo": "ncaa/ucla.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "usc",
+  "name": "USC Trojans",
+  "nickname": "Trojans",
+  "logo": "ncaa/usc.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "utah",
+  "name": "Utah Utes",
+  "nickname": "Utes",
+  "logo": "ncaa/utah.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "van",
+  "name": "Vanderbilt Commodores",
+  "nickname": "Commodores",
+  "logo": "ncaa/van.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "uva",
+  "name": "Virginia Cavaliers",
+  "nickname": "Cavaliers",
+  "logo": "ncaa/uva.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "vt",
+  "name": "Virginia Tech Hokies",
+  "nickname": "Hokies",
+  "logo": "ncaa/vt.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "wake",
+  "name": "Wake Forest Demon Deacons",
+  "nickname": "Demon Deacons",
+  "logo": "ncaa/wake.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "wash",
+  "name": "Washington Huskies",
+  "nickname": "Huskies",
+  "logo": "ncaa/wash.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "wvu",
+  "name": "West Virginia Mountaineers",
+  "nickname": "Mountaineers",
+  "logo": "ncaa/wvu.svg"
+ },
+ {
+  "league": "ncaa",
+  "id": "wis",
+  "name": "Wisconsin Badgers",
+  "nickname": "Badgers",
+  "logo": "ncaa/wis.svg"
+ }
+]
