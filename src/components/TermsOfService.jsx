@@ -3,7 +3,7 @@ export default function TermsOfService() {
     <div className="htp-page">
       <div className="htp-card">
 
-        <p className="legal-meta">Last updated: August 18, 2026</p>
+        <p className="legal-meta">Last updated: October 15, 2026</p>
 
         <div className="legal-section">
           <h2 className="htp-section-title">Agreement</h2>
@@ -12,7 +12,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">What Pick6.io is</h2>
-          <p>Pick6.io is a free, independently-run daily NFL trivia game. It is a fan project and is not affiliated with, endorsed by, or sponsored by the NFL or any team, league, or player association. Team names and logos are used for identification purposes only and remain the property of their respective owners.</p>
+          <p>Pick6.io is a free, independently-run collection of daily sports trivia games. It is a fan project and is not affiliated with, endorsed by, or sponsored by the NFL, NBA, MLB, NHL, NCAA, or any team, school, conference, league, or player association. Team and school names and logos are used for identification purposes only and remain the property of their respective owners.</p>
         </div>
 
         <div className="legal-section">
@@ -33,7 +33,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Ownership</h2>
-          <p>The Pick6.io name, puzzle format, and underlying code and design are ours. The underlying NFL statistics and career facts are drawn from public sources and belong to no one; we don't claim ownership over the facts themselves, only how the game presents them.</p>
+          <p>The Pick6.io name, puzzle format, and underlying code and design are ours. The underlying sports statistics and career facts are drawn from public sources and belong to no one; we don't claim ownership over the facts themselves, only how the game presents them.</p>
         </div>
 
         <div className="legal-section">
