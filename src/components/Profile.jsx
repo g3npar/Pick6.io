@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { formatDate } from '../utils/formatDate'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -6,31 +6,18 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const LINEUP_LOGOS = ['NFL', 'NBA', 'MLB', 'NHL', 'College', 'Old']
 
 // one line per game, points plus how the attempts went
+// same squares as the share text: a red one per miss, then green for the one you got
+const tries = (got, attempts) => got ? '🟥'.repeat(Math.max(0, attempts - 1)) + '🟩' : '🟥🟥🟥'
+
+// every game gets a line each day, the ones you didn't finish say so
 function gameLines(day) {
-  const lines = []
-  if (day.pick6) {
-    const p = day.pick6
-    lines.push({
-      game: 'Pick 6', score: p.score,
-      detail: [p.lieFound ? `lie on attempt ${p.lieAttempts}` : 'lie missed', p.playerCorrect ? 'player ✓' : 'player ✗'],
-    })
-  }
-  if (day.filmroom) {
-    const f = day.filmroom
-    const year = f.yearScore === 3 ? 'exact year' : f.yearScore === 1 ? 'year 1 off' : f.gaveUp ? 'gave up' : 'year missed'
-    lines.push({
-      game: 'Film Room', score: f.score,
-      detail: [f.teamFound ? `team on attempt ${f.teamAttempts}` : 'team missed', year],
-    })
-  }
-  if (day.lineup) {
-    lines.push({
-      game: 'Logo Lineup', score: day.lineup.score,
-      // attempt it was solved on, or ✗
-      detail: day.lineup.logos.map((l, i) => `${LINEUP_LOGOS[i]} ${l.solved ? l.attempts : '✗'}`),
-    })
-  }
-  return lines
+  const p = day.pick6, f = day.filmroom, l = day.lineup
+  return [
+    { game: 'Pick 6', score: p?.score, detail: p && [`Lie ${tries(p.lieFound, p.lieAttempts)}`, `Player ${p.playerCorrect ? '🟩' : '🟥'}`] },
+    // year is 🟩 exact, 🟨 one off, 🟥 missed, like the Film Room share text
+    { game: 'Film Room', score: f?.score, detail: f && [`Team ${tries(f.teamFound, f.teamAttempts)}`, `Year ${f.yearScore === 3 ? '🟩' : f.yearScore === 1 ? '🟨' : '🟥'}`] },
+    { game: 'Logo Lineup', score: l?.score, detail: l && l.logos.map((x, i) => `${LINEUP_LOGOS[i]} ${tries(x.solved, x.attempts)}`) },
+  ]
 }
 
 function PerDayStats() {
@@ -46,7 +33,7 @@ function PerDayStats() {
 
   return (
     <div className="legal-section">
-      <h2 className="htp-section-title">Per day stats</h2>
+      <h2 className="htp-section-title stats-title">Per day stats</h2>
       {error && <p className="board-empty">Couldn't load your stats right now.</p>}
       {!error && !days && <p className="profile-hint">Loading…</p>}
       {days && days.length === 0 && <p className="board-empty">Finish a puzzle and it'll show up here.</p>}
@@ -56,10 +43,15 @@ function PerDayStats() {
             <li key={day.date} className="stats-day">
               <span className="stats-date">{formatDate(day.date)}</span>
               {gameLines(day).map(line => (
-                <div key={line.game} className="stats-game">
+                <div key={line.game} className={`stats-game${line.detail ? '' : ' stats-game--none'}`}>
                   <span className="stats-game-name">{line.game}</span>
-                  <span className="stats-detail">{line.detail.join(' · ')}</span>
-                  <span className="stats-score">{line.score}/6</span>
+                  <span className="stats-detail">
+                    {/* each piece stays on one line, so a logo's squares never split across lines */}
+                    {line.detail
+                      ? line.detail.map((d, i) => <Fragment key={i}>{i > 0 && ' · '}<span className="stats-item">{d}</span></Fragment>)
+                      : 'not played'}
+                  </span>
+                  <span className="stats-score">{line.detail ? `${line.score}/6` : '–'}</span>
                 </div>
               ))}
             </li>

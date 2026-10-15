@@ -17,7 +17,7 @@ try { OLD = require('./data/old_logos.json') } catch {}
 const LINEUP_EPOCH = '2026-10-09'
 
 const LEAGUES = ['nfl', 'nba', 'mlb', 'nhl', 'ncaa']
-const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'College' }
+const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'NCAA' }
 const SLOTS = [...LEAGUES, 'old']
 const MAX_ATTEMPTS = 3
 // how far in each attempt starts. modern logos are svgs, so these can go as tight as we want

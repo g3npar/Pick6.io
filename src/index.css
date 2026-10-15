@@ -1,5 +1,25 @@
 /* global styles */
 
+/* fonts are served from /fonts instead of Google Fonts. Google's stylesheet held up
+   the app's JavaScript (browsers wait for it), which delayed every puzzle request.
+   Latin only, the same subset Google sent us */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 900;   /* one variable file covers every weight */
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/anton-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* design tokens */
 :root {
   --bg:            #10121e;
@@ -1798,7 +1818,14 @@ kbd {
 .stats-date { font-size: 13px; font-weight: 800; color: var(--text); }
 .stats-game { display: grid; grid-template-columns: 96px 1fr auto; align-items: baseline; gap: 10px; }
 .stats-game-name { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-sec); }
-.stats-detail { font-size: 12px; color: var(--text-muted); }
+.stats-detail { font-size: 12px; color: var(--text-sec); letter-spacing: 0.02em; }
+.stats-item { white-space: nowrap; }
+/* games you didn't finish that day */
+.stats-game--none .stats-game-name,
+.stats-game--none .stats-detail,
+.stats-game--none .stats-score { color: var(--text-muted); opacity: 0.6; }
+/* same font as PICK in the logo */
+.htp-section-title.stats-title { font-family: 'Anton', sans-serif; font-weight: 400; font-size: 22px; letter-spacing: 0.06em; color: var(--red); }
 .stats-score { font-size: 13px; font-weight: 800; color: var(--text); }
 .profile-ok    { font-size: 13px; color: var(--green); margin-top: 8px; }
 .profile-error { font-size: 13px; color: var(--red); margin-top: 14px; }
@@ -2138,6 +2165,10 @@ kbd {
 .ll-card--full img { width: 80%; height: 80%; }
 
 .ll-guess { display: flex; flex-direction: column; gap: 8px; }
+.ll-guess-row { display: flex; gap: 8px; align-items: stretch; }
+.ll-guess-row .ll-search { flex: 1; min-width: 0; }
+/* same height as the search box, and narrow enough to fit beside it on a phone */
+.ll-give-up { flex-shrink: 0; padding: 0 14px; font-size: 12px; white-space: nowrap; }
 .ll-checking { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
 .ll-search { position: relative; }
 .ll-search-input {

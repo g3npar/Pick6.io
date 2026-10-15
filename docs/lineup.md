@@ -17,7 +17,7 @@ Every day has six logos:
 
 The first five are always the team's current logo. You see each one zoomed in 5x, and you type the team into a search box that only has that league's teams. You get 3 attempts per logo. Each miss zooms out (5x, then 3x, then 1.6x), and after the third miss it shows the whole logo and the answer. Guessing a team you already missed on that logo doesn't use an attempt.
 
-You can play the logos in any order with the tabs at the top. Each one you get is 1 point, so the max is 6 like the other games. Give Up only gives up on the logo you're looking at, it shows the answer and the other logos stay playable.
+You can play the logos in any order with the tabs at the top. Each one you get is 1 point, so the max is 6 like the other games. Give Up (next to the search box) only gives up on the logo you're looking at, it shows the answer and the other logos stay playable.
 
 For the old logo, the answer is the team today, so an old Oakland Raiders logo is just the Raiders. The reveal shows the old name and years too.
 

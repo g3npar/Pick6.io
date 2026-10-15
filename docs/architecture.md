@@ -31,6 +31,13 @@ This is for Pick 6. Film Room and Logo Lineup work the same way but load their o
 
 Either way, your in-progress game is saved in `sessionStorage` so a refresh doesn't wipe it.
 
+## Keeping the first load fast
+
+A puzzle used to take about 1.4 seconds to show up, mostly from things happening one after another. Now it's about 0.9 (measured with a fake 300ms API on a normal connection).
+
+- **Fonts are ours.** Inter and Anton live in `public/fonts/` with the `@font-face` rules at the top of `src/index.css`. Google Fonts' stylesheet used to hold up the app's JavaScript (browsers wait for stylesheets before running scripts), which pushed back every puzzle request.
+- **The API requests start early.** A small plugin in `vite.config.js` adds a `preconnect` to the API and preloads `/puzzle/today/current` and `/auth/me` in `index.html`, so they run while the JavaScript downloads. The app's own fetches reuse them, which only works if they match exactly, so if you change how `App.jsx` fetches those two (like dropping `credentials: 'include'`), change the plugin too. It uses `VITE_API_URL`, same as the app.
+
 ## Heads up
 
 - There are two "epoch" dates. `EPOCH` in `api/puzzle.js` is used to generate puzzles, so **don't change it** or every future puzzle changes. `PUZZLE_EPOCH` in `GameBoard.jsx` is just for the "Pick 6 #N" number.

@@ -266,7 +266,17 @@ export default function LineupBoard({ date = null }) {
               </div>
             ) : (
               <div className="ll-guess">
-                <TeamSearch key={current} teams={teams} missed={slot.wrong} onPick={guess} disabled={busy} hint={searchHint(league)} />
+                {/* give up sits next to the search box, it only ends this logo */}
+                <div className="ll-guess-row">
+                  <TeamSearch key={current} teams={teams} missed={slot.wrong} onPick={guess} disabled={busy} hint={searchHint(league)} />
+                  <button
+                    className={`give-up-btn ll-give-up${confirmingGiveUp ? ' give-up-btn--confirm' : ''}`}
+                    onClick={handleGiveUpClick}
+                    disabled={busy}
+                  >
+                    {confirmingGiveUp ? 'Sure?' : 'Give Up'}
+                  </button>
+                </div>
                 {slow && <span className="ll-checking"><span className="fr-spinner" aria-hidden="true" />Checking…</span>}
               </div>
             )}
@@ -274,14 +284,6 @@ export default function LineupBoard({ date = null }) {
         </div>
 
         <div className="circle-side circle-side--right">
-          {!data.completed && !slot.done && (
-            <button
-              className={`give-up-btn${confirmingGiveUp ? ' give-up-btn--confirm' : ''}`}
-              onClick={handleGiveUpClick}
-            >
-              {confirmingGiveUp ? 'Are you sure?' : 'Give Up'}
-            </button>
-          )}
           {data.completed && (
             <div className="result-table">
               {data.leagues.map((l, i) => {

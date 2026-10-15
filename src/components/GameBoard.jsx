@@ -46,6 +46,10 @@ const FACT_PATHS   = Array.from({ length: N_FACTS }, (_, i) => getFactPath(i))
 const FACT_CENTERS = Array.from({ length: N_FACTS }, (_, i) => getFactCentroid(i))
 
 // renders fact value as logos or text
+// some schools come in backwards ("Indiana PA, University of"), which only shows
+// when there's no logo and the name has to be text
+const collegeText = name => name.replace(/,\s*(the\s+)?university of$/i, '').replace(/,\s*the$/i, '').trim()
+
 function FactValue({ display, compact }) {
   if (display.isTeams) {
     const many = display.value.split(', ').length >= 3
@@ -66,7 +70,8 @@ function FactValue({ display, compact }) {
       <div className={`fl-logos${compact ? ' fl-logos--sm' : ''}`}>
         {src
           ? <img src={src} alt={display.value} className="fl-logo fl-logo-college" title={display.value} />
-          : <p className="fl-text fl-value">{display.value}</p>}
+          // long names drop to the small size so they stay inside the wedge
+          : <p className={`fl-text fl-value${compact || collegeText(display.value).length > 10 ? ' fl-value--sm' : ''}`}>{collegeText(display.value)}</p>}
       </div>
     )
   }
