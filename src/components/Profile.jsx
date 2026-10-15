@@ -10,15 +10,15 @@ const LINEUP_LOGOS = ['NFL', 'NBA', 'MLB', 'NHL', 'College', 'Old']
 // same squares as the share text: a red one per miss, then green for the one you got
 const tries = (got, attempts) => got ? '🟥'.repeat(Math.max(0, attempts - 1)) + '🟩' : '🟥🟥🟥'
 
-// every game gets a line each day, the ones you didn't finish say so
-function gameLines(day) {
+// a line for each game that existed that day, the ones you didn't finish say so
+function gameLines(day, starts) {
   const p = day.pick6, f = day.filmroom, l = day.lineup
   return [
     { game: 'Pick 6', score: p?.score, detail: p && [`Lie ${tries(p.lieFound, p.lieAttempts)}`, `Player ${p.playerCorrect ? '🟩' : '🟥'}`] },
     // year is 🟩 exact, 🟨 one off, 🟥 missed, like the Film Room share text
     { game: 'Film Room', score: f?.score, detail: f && [`Team ${tries(f.teamFound, f.teamAttempts)}`, `Year ${f.yearScore === 3 ? '🟩' : f.yearScore === 1 ? '🟨' : '🟥'}`] },
     { game: 'Logo Lineup', score: l?.score, detail: l && l.logos.map((x, i) => `${LINEUP_LOGOS[i]} ${tries(x.solved, x.attempts)}`) },
-  ]
+  ].filter((line, i) => !starts || day.date >= starts[['pick6', 'filmroom', 'lineup'][i]])
 }
 
 const PAGE_DAYS = 14
@@ -38,7 +38,8 @@ function calendar(start, end, played) {
 function PerDayStats() {
   const [days, setDays] = useState(null)       // calendar days loaded so far
   const [oldest, setOldest] = useState(null)   // first day of the last page
-  const [more, setMore] = useState(false)      // older results exist
+  const [more, setMore] = useState(false)      // older days with puzzles exist
+  const [starts, setStarts] = useState(null)   // each game's first day
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
 
@@ -51,6 +52,7 @@ function PerDayStats() {
         setDays(prev => [...(prev || []), ...calendar(page.start, page.end, page.days)])
         setOldest(page.start)
         setMore(page.more)
+        setStarts(page.starts)
       })
   }
 
@@ -80,7 +82,7 @@ function PerDayStats() {
           {days.map(day => (
             <li key={day.date} className="stats-day">
               <span className="stats-date">{formatDate(day.date)}</span>
-              {gameLines(day).map(line => (
+              {gameLines(day, starts).map(line => (
                 <div key={line.game} className={`stats-game${line.detail ? '' : ' stats-game--none'}`}>
                   <span className="stats-game-name">{line.game}</span>
                   <span className="stats-detail">

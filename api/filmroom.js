@@ -519,7 +519,7 @@ router.get('/leaderboard', async (_req, res) => {
 })
 
 module.exports = {
-  filmroomRouter: router, ensureFilmroomSchema,
+  filmroomRouter: router, ensureFilmroomSchema, FILMROOM_EPOCH,
   // exported for the pool size check
   POOL, FRANCHISES, seasonForDate,
 }

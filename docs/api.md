@@ -43,7 +43,7 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `POST /auth/logout` | Sign out |
 | `GET /auth/me` | Who's signed in |
 | `PUT /auth/username` | Change your username |
-| `GET /auth/history?end=&days=` | Your finished games from all three, grouped by day, for the "Per day stats" on your profile. Comes 14 days at a time ending on `end` (today by default), and says if there are older results for the "Load 14 more days" button |
+| `GET /auth/history?end=&days=` | Your finished games from all three, grouped by day, for the "Per day stats" on your profile. Comes 14 days at a time ending on `end` (today by default), with each game's first day so days before a game launched don't show it. Paging stops at Pick 6 #1 |
 | `DELETE /auth/account` | Delete your account and all your results |
 
 ## Admin stuff

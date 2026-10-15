@@ -498,4 +498,4 @@ router.get('/leaderboard', async (_req, res) => {
   }
 })
 
-module.exports = { lineupRouter: router, ensureLineupSchema, warmLineup }
+module.exports = { lineupRouter: router, ensureLineupSchema, warmLineup, LINEUP_EPOCH }

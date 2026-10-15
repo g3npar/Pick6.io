@@ -17,8 +17,8 @@ const {
   upsertUser, setUsername, signSession, optionalAuth, requireAuth, isAdminEmail,
   signPortrait, verifyPortrait,
 } = require('./auth')
-const { filmroomRouter, ensureFilmroomSchema } = require('./filmroom')
-const { lineupRouter, ensureLineupSchema, warmLineup } = require('./lineup')
+const { filmroomRouter, ensureFilmroomSchema, FILMROOM_EPOCH } = require('./filmroom')
+const { lineupRouter, ensureLineupSchema, warmLineup, LINEUP_EPOCH } = require('./lineup')
 
 const app = express()
 
@@ -384,24 +384,23 @@ const shiftDate = (date, n) => {
   d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
+// each game's first day. Pick 6 #1 is PUZZLE_EPOCH in GameBoard.jsx, the other two
+// are their epochs. days before a game existed don't show it, and paging stops at the oldest
+const GAME_STARTS = { pick6: '2026-08-17', filmroom: FILMROOM_EPOCH, lineup: LINEUP_EPOCH }
+const FIRST_DAY = Object.values(GAME_STARTS).sort()[0]
 app.get('/auth/history', requireAuth, async (req, res) => {
   const end = /^\d{4}-\d{2}-\d{2}$/.test(req.query.end || '') ? req.query.end : todayDateStr()
   const span = Math.min(Math.max(parseInt(req.query.days, 10) || 14, 1), 60)
-  const start = shiftDate(end, 1 - span)
+  if (end < FIRST_DAY) return res.json({ start: end, end, more: false, starts: GAME_STARTS, days: [] })
+  const start = [shiftDate(end, 1 - span), FIRST_DAY].sort().pop()
   try {
     const day = "to_char(puzzle_date, 'YYYY-MM-DD') AS date"
     const inRange = 'user_id = $1 AND puzzle_date BETWEEN $2 AND $3'
     const args = [req.userId, start, end]
-    const [p6, fr, ll, older] = await Promise.all([
+    const [p6, fr, ll] = await Promise.all([
       pool.query(`SELECT ${day}, lie_found, lie_attempts, player_correct, score FROM user_results WHERE ${inRange}`, args),
       pool.query(`SELECT ${day}, team_found, team_attempts, year_guess, score FROM filmroom_results WHERE ${inRange}`, args),
       pool.query(`SELECT ${day}, slots, score FROM lineup_games WHERE ${inRange} AND completed`, args),
-      // is there anything before this page, so the profile knows to offer more
-      pool.query(`
-        SELECT EXISTS (SELECT 1 FROM user_results WHERE user_id = $1 AND puzzle_date < $2)
-            OR EXISTS (SELECT 1 FROM filmroom_results WHERE user_id = $1 AND puzzle_date < $2)
-            OR EXISTS (SELECT 1 FROM lineup_games WHERE user_id = $1 AND puzzle_date < $2 AND completed) AS more
-      `, [req.userId, start]),
     ])
     const days = new Map()
     const dayFor = date => days.get(date) || days.set(date, { date }).get(date)
@@ -428,8 +427,13 @@ app.get('/auth/history', requireAuth, async (req, res) => {
         logos: r.slots.map(s => ({ solved: s.solved, attempts: s.solved ? s.attempts + 1 : s.attempts })),
       }
     }
+    // a result from before its game started is leftover test data, so it's dropped
+    for (const [game, first] of Object.entries(GAME_STARTS)) {
+      for (const d of days.values()) if (d.date < first) delete d[game]
+    }
     res.json({
-      start, end, more: older.rows[0].more,
+      // more days to page back to, until the first day of the oldest game
+      start, end, more: start > FIRST_DAY, starts: GAME_STARTS,
       days: [...days.values()].sort((a, b) => b.date.localeCompare(a.date)),
     })
   } catch (err) {
