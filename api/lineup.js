@@ -220,10 +220,34 @@ async function cropCenter(square, dateStr, slot) {
 }
 
 const _crops = new Map()
+// drawing a crop takes ~1s per logo on Render, so every crop is cut once, saved in
+// lineup_crops, and kept in memory. warmLineup() cuts each day's ahead of time
+const _cutting = new Map()   // crops being cut right now, so two requests share the work
 async function cropImage(puzzle, dateStr, slot, level) {
   const { logo } = puzzle.slots[slot]
   const key = `${dateStr}:${slot}:${level}:${logo}`
   if (_crops.has(key)) return _crops.get(key)
+  if (_cutting.has(key)) return _cutting.get(key)
+  const job = (async () => {
+    const saved = await pool.query(
+      'SELECT image FROM lineup_crops WHERE puzzle_date = $1 AND slot = $2 AND level = $3', [dateStr, slot, level])
+    let buf = saved.rows[0]?.image
+    if (!buf) {
+      buf = await cutCrop(logo, dateStr, slot, level)
+      await pool.query(
+        'INSERT INTO lineup_crops (puzzle_date, slot, level, image) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+        [dateStr, slot, level, buf])
+    }
+    const url = `data:image/webp;base64,${buf.toString('base64')}`
+    if (_crops.size >= 300) _crops.delete(_crops.keys().next().value)
+    _crops.set(key, url)
+    return url
+  })()
+  _cutting.set(key, job)
+  try { return await job } finally { _cutting.delete(key) }
+}
+
+async function cutCrop(logo, dateStr, slot, level) {
   const square = await logoSquare(logo)
   const { side } = square
   const [cx, cy] = await cropCenter(square, dateStr, slot)
@@ -233,14 +257,40 @@ async function cropImage(puzzle, dateStr, slot, level) {
   const win = Math.round(side / zoom)
   const left = Math.min(Math.max(0, Math.round(cx * side - win / 2)), side - win)
   const top  = Math.min(Math.max(0, Math.round(cy * side - win / 2)), side - win)
-  const buf = await sharp(square.data)
+  return sharp(square.data)
     .extract({ left, top, width: win, height: win })
     .resize(CROP_PX, CROP_PX)
     .webp({ quality: 88 }).toBuffer()
-  const url = `data:image/webp;base64,${buf.toString('base64')}`
-  if (_crops.size >= 300) _crops.delete(_crops.keys().next().value)
-  _crops.set(key, url)
-  return url
+}
+
+// cuts and saves every crop for today and tomorrow, then any past day that's missing
+// some, one at a time so it doesn't hog the server. runs at startup and every 30 minutes,
+// so nobody opening a puzzle has to wait for the drawing
+const CROPS_PER_DAY = SLOTS.length * ZOOMS.length
+let _warming = false
+async function warmLineup() {
+  if (_warming) return
+  _warming = true
+  try {
+    const today = todayDateStr()
+    const shift = n => { const d = new Date(`${today}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
+    const dates = [today, shift(1)]
+    for (let n = -1; shift(n) >= LINEUP_EPOCH; n--) dates.push(shift(n))
+    for (const date of dates) {
+      const have = await pool.query('SELECT count(*)::int AS n FROM lineup_crops WHERE puzzle_date = $1', [date])
+      if (have.rows[0].n >= CROPS_PER_DAY) continue
+      // without old logos the puzzle is a stand-in that isn't saved, don't save its crops either
+      if (!OLD.length) continue
+      const puzzle = await getPuzzleForDate(date)
+      for (let slot = 0; slot < SLOTS.length; slot++) {
+        for (let level = 0; level < ZOOMS.length; level++) await cropImage(puzzle, date, slot, level)
+      }
+    }
+  } catch (err) {
+    console.error('Logo Lineup warm up failed:', err.message)
+  } finally {
+    _warming = false
+  }
 }
 
 // game state, one entry per slot: { attempts, wrong: [team ids], solved }
@@ -294,6 +344,16 @@ async function ensureLineupSchema(dbPool) {
       puzzle_date DATE PRIMARY KEY,
       puzzle      JSONB NOT NULL,
       created_at  TIMESTAMPTZ DEFAULT now()
+    )
+  `)
+  // every crop ever cut, so restarts and new days don't redraw them (see cropImage)
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS lineup_crops (
+      puzzle_date DATE NOT NULL,
+      slot        SMALLINT NOT NULL,
+      level       SMALLINT NOT NULL,
+      image       BYTEA NOT NULL,
+      PRIMARY KEY (puzzle_date, slot, level)
     )
   `)
   // progress and the finished result live in one row, completed flips at the end
@@ -438,4 +498,4 @@ router.get('/leaderboard', async (_req, res) => {
   }
 })
 
-module.exports = { lineupRouter: router, ensureLineupSchema }
+module.exports = { lineupRouter: router, ensureLineupSchema, warmLineup }

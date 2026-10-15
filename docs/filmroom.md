@@ -46,7 +46,7 @@ Washington shows as just "Washington" before 2020, "Washington Football Team" fo
 
 ## The data
 
-It's all in `api/data/team_seasons.json`, made by `scripts/build_team_seasons.py` from `nfl_data_py` schedules and weekly stats (2025 on comes from `nflreadpy`, same as Pick 6's loader). It's history so it doesn't change, I only need to rerun the script to add a new season. The API figures out the year range from the file. It's not in the database.
+It's all in `api/data/team_seasons.json`, made by `scripts/build_team_seasons.py` from `nfl_data_py` schedules and weekly stats (2025 on comes from `nflreadpy`, same as Pick 6's loader). It's history so it doesn't change, it only gets rebuilt once a year to add the season that just ended. The API figures out the year range from the file. It's not in the database.
 
 - The coach and QB are whoever had the most regular season games. That way an interim coach or a backup QB who started one playoff game doesn't end up as the clue.
 - The division and conference finish come from nflverse's standings file, so they use the NFL's real tiebreakers. The clue says "1st in division", not "1st in AFC West", since naming the division would narrow the team down to 4. Conference finish is the playoff seed, so teams that missed the playoffs only get their division finish.

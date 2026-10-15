@@ -27,6 +27,8 @@ The browser never gets a full logo until that logo is done. The server cuts the 
 
 Where the crop is centered is picked per day from the parts of the logo that aren't transparent, so it never lands on empty space.
 
+Cutting the crops is slow, about a second per logo on Render, so the first person to open a day used to wait 5-6 seconds (and again after every deploy, since the crops only lived in memory). Now every crop gets saved in `lineup_crops` the first time it's cut, and `warmLineup()` cuts today's and tomorrow's ahead of time when the API starts and every 30 minutes after, then fills in any archive days that are missing some. So opening a puzzle is just reading saved images. If you ever delete a day from `lineup_puzzles`, delete its `lineup_crops` rows too, or the old crops stick around for the new puzzle.
+
 Current logos are SVGs, so the server draws them at 1600px before cutting the crop and even 5x stays sharp. Most official SVGs have a ™ or ® in a corner, which would show up in a crop, so the server erases small shapes that sit on their own along the bottom of the logo first (`eraseMarks` in `api/lineup.js`). The full logo you see at the end still has them. Old logos only exist as pictures (around 900px), so they don't zoom in past the point where the picture would get stretched and blurry.
 
 ## How the daily logos get picked
@@ -40,13 +42,14 @@ Same idea as Film Room. Each league goes through all its teams in a shuffled ord
 Both lists are JSON files in `api/data/`, and the images are in `public/logos/leagues/`.
 
 - **Modern logos:** `scripts/build_logo_teams.py` gets every team's name from ESPN's public team lists and the logo as an SVG from each league's own site (nfl.com, nba.com, mlbstatic.com, nhle.com, ncaa.com), and writes `logo_teams.json`. ESPN only has PNGs, and a 500px PNG zoomed 5x is a blur. Each site names teams differently, so the script has a few mappings (NBA team ids, NFL codes, college slugs like "ohio-st"). The game shows logos on a light grey card so navy and black still show up.
-- **Old logos:** `scripts/build_old_logos.py` gets them from sportslogos.net and writes `old_logos.json`. For each team it keeps the two most recent primary logos that aren't the current one, were still used in 1980 or later, and actually look different from today's logo. A lot of "old" logos are just small redraws (the Cowboys star, the Saints fleur-de-lis), and those would make the old logo free. The script compares tiny thumbnails to catch those, which misses a few, so the rest are in `EXCLUDE` by hand (the Raiders shield, the Browns helmet, the Maple Leafs leaf). That leaves about 200 old logos. It includes old cities with the same nickname (Oakland Raiders, New Jersey Nets) but not different nicknames (Seattle SuperSonics, Hartford Whalers), since casual fans wouldn't connect those. Retired names like the Redskins and Indians are never used, and neither are Native American caricatures (the old Braves face, Chief Illiniwek). Run it with `--review` first, look at the contact sheet, and add anything that shouldn't be in the game to `EXCLUDE` as the team and the logo's first season.
+- **Old logos:** `scripts/build_old_logos.py` gets them from sportslogos.net and writes `old_logos.json`. For each team it keeps the two most recent primary logos that aren't the current one, were still used in 1980 or later, and actually look different from today's logo. A lot of "old" logos are just small redraws (the Cowboys star, the Saints fleur-de-lis), and those would make the old logo free. The script compares tiny thumbnails to catch those, which misses a few, so the rest are in `EXCLUDE` by hand (the Raiders shield, the Browns helmet, the Maple Leafs leaf). That leaves about 200 old logos. It includes old cities with the same nickname (Oakland Raiders, New Jersey Nets) but not different nicknames (Seattle SuperSonics, Hartford Whalers), since casual fans wouldn't connect those. Retired names like the Redskins and Indians are never used, and neither are Native American caricatures (the old Braves face, Chief Illiniwek). Anything that shouldn't be in the game goes in `EXCLUDE` as the team and the logo's first season.
 
-Rerun the first script when a team rebrands (delete its old image first), and the second one every so often to pick up logos that just got retired.
+Neither list updates on its own, so a team's new logo (or one that just got retired) isn't in the game until the lists get rebuilt.
 
 ## Tables
 
 - `lineup_puzzles` - the saved puzzle for each day
+- `lineup_crops` - every zoomed crop that's been cut, 18 a day (6 logos, 3 zoom levels), about 7 KB each
 - `lineup_games` - one row per player per day, with every logo's attempts and misses, the score, and whether it's finished. Unlike Film Room, progress and the result are the same row, and `completed` flips when all six logos are done.
 
 Signed out games are kept in the browser per day, and the browser sends that back when it loads so the server knows which zoom level to send.

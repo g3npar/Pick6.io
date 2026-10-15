@@ -18,7 +18,7 @@ const {
   signPortrait, verifyPortrait,
 } = require('./auth')
 const { filmroomRouter, ensureFilmroomSchema } = require('./filmroom')
-const { lineupRouter, ensureLineupSchema } = require('./lineup')
+const { lineupRouter, ensureLineupSchema, warmLineup } = require('./lineup')
 
 const app = express()
 
@@ -50,7 +50,13 @@ app.use(cors({
 // the game tables point at users, so they wait for the auth schema
 ensureAuthSchema(pool)
   .then(() => ensureFilmroomSchema(pool).catch(err => console.error('Film Room schema init failed:', err.message)))
-  .then(() => ensureLineupSchema(pool).catch(err => console.error('Logo Lineup schema init failed:', err.message)))
+  .then(() => ensureLineupSchema(pool)
+    .then(() => {
+      // Logo Lineup crops are slow to draw, so get today's and tomorrow's ready now and keep checking
+      warmLineup()
+      setInterval(warmLineup, 30 * 60 * 1000).unref()
+    })
+    .catch(err => console.error('Logo Lineup schema init failed:', err.message)))
   .catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
