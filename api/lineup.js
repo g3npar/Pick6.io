@@ -21,7 +21,7 @@ const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'NC
 const SLOTS = [...LEAGUES, 'old']
 const MAX_ATTEMPTS = 3
 // how far in each attempt starts. modern logos are svgs, so these can go as tight as we want
-const ZOOMS = [5, 3, 1]   // the last attempt shows the whole logo
+const ZOOMS = [5, 2.2, 1]   // each miss shows ~5x more of the logo, the last attempt shows all of it
 // smallest window an old (picture) logo gets cropped to, see cropImage
 const MIN_RASTER_WINDOW = 240
 const CROP_PX = 320
