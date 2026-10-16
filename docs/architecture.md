@@ -40,5 +40,7 @@ A puzzle used to take about 1.4 seconds to show up, mostly from things happening
 
 ## Heads up
 
+- The "Share Result" text for all three games comes from `src/utils/share.js` (title, one line per part with squares for attempts, total, link), so if you change the format, change it there and all three stay matching.
+
 - There are two "epoch" dates. `EPOCH` in `api/puzzle.js` is used to generate puzzles, so **don't change it** or every future puzzle changes. `PUZZLE_EPOCH` in `GameBoard.jsx` is just for the "Pick 6 #N" number.
 - `public/awards.csv` only gets read when the API starts, so redeploy after updating it.

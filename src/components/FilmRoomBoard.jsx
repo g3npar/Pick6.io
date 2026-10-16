@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { shareText, tries, copyText } from '../utils/share'
 import { teamLogo } from '../utils/teamLogo'
 import { formatDate } from '../utils/formatDate'
 import { DIVISIONS, franchiseName, nickname } from '../utils/franchises'
@@ -392,25 +393,11 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
 
   const handleShare = async () => {
     const r = game.result
-    const teamEmoji = ['🟥🟥🟥', '🟥🟥🟩', '🟥🟩', '🟩'][r.teamScore]
-    const yearEmoji = r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥'
-    const text = `Pick6 Film Room ${practice ? '(practice)' : `#${meta.number}`}\n${teamEmoji} Team: ${r.teamScore}/3\n${yearEmoji} Year: ${r.yearScore}/3\n${r.score}/6\n\nhttps://pick6.io`
-
-    let copied = false
-    try {
-      await navigator.clipboard.writeText(text)
-      copied = true
-    } catch {
-      const ta = document.createElement('textarea')
-      ta.value = text
-      ta.style.position = 'fixed'
-      ta.style.opacity = '0'
-      document.body.appendChild(ta)
-      ta.select()
-      try { copied = document.execCommand('copy') } catch { copied = false }
-      document.body.removeChild(ta)
-    }
-    setShareState(copied ? 'copied' : 'failed')
+    const text = shareText(practice ? 'Film Room (practice)' : `Film Room #${meta.number}`, [
+      [tries(r.teamFound, r.attempts), 'Team', r.teamScore, 3],
+      [r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥', 'Year', r.yearScore, 3],
+    ], r.score)
+    setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 

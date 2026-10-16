@@ -25,7 +25,7 @@ For the old logo, the answer is the team today, so an old Oakland Raiders logo i
 
 To make it harder, each logo gets its own look for the day: about half are turned to a random angle (15° to 345°, never almost upright) and about a third are black and white. It's the same at every zoom level, and the answer always shows the real logo upright and in color. The odds are `ROTATE_CHANCE` and `GRAY_CHANCE` in `api/lineup.js`.
 
-Picking a team from the search list (click, or arrow keys and Enter) fills it in, and the ENTER button (or pressing Enter again) guesses it. Typing a team's full name and pressing Enter guesses it right away.
+Picking a team from the search list (click, or arrow keys and Enter) fills it in, and the ENTER button (or pressing Enter again) guesses it. Typing a team's full name and pressing Enter guesses it right away. You don't have to click the search box first, typing anywhere on the page goes into it. On a finished logo's answer, Enter goes to the next logo.
 
 ## Keeping the answer hidden
 

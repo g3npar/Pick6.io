@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { shareText, tries, copyText } from '../utils/share'
 import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
@@ -222,27 +223,12 @@ function GameBoard({
   const handleShare = async () => {
     const lieScore    = lieFound ? Math.max(1, 3 - lieAttempts) : 0
     const playerScore = playerCorrect ? 3 : 0
-    const lieEmoji    = lieScore === 3 ? '🟩' : lieScore === 2 ? '🟥🟩' : lieScore === 1 ? '🟥🟥🟩' : '🟥🟥🟥'
-    const playerEmoji = playerScore === 3 ? '🟩' : '🟥'
     const num = puzzle.date ? ` #${puzzleNumber(puzzle.date)}` : ''
-    const text = `Pick 6${num}\n${lieEmoji} Lie: ${lieScore}/3\n${playerEmoji} Player: ${playerScore}/3\n${currentScore}/6\n\nhttps://pick6.io`
-
-    let copied = false
-    try {
-      await navigator.clipboard.writeText(text)
-      copied = true
-    } catch {
-      // fallback copy method
-      const ta = document.createElement('textarea')
-      ta.value = text
-      ta.style.position = 'fixed'
-      ta.style.opacity = '0'
-      document.body.appendChild(ta)
-      ta.select()
-      try { copied = document.execCommand('copy') } catch { copied = false }
-      document.body.removeChild(ta)
-    }
-    setShareState(copied ? 'copied' : 'failed')
+    const text = shareText(`Pick 6${num}`, [
+      [tries(lieFound, lieAttempts), 'Lie', lieScore, 3],
+      [playerCorrect ? '🟩' : '🟥', 'Player', playerScore, 3],
+    ], currentScore)
+    setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 
@@ -511,7 +497,7 @@ function GameBoard({
               )}
               <div className="share-row">
                 <button className="share-btn" onClick={handleShare}>Share Result</button>
-                {shareState === 'copied' && <span className="share-toast">Link copied!</span>}
+                {shareState === 'copied' && <span className="share-toast">Copied!</span>}
                 {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
             </div>

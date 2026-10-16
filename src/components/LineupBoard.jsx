@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { shareText, tries, copyText, pts } from '../utils/share'
 import { formatDate } from '../utils/formatDate'
 import WheelSpinner from './WheelSpinner'
 import RulesButton from './HowToPlay'
@@ -33,9 +34,9 @@ async function post(path, body) {
 
 // the server sends the file with its extension (svg for current logos, webp for old ones)
 const fullLogo = logo => `/logos/leagues/${logo}`
-// 1 point a logo, minus 0.25 a miss. shown without trailing zeros: 4.75, 5.5, 6
+// 1 point a logo, minus 0.25 a miss
 const pointsFor = s => (s.solved ? 1 - 0.25 * s.attempts : 0)
-const pts = n => String(Number(n.toFixed(2)))
+
 // the tabs only say "OLD", so the search box says which league to type
 const searchHint = l => `${l.old ? 'Old ' : ''}${l.league === 'ncaa' ? (l.old ? 'college' : 'College') : l.label} team…`
 
@@ -45,6 +46,20 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)   // highlighted match, moved with the arrow keys
   const ref = useRef(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    const onKey = e => {
+      if (disabled || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || e.key === ' ') return
+      const el = document.activeElement
+      if (el === inputRef.current) return
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      if (document.querySelector('.rules-card')) return
+      inputRef.current?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [disabled])
   const term = q.trim().toLowerCase()
   const matches = term ? teams.filter(t => t.name.toLowerCase().includes(term)).slice(0, 6) : []
   // the team that ENTER sends: one picked from the list, or a full name typed out
@@ -85,6 +100,7 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     <>
       <div className="ll-search" ref={ref}>
         <input
+          ref={inputRef}
           className="ll-search-input"
           value={q}
           placeholder={hint}
@@ -197,6 +213,21 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     setCurrent(next >= 0 ? next : firstOpen(slots))
   }
 
+  useEffect(() => {
+    if (!data || !data.slots[current]?.done || !data.slots.some((x, i) => i !== current && !x.done)) return
+    const onKey = e => {
+      if (e.key !== 'Enter' || e.repeat) return
+      const el = document.activeElement
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
+      if (el && el.tagName === 'BUTTON' && !el.classList.contains('ll-tab')) return
+      if (document.querySelector('.rules-card')) return
+      e.preventDefault()
+      nextLogo()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [data, current])
+
   const handleGiveUpClick = () => {
     // only the logo you're looking at, the others stay playable
     if (confirmingGiveUp) { setConfirmingGiveUp(false); send({ giveUp: true, slot: current }) }
@@ -204,25 +235,13 @@ export default function LineupBoard({ date = null, signedIn = false }) {
   }
 
   const handleShare = async () => {
-    const row = data.slots.map(s => s.solved ? '🟩' : '🟥').join('')
-    const text = `Logo Lineup #${data.number}\n${row}\n${pts(data.score)}/6\n\nhttps://pick6.io`
-    let copied = false
-    try {
-      await navigator.clipboard.writeText(text)
-      copied = true
-    } catch {
-      try {
-        const ta = document.createElement('textarea')
-        ta.value = text
-        ta.style.cssText = 'position:fixed;opacity:0'
-        document.body.appendChild(ta)
-        ta.select()
-        copied = document.execCommand('copy')
-        document.body.removeChild(ta)
-      } catch {}
-    }
-    setShareState(copied ? 'copied' : 'error')
-    setTimeout(() => setShareState('idle'), 2000)
+    // a line per logo, same as the other games' lines per part
+    const text = shareText(`Logo Lineup #${data.number}`, data.leagues.map((l, i) => {
+      const s = data.slots[i]
+      return [tries(s.solved, s.attempts), l.old ? 'Old' : l.label, pointsFor(s), 1]
+    }), data.score)
+    setShareState(await copyText(text) ? 'copied' : 'failed')
+    setTimeout(() => setShareState('idle'), 1800)
   }
 
   if (error) {
@@ -375,9 +394,9 @@ export default function LineupBoard({ date = null, signedIn = false }) {
               )}
               {!data.signedIn && <p className="fr-signin-hint">Sign in to save your Logo Lineup results.</p>}
               <div className="share-row">
-                <button className="share-btn" onClick={handleShare}>
-                  {shareState === 'copied' ? 'Copied!' : shareState === 'error' ? 'Copy failed' : 'Share Result'}
-                </button>
+                <button className="share-btn" onClick={handleShare}>Share Result</button>
+                {shareState === 'copied' && <span className="share-toast">Copied!</span>}
+                {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
             </div>
           )}
