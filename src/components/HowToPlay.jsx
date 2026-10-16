@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
-// the rules live behind an "i" button in each game instead of their own page
+// rules popups for each game's "i" button
 
 function Pick6Rules() {
   return (
@@ -197,7 +197,7 @@ export default function RulesButton({ game }) {
   return (
     <>
       <button className="rules-btn" onClick={() => setOpen(true)} aria-label={title} title={title}>i</button>
-      {/* portal to <body>, inside the game it got stuck under the Pick 6 wheel */}
+      {/* rendered in <body> so it sits above the game */}
       {open && createPortal(
         <div className="results-overlay" onClick={() => setOpen(false)}>
           <div className="htp-card rules-card" role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>

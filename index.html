@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="no-referrer" />
-    <!--
-      frame-ancestors is deliberately left out here, it's ignored when
-      delivered via <meta> (browsers only honor it as a real HTTP header),
-      so it's set in vercel.json's headers instead, where it actually works.
-      This tag still covers local dev (vite dev doesn't apply vercel.json).
-    -->
+    <!-- frame-ancestors only works as a header, so it's in vercel.json -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' https://accounts.google.com/gsi/client;
@@ -30,22 +25,18 @@
     <meta property="og:description" content="Daily sports trivia games, each scored out of 6. New puzzles every day. Pick6.io is an independent project, not affiliated with the NFL or any other league." />
     <meta property="og:image" content="https://pick6.io/og-image.png?v=2" />
 
-    <!-- Not for Twitter/X itself, Discord and a few other unfurlers key off this
-         tag specifically to render a large image embed instead of a small thumbnail. -->
+    <!-- big image previews in Discord and others -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://pick6.io/og-image.png?v=2" />
 
-    <!--
-      Google Search doesn't use SVG favicons — only a raster format, a multiple of
-      48px. The SVG stays as the primary icon for browsers that do support it.
-    -->
+    <!-- Google needs a PNG favicon (multiple of 48px), browsers use the SVG -->
     <link rel="icon" type="image/svg+xml" href="/pick-six-logo.svg" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- our own font files (see the top of src/index.css), fetched right away since every page uses them -->
+    <!-- self-hosted fonts, see src/index.css -->
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin />
     <script src="https://accounts.google.com/gsi/client" async defer></script>

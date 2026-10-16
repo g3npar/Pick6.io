@@ -47,8 +47,7 @@ const FACT_PATHS   = Array.from({ length: N_FACTS }, (_, i) => getFactPath(i))
 const FACT_CENTERS = Array.from({ length: N_FACTS }, (_, i) => getFactCentroid(i))
 
 // renders fact value as logos or text
-// some schools come in backwards ("Indiana PA, University of"), which only shows
-// when there's no logo and the name has to be text
+// fixes backwards names like "Indiana PA, University of"
 const collegeText = name => name.replace(/,\s*(the\s+)?university of$/i, '').replace(/,\s*the$/i, '').trim()
 
 function FactValue({ display, compact }) {
@@ -71,7 +70,7 @@ function FactValue({ display, compact }) {
       <div className={`fl-logos${compact ? ' fl-logos--sm' : ''}`}>
         {src
           ? <img src={src} alt={display.value} className="fl-logo fl-logo-college" title={display.value} />
-          // long names drop to the small size so they stay inside the wedge
+          // smaller text for long names
           : <p className={`fl-text fl-value${compact || collegeText(display.value).length > 10 ? ' fl-value--sm' : ''}`}>{collegeText(display.value)}</p>}
       </div>
     )
@@ -197,7 +196,7 @@ function GameBoard({
       setQuery(results[next].name)
       onSelectPlayer(results[next].name, results[next].headshot_url || null)
     } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dropdownOpen && results.length > 0) {
-      // moves the highlight without changing what you typed, Enter picks it
+      // move the highlight
       e.preventDefault()
       const step = e.key === 'ArrowDown' ? 1 : -1
       setTabIdx(i => i < 0 ? (step > 0 ? 0 : results.length - 1) : (i + step + results.length) % results.length)
@@ -208,7 +207,7 @@ function GameBoard({
       const target = tabIdx >= 0 && results[tabIdx]
         ? results[tabIdx]
         : dropdownOpen && results.length > 0 ? results[0] : null
-      // first Enter picks the player, the next one locks it in (same as Logo Lineup)
+      // first Enter picks, second locks in
       if (target) handleSelect(target)
       else if (canSubmitPlayer) onSubmit()
     }
@@ -386,8 +385,7 @@ function GameBoard({
                     autoComplete="off"
                     spellCheck="false"
                   />
-                  {/* always there and just invisible while empty, the box is as wide as what's in
-                      it, so popping the ✕ in when you type made the whole box grow */}
+                  {/* always there (hidden when empty) so the box doesn't resize */}
                   <button
                     className={`clear-search-btn${query ? '' : ' clear-search-btn--hidden'}`}
                     onClick={handleClear}
@@ -465,7 +463,7 @@ function GameBoard({
                     {lieFound ? '✓' : '✗'}
                   </span>
                   Lie
-                  {/* lieAttempts only counts misses, so add the one that found it */}
+                  {/* lieAttempts is misses only, add the right one */}
                   <span className="result-table-attempts">used {lieFound ? lieAttempts + 1 : lieAttempts}/3 attempts</span>
                 </span>
                 <span className="result-table-value">{lieFound ? `+${Math.max(1, 3 - lieAttempts)}` : '+0'}</span>

@@ -1,10 +1,4 @@
-/**
- * Parses a plain-text fact sentence into structured display parts.
- * Returns { label, value, sublabel }
- *   label:    small category heading (e.g. "PRO BOWLS", "RUSHING YARDS")
- *   value:    the prominent display value (e.g. "5", "2,097", "Ohio State")
- *   sublabel: optional context (e.g. "in 2012", null)
- */
+// turns a fact sentence into { label, value, sublabel }, e.g. "PRO BOWLS", "5", "in 2012"
 
 // compacts and to ampersand
 const amp = s => s.replace(/ and /g, ' & ')

@@ -8,11 +8,10 @@ import RulesButton from './HowToPlay'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const MAX_ATTEMPTS = 3
-// generate button is a local testing tool, never in the production build
+// dev only
 const DEV = import.meta.env.DEV
 
-// anonymous games live in the browser, signed in ones come back from the server.
-// one per day, so playing an archive day doesn't wipe today's
+// signed out games are kept in the browser, one per day
 const STORE_KEY = 'pick6_filmroom_days'
 const readStore = date => { try { return JSON.parse(sessionStorage.getItem(STORE_KEY))?.[date] ?? null } catch { return null } }
 const writeStore = (date, game) => {
@@ -34,16 +33,14 @@ async function post(path, body) {
   return data
 }
 
-// the season's own logo, downloaded from sportslogos.net (public/logos/nfl/eras)
+// that season's logo
 const eraLogo = file => `/logos/nfl/eras/${file}.webp`
 
 const freshGame = clues => ({
   clues, attempts: 0, wrongTeams: [], teamFound: false, teamDone: false, answer: null, result: null,
 })
 
-// arrow keys move to the nearest cell that way on screen, so the same code works for
-// the year grid and the team grid (two conferences side by side). nothing focused
-// yet starts at the picked cell, or the first one
+// arrow keys move to the nearest cell in that direction, works for both grids
 function moveInGrid(grid, key) {
   const cells = [...grid.querySelectorAll('button:not(:disabled)')]
   if (!cells.length) return
@@ -62,7 +59,7 @@ function moveInGrid(grid, key) {
     const x = r.left + r.width / 2 - cx, y = r.top + r.height / 2 - cy
     const along = x * dx + y * dy
     if (along < 2) continue
-    // staying in the same row or column matters more than distance
+    // prefer staying in the same row/column
     const score = along + Math.abs(x * dy - y * dx) * 3
     if (score < bestScore) { bestScore = score; best = c }
   }
@@ -71,7 +68,7 @@ function moveInGrid(grid, key) {
 
 const ARROWS = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp']
 
-// every year in one small grid, a native select made you scroll through 25
+// every year in one grid, no scrolling
 function YearPicker({ years, value, onChange, onSubmit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -87,10 +84,8 @@ function YearPicker({ years, value, onChange, onSubmit }) {
 
   const gridRef = useRef(null)
   const btnRef = useRef(null)
-  // arrows open the grid and move around it, Enter or Space picks
   const onKeyDown = e => {
-    // picked something and back on the button: Enter guesses it, like Logo Lineup.
-    // arrows or Space still open the grid to change the pick
+    // Enter on the button guesses what's picked, arrows/Space reopen the grid
     if (e.key === 'Enter' && !open && value && e.target === btnRef.current) {
       e.preventDefault()
       onSubmit?.()
@@ -102,7 +97,7 @@ function YearPicker({ years, value, onChange, onSubmit }) {
     if (gridRef.current) moveInGrid(gridRef.current, e.key)
   }
 
-  // 5 to 7 columns, whichever leaves the last row closest to full
+  // 5-7 columns, whichever fills the last row best
   const cols = [7, 6, 5].reduce((best, c) => ((c - years.length % c) % c < (best - years.length % best) % best ? c : best))
 
   return (
@@ -138,7 +133,7 @@ function YearPicker({ years, value, onChange, onSubmit }) {
   )
 }
 
-// all 32 teams by division, no scrolling through a list
+// all 32 teams by division
 function TeamPicker({ value, missed, onChange, onSubmit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -155,8 +150,7 @@ function TeamPicker({ value, missed, onChange, onSubmit }) {
   const gridRef = useRef(null)
   const btnRef = useRef(null)
   const onKeyDown = e => {
-    // picked something and back on the button: Enter guesses it, like Logo Lineup.
-    // arrows or Space still open the grid to change the pick
+    // Enter on the button guesses what's picked, arrows/Space reopen the grid
     if (e.key === 'Enter' && !open && value && e.target === btnRef.current) {
       e.preventDefault()
       onSubmit?.()
@@ -184,8 +178,7 @@ function TeamPicker({ value, missed, onChange, onSubmit }) {
         </span>
         <span className="fr-year-caret" aria-hidden="true">▾</span>
       </button>
-      {/* always rendered, just hidden, so the logos load once with the board
-          instead of every time the grid opens */}
+      {/* always rendered so the logos only load once */}
       <div className="fr-team-grid" hidden={!open} ref={gridRef}>
         {['AFC', 'NFC'].map(conf => (
           <div key={conf} className="fr-conf">
@@ -241,18 +234,16 @@ function ClueRow({ clue }) {
   )
 }
 
-// no date means today's puzzle, a date is a day from the archive
-// no date means today's puzzle, a date is a day from the archive. signedIn reloads
-// the board when you sign in, so a game you played signed out moves to your account
+// no date = today, a date = an archive day
 export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const [meta, setMeta]         = useState(null)   // { date, number, firstYear, lastYear, signedIn }
   const [game, setGame]         = useState(null)
   const [error, setError]       = useState(null)
   const [busy, setBusy]         = useState(false)
-  const [submitting, setSubmitting] = useState(false)   // a guess is on its way to the server
-  const [slow, setSlow]             = useState(false)   // ...and it's taking long enough to say so
+  const [submitting, setSubmitting] = useState(false)   // guess in flight
+  const [slow, setSlow]             = useState(false)   // ...and it's slow
   const slowTimer = useRef(null)
-  // the spinner only shows on a slow connection, a normal check is back before it would flash
+  // spinner only on slow connections
   const startSubmit = () => {
     setBusy(true); setSubmitting(true)
     slowTimer.current = setTimeout(() => setSlow(true), 500)
@@ -266,7 +257,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const [shareState, setShareState] = useState('idle')
-  const [practice, setPractice] = useState(null)   // encrypted token for a generated puzzle
+  const [practice, setPractice] = useState(null)   // encrypted practice token
 
   const load = (claimed = false) => {
     setError(null)
@@ -286,7 +277,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
           })
         } else {
           const kept = readStore(d.date)
-          // played signed out, now signed in with nothing saved for the day: save it, then reload
+          // just signed in: save the signed out game, then reload
           if (d.signedIn && !claimed && kept && (kept.result || kept.attempts > 0 || kept.teamFound)) {
             return post('/filmroom/claim', {
               puzzleDate: d.date,
@@ -303,8 +294,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   }
 
   useEffect(() => { setGame(null); setMeta(null); load() }, [date])
-  // the board loads before the site knows you're signed in, so only reload when that
-  // actually differs from what the server said (you just signed in or out)
+  // reload only when sign in status actually changes
   useEffect(() => {
     if (meta && meta.signedIn !== signedIn) { setGame(null); setMeta(null); load() }
   }, [signedIn])
@@ -321,7 +311,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     try {
       const d = await post('/filmroom/practice', {})
       setPractice(d.practice)
-      // practice games are never saved, so they always play like signed out
+      // practice games are never saved
       setMeta(m => ({ ...m, firstYear: d.firstYear, lastYear: d.lastYear, signedIn: false }))
       setGame(freshGame(d.clues))
       resetInputs()
@@ -332,7 +322,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     }
   }
 
-  // drop the practice board first, or the save effect would store it as today's game
+  // clear practice first so it isn't saved as today's game
   const backToToday = () => { setGame(null); setPractice(null); resetInputs(); load() }
 
   const puzzleRef = () => (practice ? { practice } : { puzzleDate: meta.date })
@@ -344,7 +334,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     return () => clearTimeout(t)
   }, [confirmingGiveUp])
 
-  // a game left open past midnight just finishes as that day's, it's in the archive now
+  // a game left open past midnight still saves to its own day
   const handleError = e => alert(e.message)
 
   const guessTeam = async () => {
@@ -355,7 +345,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
       setGame(g => ({
         ...g, clues: d.clues, attempts: d.attempts, teamFound: d.teamFound, teamDone: d.teamPhaseComplete,
         answer: d.answer || null,
-        // the server only knows wrong teams for signed in players
+        // signed out: track wrong teams here
         wrongTeams: meta.signedIn ? d.wrongTeams : d.correct ? g.wrongTeams : [...new Set([...g.wrongTeams, team])],
       }))
       setTeam(null)
@@ -421,12 +411,12 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const { result, answer } = game
   const years = []
   for (let y = meta.firstYear; y <= meta.lastYear; y++) years.push(y)
-  // a give up has no guess to show, so it goes straight to the answer
+  // a give up has no guess to show
   const yearWrong = result && result.yearScore !== 3
   const gotSomethingWrong = result && result.yearGuess != null && (!result.teamFound || yearWrong)
-  // a perfect game shows here too, just with all checkmarks
+  // perfect games too, all checkmarks
   const showingGuess = result && result.yearGuess != null && !(gotSomethingWrong && showAnswer)
-  // your last team guess, the right one if you got it
+  // last team guessed
   const guessedTeam = result && (result.teamFound ? answer.franchise : game.wrongTeams[game.wrongTeams.length - 1])
   const guessLogo = result && (result.teamFound
     ? answer.logo && eraLogo(answer.logo)
@@ -465,7 +455,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
           <ol className="fr-rows">
             {top.map(c => <ClueRow key={c.id} clue={c} />)}
 
-            {/* the call: where both guesses happen */}
+            {/* where you guess */}
             <li className={`fr-call${result ? (result.score === 6 ? ' fr-call--good' : ' fr-call--bad') : ''}`}>
               <span className="fr-code fr-code--call">▶</span>
 
@@ -510,8 +500,8 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                 <div className="fr-answer">
                   {showingGuess ? (
                     <>
-                      {/* your guess first, Show Correct Answer swaps in the real one */}
-                      {/* a right team gets that season's logo, and none for Washington before 2020 */}
+                      {/* your guess, Show Correct Answer swaps in the answer */}
+                      {/* that season's logo, none for Washington before 2020 */}
                       {guessLogo
                         ? <img className="fr-answer-logo" src={guessLogo} alt="" />
                         : <span className="fr-answer-logo" />}
@@ -529,7 +519,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                     </>
                   ) : (
                     <>
-                      {/* no logo for Washington before 2020, the old one is retired */}
+                      {/* none for Washington before 2020 */}
                       {answer.logo && <img className="fr-answer-logo" src={eraLogo(answer.logo)} alt="" />}
                       <div className="fr-answer-text">
                         {gotSomethingWrong && <span className="fr-answer-lead fr-answer-lead--correct">Correct answer</span>}
@@ -582,7 +572,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{result.score}/6</span>
               </div>
-              {/* 0/6 in any game is a Pick 6, same message as Pick 6 */}
+              {/* 0/6 is a Pick 6 */}
               {scoreTier === 'bad' && (
                 <>
                   <p className="result-table-pick6">You scored a Pick 6.</p>

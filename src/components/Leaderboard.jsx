@@ -9,10 +9,10 @@ const GAMES = {
   lineup:   { title: 'Logo Lineup', path: '/lineup/leaderboard', empty: 'a Logo Lineup' },
 }
 
-// survives remounts to avoid loading flash, one per game
+// cached per game to avoid a loading flash
 const cachedRows = {}
 
-// opens on the game you last played, the switch at the top flips between them
+// opens on the last game played
 export default function Leaderboard({ defaultGame = 'pick6' }) {
   const [game, setGame] = useState(defaultGame)
   const { path, empty } = GAMES[game]
@@ -20,7 +20,7 @@ export default function Leaderboard({ defaultGame = 'pick6' }) {
   const [error,   setError]   = useState(false)
 
   useEffect(() => {
-    // switching games reuses this component, so reset first
+    // reset when switching games
     setRows(cachedRows[game] ?? null); setError(false)
     fetch(`${API}${path}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })

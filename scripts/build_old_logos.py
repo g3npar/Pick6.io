@@ -1,25 +1,10 @@
 """
-Builds api/data/old_logos.json, the throwback pool for the logo game, and
-downloads the logos to public/logos/leagues/old/{league}-{id}-{start}.webp.
+Builds api/data/old_logos.json and downloads old logos from sportslogos.net, for Logo Lineup.
+Keeps each team's two most recent old logos (used 1980+) that look different from today's.
+Pages are cached and fetched slowly.
 
-For every team in api/data/logo_teams.json (run build_logo_teams.py first) it
-finds the team's pages on sportslogos.net, including old cities with the same
-nickname (Oakland Raiders, New Jersey Nets), and keeps the two most recent
-primary logos that aren't the current one and were still in use in 1980 or
-later, so casual fans have a shot at remembering them.
-
-Old logos that look like the current one are skipped automatically (see
-difference()), but the check works on tiny thumbnails so it misses some. Those,
-and logos that can never be used no matter how old they are (Native American
-caricatures), are dropped by hand: run with --review, look at the contact sheet
-it makes (it shows each logo's team and first season), and add them to EXCLUDE.
-
-sportslogos.net is fetched slowly (2 seconds between pages) and every page is
-cached, so reruns are cheap.
-
-Run:
-  python3 scripts/build_old_logos.py --review   # candidates + contact sheet
-  python3 scripts/build_old_logos.py            # download the keepers
+Run: python3 scripts/build_old_logos.py --review   (contact sheet to check, add bad ones to EXCLUDE)
+     python3 scripts/build_old_logos.py            (download)
 """
 
 import argparse
@@ -48,7 +33,7 @@ OLDEST_END = 1980     # a logo retired before this is too old for casual fans
 PER_TEAM = 2          # most recent old logos kept per team
 MIN_DIFF = 0.14       # how different from today's logo an old one has to look, see difference()
 
-# sportslogos league ids, college is split alphabetically over six pages
+# sportslogos league ids (college is six pages)
 LEAGUE_PAGES = {'nhl': [1], 'mlb': [4], 'nba': [6], 'nfl': [7], 'ncaa': [30, 31, 32, 33, 34, 35]}
 
 # old pages whose title doesn't match ESPN's name
@@ -63,16 +48,14 @@ SKIP_PAGES = {
     226, 990,         # New Orleans / OKC Hornets, that's the Pelicans' history not Charlotte's
     34,               # Minnesota North Stars, a different nickname from the Dallas Stars
 }
-# never used, from the --review contact sheet. (team, first season), or just the
-# team to skip all its old logos
+# never used: (team, first season), or a team to skip entirely
 EXCLUDE = {
     # Native American caricatures
     ('mlb:atl', 1968), ('mlb:atl', 1985),   # Braves screaming face
     ('ncaa:ill', 1981),                     # Chief Illiniwek
     ('ncaa:utah', 1975),                    # drum and feathers
     ('ncaa:miss', 1970),                    # Colonel Reb
-    # close enough to today's logo that the old slot would be free.
-    # the look-alike check misses these because the thumbnails are tiny
+    # too close to today's logo
     'nfl:lv',                               # the Raiders shield never really changed
     ('nfl:lac', 2002),                      # same bolt, white
     ('nfl:min', 1961), ('nfl:ari', 1988), ('nfl:ari', 1970), ('nfl:sf', 1968),
@@ -84,7 +67,7 @@ EXCLUDE = {
     ('nfl:no', 1967), ('nba:ny', 1984), ('nba:hou', 2004),
     ('nhl:stl', 1988), ('nhl:stl', 1979), ('ncaa:hou', 1962), ('ncaa:stan', 1979),
     ('nfl:nyj', 1998), ('mlb:sd', 2015), ('nhl:nyi', 1973), ('mlb:sd', 2012), ('nhl:min', 2001),
-    # the source image is too rough to zoom into
+    # too rough to zoom
     ('ncaa:colo', 1967),
 }
 excluded = lambda t, start: f"{t['league']}:{t['id']}" in EXCLUDE or (f"{t['league']}:{t['id']}", start) in EXCLUDE
@@ -97,8 +80,7 @@ def cache_dir():
 
 
 def url_name(kind, url):
-    # logo ids aren't unique across leagues (Islanders and Rutgers both have a "259"),
-    # so cached logo files are named after the whole url
+    # ids repeat across leagues, so cache by url
     return f"{kind}_{hashlib.sha1(url.encode()).hexdigest()[:16]}"
 
 
@@ -106,7 +88,7 @@ def fetch(url, name, binary=False):
     path = os.path.join(cache_dir(), name)
     if not os.path.exists(path) or os.path.getsize(path) < 200:
         req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': SITE + '/'})
-        # a few tries, a network blip shouldn't kill a 20 minute run
+        # retry network blips
         for attempt in range(4):
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
@@ -142,7 +124,7 @@ def team_pages(teams):
             if league == 'ncaa':
                 hit = {p: n for p, n in pages.items() if norm(n) in {norm(x) for x in names}}
             else:
-                # whole words, "Hornets" ends in "nets" but isn't the Nets
+                # whole words ("Hornets" isn't the Nets)
                 hit = {p: n for p, n in pages.items()
                        if (' ' + n.lower()).endswith(' ' + t['nickname'].lower()) or norm(n) in {norm(x) for x in names}}
             if not hit:
@@ -157,12 +139,12 @@ LOGO_RE = re.compile(
 
 
 def signature(im):
-    # tiny colour thumbnail on white, trimmed to the logo, for comparing two logos
+    # tiny thumbnail for comparing logos
     im = im.convert('RGBA')
     bg = Image.new('RGBA', im.size, 'white')
     bg.alpha_composite(im)
     im = bg.convert('RGB')
-    # near white counts as background, gif thumbnails have off-white edges
+    # near white is background
     bbox = im.convert('L').point(lambda v: 255 if v < 235 else 0).getbbox()
     if bbox:
         im = im.crop(bbox)
@@ -170,12 +152,12 @@ def signature(im):
 
 
 def difference(a, b):
-    # 0 is identical, around 0.1 is a recolor or small redraw, 0.2+ is a different logo
+    # 0 same, ~0.1 redraw, 0.2+ different
     return sum(abs(x - y) for p, q in zip(a, b) for x, y in zip(p, q)) / (len(a) * 3 * 255)
 
 
 def current_logo(t):
-    # today's logo is an svg, which Pillow can't open, so the API's sharp draws it
+    # Pillow can't read svg, so sharp draws it
     png = os.path.join(cache_dir(), f"current_{t['league']}_{t['id']}.png")
     if not os.path.exists(png):
         svg = os.path.abspath(os.path.join(ROOT, 'public', 'logos', 'leagues', t['logo']))
@@ -198,8 +180,7 @@ def candidates(teams):
             html = fetch(f'{SITE}/logos/list_by_team/{pid}/x/', f'team_{pid}.html')
             for view, lid, era_name, start, end, thumb in LOGO_RE.findall(html):
                 if not end.isdigit():
-                    # today's logo, compared from sportslogos' own thumbnail so both
-                    # sides of the comparison are drawn the same way
+                    # today's logo, from sportslogos' own thumbnail
                     current.append(thumb_signature(lid, thumb))
                     continue
                 if int(end) < OLDEST_END:
@@ -209,10 +190,7 @@ def candidates(teams):
                               'view': view, 'thumb': thumb})
         # one entry per logo, newest first
         logos = sorted({l['id']: l for l in logos}.values(), key=lambda l: -l['end'])
-        # small redraws of today's logo would make the old slot free, so skip anything
-        # that looks like the current logo or like an old one already picked
-        # ESPN's logo too, sometimes it's a different one (sportslogos calls the
-        # Bears' bear head primary, ESPN and the game use the C)
+        # skip anything that looks like today's logo (sportslogos' and the game's) or one already picked
         picked, sigs = [], current + [signature(current_logo(t))]
         for l in logos:
             if excluded(t, l['start']):
@@ -245,7 +223,7 @@ def contact_sheet(logos, path):
 
 def full_image(l):
     html = fetch(SITE + l['view'], url_name('view', l['view']))
-    # the same link shows up with & and &amp; (Texas A&M), so decode before comparing
+    # decode &amp; (Texas A&M)
     urls = sorted({html_lib.unescape(u) for u in re.findall(r'https://content\.sportslogos\.net/logos/\d+/\d+/full/[^"\' ]+\.(?:png|gif|jpg)', html)})
     if len(urls) != 1:
         raise SystemExit(f"expected one full image for {l['eraName']} {l['id']}, found {urls}")
@@ -253,8 +231,7 @@ def full_image(l):
 
 
 def clean(im):
-    # old images are often on white, flood fill from the corners so the
-    # background goes but white inside the logo stays
+    # remove white backgrounds from the corners in
     opaque = im.mode in ('RGB', 'P', 'L') and 'transparency' not in im.info
     im = im.convert('RGBA')
     if opaque:
@@ -265,7 +242,7 @@ def clean(im):
     bbox = im.getbbox()
     if bbox:
         im = im.crop(bbox)
-    # full size (sportslogos tops out around 900px), the game zooms into these
+    # keep full size, the game zooms in
     im.thumbnail((1000, 1000), Image.LANCZOS)
     return im
 

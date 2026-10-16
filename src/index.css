@@ -1,12 +1,10 @@
 /* global styles */
 
-/* fonts are served from /fonts instead of Google Fonts. Google's stylesheet held up
-   the app's JavaScript (browsers wait for it), which delayed every puzzle request.
-   Latin only, the same subset Google sent us */
+/* self-hosted fonts (Google's stylesheet slowed page load), latin only */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
-  font-weight: 400 900;   /* one variable file covers every weight */
+  font-weight: 400 900;   /* variable font, all weights */
   font-display: swap;
   src: url('/fonts/inter-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -149,7 +147,7 @@ body {
 /* nav */
 .nav {
   display: flex;
-  /* links and dividers share one height, so the red active link meets the lines with no gaps */
+  /* same height as the dividers, no gaps */
   align-items: stretch;
 }
 .nav-link {
@@ -199,14 +197,14 @@ body {
 }
 
 .user-chip { display: flex; align-items: center; gap: 8px; }
-/* matches .nav-link — the username is a nav destination like any other */
+/* styled like .nav-link */
 .user-name-btn {
   padding: 8px 14px;
   border-radius: 0;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-sec);
-  max-width: 148px;   /* 120 for the name plus the 28px of padding */
+  max-width: 148px;   /* 120 + padding */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -276,7 +274,7 @@ body {
   cursor: pointer;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
-.mode-btn + .mode-btn { border-left: none; }   /* shared borders, works for any number of buttons */
+.mode-btn + .mode-btn { border-left: none; }   /* shared borders */
 .mode-btn:hover { color: var(--text); border-color: var(--text-sec); }
 .mode-btn--active {
   background: var(--red);
@@ -335,7 +333,7 @@ body {
 }
 .circle-side--left  { align-items: flex-end; }
 
-/* puzzle number plus the "i" that opens the rules */
+/* puzzle number + rules button */
 .puzzle-number-row { display: flex; align-items: center; gap: 8px; }
 .rules-btn {
   width: 20px;
@@ -1015,7 +1013,7 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;   /* "used 3/3 attempts" needs the room to stay on one line */
+  gap: 8px;   /* room for "used 3/3 attempts" */
 }
 .result-table-label {
   display: inline-flex;
@@ -1726,14 +1724,14 @@ kbd {
   .circle-center      { padding: 8px; gap: 5px; }
   .helmet-silhouette  { width: 28px; }
 
-  /* expansion tracks the smaller padding so the clip matches the ring */
+  /* match the ring */
   .player-reveal-photo {
     margin: -8px;
     width: calc(100% + 16px);
     height: calc(100% + 16px);
   }
 
-  /* the wheel is 63% of desktop here so these need to come down with it */
+  /* smaller wheel here */
   .puzzle-date-big    { font-size: 21px; }
   .puzzle-number-label { font-size: 11px; }
   .reveal-headshot    { width: 68%; height: 68%; }
@@ -1810,10 +1808,10 @@ kbd {
 }
 
 .profile-hint  { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
-/* per day stats on the profile, one block per day, one line per game */
+/* profile per day stats */
 .stats-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .stats-day { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border); }
-/* the profile sections share the legal pages' list style, which adds a red ▸ to every li */
+/* drop the ▸ the legal page list style adds */
 .legal-section .stats-day { padding: 10px 16px; line-height: normal; }
 .legal-section .stats-day::before { content: none; }
 .stats-date { font-size: 13px; font-weight: 800; color: var(--text); }
@@ -1826,7 +1824,7 @@ kbd {
 .stats-score--bad  { color: var(--red); }
 .stats-more { display: block; width: 100%; margin-top: 10px; border-radius: 0; }
 /* games you didn't finish that day */
-/* the game name keeps its normal color, only "not played" and the dash fade */
+/* fade "not played" and the dash, not the game name */
 .stats-game--none .stats-detail,
 .stats-game--none .stats-score { color: var(--text-muted); opacity: 0.6; }
 /* same font as PICK in the logo */
@@ -1934,11 +1932,11 @@ kbd {
 .fr-call-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .fr-call-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .fr-attempts { display: flex; align-items: center; gap: 8px; }
-/* Pick 6's label sizes off the wheel, this one has a fixed row to sit in */
+/* fixed size, Pick 6's scales with the wheel */
 .fr-attempts-label { font-size: 10px; }
 .fr-call-label { font-family: 'Anton', sans-serif; font-size: 15px; letter-spacing: 0.1em; color: var(--red); }
 .fr-call-inputs { display: flex; gap: 8px; align-items: stretch; }
-/* stays red while the guess is in flight, a greyed out button reads as "nothing happened" */
+/* stays red while checking */
 .fr-btn--busy:disabled {
   background: linear-gradient(135deg, #ff2244 0%, #cc0a28 100%);
   color: #fff;
@@ -1958,7 +1956,7 @@ kbd {
 }
 @keyframes fr-spin { to { transform: rotate(360deg); } }
 .fr-btn { flex-shrink: 0; font-size: 12px; padding: 8px 14px; }
-/* not positioned, so both grids hang off the whole middle row instead of their box */
+/* not positioned, so the grids span the whole row */
 .fr-year { flex: 1; min-width: 0; }
 .fr-team { flex: 1; min-width: 0; }
 .fr-team-picked { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -2062,7 +2060,7 @@ kbd {
 .fr-answer-year { font-family: 'Anton', sans-serif; font-size: 36px; line-height: 1; color: #fff; }
 .fr-answer-name { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text); }
 
-/* right / close / wrong, the same round badges as the Pick 6 reveal */
+/* round ✓ / ✗ badges */
 .fr-mark {
   display: inline-flex;
   align-items: center;
@@ -2109,7 +2107,7 @@ kbd {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   overflow: visible;
 }
-/* the six logos, red header like the Film Room sheet */
+/* the six logo tabs */
 .ll-strip {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -2125,14 +2123,14 @@ kbd {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  /* the padding is on the tab, not the strip, so the selected tab's shading fills its whole cell */
+  /* padding on the tab so its shading fills the cell */
   height: 100%;
   padding: 12px 2px;
   border-radius: 0;
   color: rgba(255, 255, 255, 0.75);
   transition: background 0.15s, color 0.15s;
 }
-/* hover is as dark as the picked tab (lighter read like it was getting brighter) */
+/* hover darkens */
 .ll-tab:hover { background: rgba(0, 0, 0, 0.3); color: #fff; }
 .ll-tab--on { background: rgba(0, 0, 0, 0.3); color: #fff; }
 .ll-tab--on:hover { background: rgba(0, 0, 0, 0.4); }
@@ -2152,9 +2150,9 @@ kbd {
 .ll-tab--wrong .ll-tab-mark { background: #fff; color: var(--red); }
 
 .ll-stage { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
-/* title over the attempts, both centered over the logo */
+/* centered title and attempts */
 .ll-stage-top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-/* light card so logos keep their real colors, navy and black disappear on the dark board */
+/* light card so dark logos show up */
 .ll-card {
   align-self: center;
   width: min(100%, 300px);
@@ -2162,27 +2160,26 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #d7dbe5;   /* grey enough that white parts of a logo still show */
+  background: #d7dbe5;   /* white parts still show */
   border-radius: 0;
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .ll-card { position: relative; }
-/* all six images are stacked here, only the current one is visible. visibility (not
-   display: none) keeps the others decoded so switching tabs is instant */
+/* six stacked images, hidden with visibility so they stay decoded */
 .ll-card img { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; object-fit: contain; display: block; }
 .ll-card img.ll-card-off { visibility: hidden; }
-/* the full logo gets some breathing room, the crops go edge to edge */
+/* padding around the full logo */
 .ll-card img.ll-card-full { width: 80%; height: 80%; }
 
-/* the results rows are longer here (six logos, "used 2/3 attempts", "+0.75") */
+/* wider for the longer result rows */
 @media (min-width: 601px) {
   .circle-side.ll-side { flex-basis: 200px; width: 200px; }
 }
 .ll-guess { display: flex; flex-direction: column; gap: 8px; }
 .ll-guess-row { display: flex; gap: 8px; align-items: stretch; }
 .ll-guess-row .ll-search { flex: 1; min-width: 0; }
-/* same height as the search box, and narrow enough to fit beside it on a phone */
+/* fits beside the search box on phones */
 .ll-give-up { flex-shrink: 0; padding: 0 14px; font-size: 12px; white-space: nowrap; }
 .ll-enter { flex-shrink: 0; padding: 0 14px; white-space: nowrap; }
 .ll-checking { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
@@ -2246,6 +2243,6 @@ kbd {
   .ll-stage { padding: 12px; }
 }
 
-/* keyboard focus in the Film Room pickers, arrows move it around */
+/* keyboard focus in the Film Room pickers */
 .fr-team-cell:focus-visible,
 .fr-year-cell:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }

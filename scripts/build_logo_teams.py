@@ -1,16 +1,8 @@
 """
-Builds api/data/logo_teams.json, the modern teams for the logo game, and
-downloads their logos to public/logos/leagues/{league}/{id}.svg.
+Builds api/data/logo_teams.json and downloads each team's SVG logo, for Logo Lineup.
+Every NFL, NBA, MLB and NHL team plus Power 4 and Notre Dame. Existing logos are skipped.
 
-One pool per league: every NFL, NBA, MLB and NHL team, plus the Power 4
-conferences and Notre Dame for college. Names come from ESPN's public team
-lists. Logos are SVGs from each league's own site so the zoomed crops stay sharp
-(ESPN only has PNGs, and a 500px PNG zoomed 5x is a blur). Logos that are
-already downloaded are skipped, so rerun this when a team rebrands (delete its
-old file first) or the college pool changes.
-
-Run:
-  python3 scripts/build_logo_teams.py
+Run: python3 scripts/build_logo_teams.py
 """
 
 import json
@@ -33,7 +25,7 @@ LEAGUES = {
     'ncaa': 'football/college-football',
 }
 
-# college is just the schools casual fans see on TV, by ESPN's "location"
+# college pool, by ESPN's "location"
 POWER_4 = {
     'ACC':     ['Boston College', 'California', 'Clemson', 'Duke', 'Florida State', 'Georgia Tech', 'Louisville',
                 'Miami', 'NC State', 'North Carolina', 'Pittsburgh', 'SMU', 'Stanford', 'Syracuse', 'Virginia',
@@ -57,7 +49,7 @@ def get(url):
         return r.read()
 
 
-# each league names teams its own way, so these map ESPN's teams onto theirs
+# map ESPN teams to each league's own ids
 NFL_CODES = {'wsh': 'WAS', 'lar': 'LA'}   # the rest are ESPN's abbreviation in capitals
 NBA_IDS = {
     'atl': 37, 'bos': 38, 'cle': 39, 'no': 40, 'chi': 41, 'dal': 42, 'den': 43, 'gs': 44, 'hou': 45, 'lac': 46,
@@ -95,7 +87,7 @@ def svg_sources():
 
 def save_svg(url, path):
     data = get(url)
-    # a real vector, not an error page or a PNG wrapped in an svg tag
+    # must be a real vector
     if b'<svg' not in data[:2000] or b'<image' in data:
         raise SystemExit(f'not a usable svg: {url}')
     with open(path, 'wb') as f:
@@ -129,7 +121,7 @@ for league, path in LEAGUES.items():
             'logo': f'{league}/{team_id}.svg',
         })
 
-# a school that renamed itself on ESPN would silently drop out of the pool
+# catch schools ESPN renamed
 found = sum(t['league'] == 'ncaa' for t in teams)
 if found != len(COLLEGES):
     raise SystemExit(f'only matched {found} of {len(COLLEGES)} colleges, check POWER_4 against ESPN')

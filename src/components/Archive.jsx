@@ -10,10 +10,10 @@ const GAMES = {
   lineup:   { title: 'Logo Lineup', path: '/lineup/archive' },
 }
 
-// survives remounts to avoid loading flash, one per game
+// cached per game to avoid a loading flash
 const cachedRows = {}
 
-// opens on the game you last played, same switch as the leaderboard
+// opens on the last game played
 export default function Archive({ user, defaultGame = 'pick6', onPlayDate }) {
   const [game,  setGame]  = useState(defaultGame)
   const [rows,  setRows]  = useState(cachedRows[game] ?? null)

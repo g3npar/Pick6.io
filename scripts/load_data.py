@@ -1,15 +1,9 @@
 """
-Loads NFL player and season data into RDS PostgreSQL: schema migration,
-player/roster data, season stats, and Super Bowl/MVP/Heisman metadata.
+Loads NFL players, rosters and season stats into Postgres. Awards come from scrape_awards.py.
 
-Award data (All-Pro, Pro Bowl, OPOY/DPOY/OROY/DROY/CPOY, HOF) comes from a
-separate script — see scripts/scrape_awards.py — since nfl_data_py has no
-working source for it (see the note near the bottom of this file).
-
-Run:
-  python3 scripts/load_data.py                    # full load (rare, ~45yr of history)
-  python3 scripts/load_data.py --rosters-only     # rosters + jerseys, no stats
-  python3 scripts/load_data.py --current-season   # weekly cron: rosters + this season's stats
+Run: python3 scripts/load_data.py                    (full load)
+     python3 scripts/load_data.py --rosters-only     (rosters + jerseys)
+     python3 scripts/load_data.py --current-season   (weekly cron)
 """
 
 import os
@@ -82,7 +76,7 @@ print("  Done")
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 1b — Incremental load  (--rosters-only / --current-season)
-# ════════════════════════════════════════════════════════════════════════════════.
+# ════════════════════════════════════════════════════════════════════════════════
 if INCREMENTAL:
     mode = "current-season" if CURRENT_ONLY else "rosters-only"
     print(f"\n── 1b. Incremental load — {mode} ({CURRENT_SEASON}) ──")
@@ -248,10 +242,7 @@ seasonal_modern = (
                                "receiving_tds", "sacks"])
 )
 
-# Build a gsis_id → college/draft lookup from players_df
-# NB: nfl_data_py's import_players() calls the overall-pick column
-# "draft_pick", not "draft_number" — that mismatch meant draft_number was
-# silently never populated for anyone (all 6,644 players had it NULL).
+# gsis_id → college/draft lookup (the overall pick column is "draft_pick")
 META_COLS  = ['gsis_id', 'college_name', 'draft_year', 'draft_round', 'draft_pick']
 meta_avail = [c for c in META_COLS if c in players_df.columns]
 player_meta = {}
@@ -290,8 +281,7 @@ new_modern = seasonal_modern[~seasonal_modern["player_id"].isin(existing_ids)][
     ["player_id", "player_display_name", "position"]
 ].drop_duplicates(subset="player_id")
 new_modern = new_modern.rename(columns={"player_display_name": "display_name"})
-# newest season entrants still have a birth date in the players file, pull it in
-# instead of leaving it null or their birth year fact never builds
+# pull in birth dates for the newest players
 new_modern = new_modern.merge(
     players_df[["gsis_id", "birth_date"]],
     left_on="player_id", right_on="gsis_id", how="left"
@@ -309,7 +299,7 @@ def birth_year_of(value):
         year = int(text[:4])
     except ValueError:
         return None
-    # guards against placeholder dates in the source
+    # skip placeholder dates
     return year if 1900 <= year <= 2015 else None
 
 
@@ -342,8 +332,7 @@ for db_id, nfl_id in results:
 conn.commit()
 print(f"  {len(player_id_map)} players upserted")
 
-# any player the merges missed still has a birth date in the players file, so
-# fill the gaps directly rather than leaving their birth year fact unavailable
+# fill any birth dates the merges missed
 birth_by_id = {}
 for gsis_id, birth_date in zip(players_df["gsis_id"], players_df["birth_date"]):
     year = birth_year_of(birth_date)
@@ -567,10 +556,7 @@ for season, team in sb_winners.items():
           AND ps.season_year = %s AND ps.team = %s
     """, (season, team))
 
-# Pass 2 — roster-based match for 1999+ (catches defenders/ST with NULL team,
-# and upserts a season row for anyone on the winning roster who doesn't
-# already have one for that year — e.g. a player whose only tracked seasons
-# are elsewhere in their career).
+# Pass 2 — roster match for 1999+, adds a season row if missing
 roster_years = sorted(yr for yr in sb_winners if yr >= 1999)
 if roster_years:
     print(f"  Loading seasonal rosters for {len(roster_years)} SB seasons (1999+)…")
@@ -594,8 +580,7 @@ if roster_years:
                       team = COALESCE(player_seasons.team, EXCLUDED.team)
             """, [(db_id, team, yr, True) for db_id in db_ids])
 
-# Pass 3 — manual overrides for pre-1999 defenders / known gaps
-# Upserts a season row if missing, then sets the flag.
+# Pass 3 — manual overrides for pre-1999 defenders and gaps
 SB_PLAYER_OVERRIDES = [
     # (player_name, season_year, team)
     ("Deion Sanders",   1994, "SF"),   # SF 49ers, SB XXIX
@@ -647,12 +632,7 @@ print("\n── 8. AP MVP ──")
 cur.execute("UPDATE player_seasons SET ap_mvp = false")
 mvp_ambiguous = []
 for season, name in {**AP_MVP, **AP_MVP_EXTRA}.items():
-    # Exact full-name match — a last-name substring match (the old behavior)
-    # would flag every player sharing that surname, not just the real winner.
-    # Two real players can still share an exact full name (e.g. two different
-    # "Josh Allen"s both had a 2024 season row), so check for that rather than
-    # blindly flagging every name match — that already mis-credited a 2024
-    # MVP to an unrelated Josh Allen.
+    # exact full name, and skip names two players share (two Josh Allens in 2024)
     cur.execute("""
         SELECT p.id FROM player_seasons ps
         JOIN players p ON p.id = ps.player_id

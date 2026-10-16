@@ -7,7 +7,7 @@ import RulesButton from './HowToPlay'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const MAX_ATTEMPTS = 3
 
-// signed out games live in the browser, one per day so the archive doesn't wipe today's
+// signed out games are kept in the browser, one per day
 const STORE_KEY = 'pick6_lineup_days'
 const readStore = date => { try { return JSON.parse(sessionStorage.getItem(STORE_KEY))?.[date] ?? null } catch { return null } }
 const writeStore = (date, slots) => {
@@ -16,8 +16,7 @@ const writeStore = (date, slots) => {
     sessionStorage.setItem(STORE_KEY, JSON.stringify({ ...all, [date]: slots }))
   } catch {}
 }
-// only what the server needs back, not the images. the team you got goes along so
-// the game can move to your account if you sign in later (the server checks it)
+// state for the server, with the team you got so it can be checked if you sign in later
 const slimSlots = slots => slots.map(({ attempts, wrong, solved, answer }) => ({ attempts, wrong, solved, ...(solved ? { team: answer?.team } : {}) }))
 
 async function post(path, body) {
@@ -32,19 +31,19 @@ async function post(path, body) {
   return data
 }
 
-// the server sends the file with its extension (svg for current logos, webp for old ones)
+// logo paths include the extension
 const fullLogo = logo => `/logos/leagues/${logo}`
 // 1 point a logo, minus 0.25 a miss
 const pointsFor = s => (s.solved ? 1 - 0.25 * s.attempts : 0)
 
-// the tabs only say "OLD", so the search box says which league to type
+// the tab only says OLD, so the hint names the league
 const searchHint = l => `${l.old ? 'Old ' : ''}${l.league === 'ncaa' ? (l.old ? 'college' : 'College') : l.label} team…`
 
-// type a few letters, pick from that league's teams
+// search within the logo's league
 function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
-  const [active, setActive] = useState(-1)   // highlighted match, moved with the arrow keys
+  const [active, setActive] = useState(-1)   // arrow key highlight
   const ref = useRef(null)
   const inputRef = useRef(null)
 
@@ -62,7 +61,7 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   }, [disabled])
   const term = q.trim().toLowerCase()
   const matches = term ? teams.filter(t => t.name.toLowerCase().includes(term)).slice(0, 6) : []
-  // the team that ENTER sends: one picked from the list, or a full name typed out
+  // what ENTER sends: a picked team or a full typed name
   const chosen = teams.find(t => t.name.toLowerCase() === term && !missed.includes(t.id)) || null
 
   useEffect(() => {
@@ -71,12 +70,12 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
-  // picking a team from the list fills it in, ENTER (or the Enter key) guesses it
+  // picking fills it in, ENTER guesses it
   const choose = t => { setQ(t.name); setOpen(false); setActive(-1) }
   const submit = () => { if (!chosen || disabled) return; onPick(chosen.id); setQ(''); setActive(-1) }
   const first = matches.find(t => !missed.includes(t.id))
 
-  // up and down skip teams you already missed on this logo
+  // arrows skip teams already missed
   const move = step => {
     const ok = matches.map((t, i) => (missed.includes(t.id) ? -1 : i)).filter(i => i >= 0)
     if (!ok.length) return
@@ -90,8 +89,8 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     else if (e.key === 'Escape') { setOpen(false); setActive(-1) }
     else if (e.key === 'Enter') {
       const hi = listShowing && matches[active] && !missed.includes(matches[active].id) ? matches[active] : null
-      if (hi) choose(hi)                      // highlighted in the list: fill it in
-      else if (chosen) submit()               // already picked (or typed out): guess it
+      if (hi) choose(hi)                      // fill in the highlighted team
+      else if (chosen) submit()               // guess it
       else if (listShowing && first) choose(first)
     }
   }
@@ -137,11 +136,9 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   )
 }
 
-// no date means today's puzzle, a date is a day from the archive
-// no date means today's puzzle, a date is a day from the archive. signedIn reloads
-// the board when you sign in, so a game you played signed out moves to your account
+// no date = today, a date = an archive day
 export default function LineupBoard({ date = null, signedIn = false }) {
-  const [data, setData]     = useState(null)   // the /lineup/day response
+  const [data, setData]     = useState(null)
   const [error, setError]   = useState(null)
   const [current, setCurrent] = useState(0)
   const [busy, setBusy]     = useState(false)
@@ -154,11 +151,10 @@ export default function LineupBoard({ date = null, signedIn = false }) {
 
   const load = () => {
     setError(null)
-    // the server can't know a signed out player's progress, so send what the browser kept.
-    // for today the date isn't known until the first answer, so that can take a second trip
+    // send the browser's saved game (today's date is only known after the first response)
     post('/lineup/day', { date, local: date ? readStore(date) : null })
       .then(d => {
-        // signed in with nothing saved yet, the server takes the browser's game (after checking it)
+        // just signed in with nothing saved: send the browser's game
         const nothingSaved = d.slots.every(st => !st.attempts && !st.solved)
         const kept = !date && (!d.signedIn || nothingSaved) && readStore(d.date)
         return kept ? post('/lineup/day', { date: d.date, local: kept }) : d
@@ -168,8 +164,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
   }
 
   useEffect(() => { setData(null); load() }, [date])
-  // the board loads before the site knows you're signed in, so only reload when that
-  // actually differs from what the server said (you just signed in or out)
+  // reload only when sign in status actually changes
   useEffect(() => {
     if (data && data.signedIn !== signedIn) { setData(null); load() }
   }, [signedIn])
@@ -178,7 +173,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     if (data && !data.signedIn) writeStore(data.date, slimSlots(data.slots))
   }, [data])
 
-  // "Are you sure?" belongs to the logo it was asked on
+  // reset "Are you sure?" when switching logos
   useEffect(() => { setConfirmingGiveUp(false) }, [current])
 
   // reverts confirm state if untouched
@@ -191,7 +186,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
   const send = async body => {
     if (busy) return
     setBusy(true)
-    // the spinner only shows on a slow connection
+    // spinner only on slow connections
     slowTimer.current = setTimeout(() => setSlow(true), 500)
     try {
       const d = await post('/lineup/guess', { date: data.date, local: slimSlots(data.slots), ...body })
@@ -229,13 +224,13 @@ export default function LineupBoard({ date = null, signedIn = false }) {
   }, [data, current])
 
   const handleGiveUpClick = () => {
-    // only the logo you're looking at, the others stay playable
+    // only the current logo
     if (confirmingGiveUp) { setConfirmingGiveUp(false); send({ giveUp: true, slot: current }) }
     else setConfirmingGiveUp(true)
   }
 
   const handleShare = async () => {
-    // a line per logo, same as the other games' lines per part
+    // one line per logo
     const text = shareText(`Logo Lineup #${data.number}`, data.leagues.map((l, i) => {
       const s = data.slots[i]
       return [tries(s.solved, s.attempts), l.old ? 'Old' : l.label, pointsFor(s), 1]
@@ -280,7 +275,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
         </div>
 
         <div className="ll-board">
-          {/* one tab per logo, you can play them in any order */}
+          {/* one tab per logo, any order */}
           <ol className="ll-strip">
             {data.leagues.map((l, i) => {
               const s = data.slots[i]
@@ -311,8 +306,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
               )}
             </div>
 
-            {/* every logo's image is in the card at once, already loaded and decoded, and
-                switching tabs just shows another one, so it appears with the rest of the screen */}
+            {/* all six images stay loaded so switching tabs is instant */}
             <div className="ll-card">
               {data.slots.map((s, i) => (
                 <img
@@ -333,7 +327,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                   <span className={`fr-mark fr-mark--${slot.solved ? 'right' : 'wrong'}`}>{slot.solved ? '✓' : '✗'}</span>
                 </span>
                 {slot.answer.eraName && (
-                  // the old name only when it was different, "Oakland Raiders · 1995-2019"
+                  // old name only if it changed
                   <span className="ll-answer-era">
                     {slot.answer.eraName !== slot.answer.name ? `${slot.answer.eraName} · ${slot.answer.years}` : `Logo from ${slot.answer.years}`}
                   </span>
@@ -342,7 +336,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
               </div>
             ) : (
               <div className="ll-guess">
-                {/* give up sits next to the search box, it only ends this logo */}
+                {/* give up only ends this logo */}
                 <div className="ll-guess-row">
                   <TeamSearch key={current} teams={teams} missed={slot.wrong} onPick={guess} disabled={busy} hint={searchHint(league)} />
                   <button
@@ -371,7 +365,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                         {s.solved ? '✓' : '✗'}
                       </span>
                       {l.old ? 'Old' : l.label}
-                      {/* the right guess counts, a give up before three misses says so */}
+                      {/* attempts used, or gave up */}
                       <span className="result-table-attempts">
                         {s.solved ? `used ${s.attempts + 1}/${MAX_ATTEMPTS} attempts` : s.wrong.length < MAX_ATTEMPTS ? 'gave up' : `used ${MAX_ATTEMPTS}/${MAX_ATTEMPTS} attempts`}
                       </span>
@@ -385,7 +379,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{pts(data.score)}/6</span>
               </div>
-              {/* 0/6 in any game is a Pick 6, same message as Pick 6 */}
+              {/* 0/6 is a Pick 6 */}
               {scoreTier === 'bad' && (
                 <>
                   <p className="result-table-pick6">You scored a Pick 6.</p>

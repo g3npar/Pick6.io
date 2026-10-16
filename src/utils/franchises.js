@@ -1,5 +1,4 @@
-// the 32 teams you can guess in Film Room, by today's name
-// keys match api/filmroom.js, relocated teams count as the same franchise
+// Film Room's 32 franchises by today's name, keys match api/filmroom.js
 export const FRANCHISES = [
   { key: 'ARI', name: 'Arizona Cardinals' },
   { key: 'ATL', name: 'Atlanta Falcons' },
@@ -37,7 +36,7 @@ export const FRANCHISES = [
 
 export const franchiseName = key => FRANCHISES.find(f => f.key === key)?.name ?? key
 
-// current alignment, so the picker reads like a standings page
+// current divisions
 export const DIVISIONS = [
   { conf: 'AFC', name: 'East',  teams: ['BUF', 'MIA', 'NE', 'NYJ'] },
   { conf: 'AFC', name: 'North', teams: ['BAL', 'CIN', 'CLE', 'PIT'] },

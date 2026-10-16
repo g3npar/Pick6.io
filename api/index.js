@@ -42,17 +42,17 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
     cb(new Error('CORS: origin not allowed'))
   },
-  credentials: true,   // required so the browser sends/accepts the session cookie
+  credentials: true,   // send the session cookie
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 }))
 
-// the game tables point at users, so they wait for the auth schema
+// game tables reference users, so auth goes first
 ensureAuthSchema(pool)
   .then(() => ensureFilmroomSchema(pool).catch(err => console.error('Film Room schema init failed:', err.message)))
   .then(() => ensureLineupSchema(pool)
     .then(() => {
-      // Logo Lineup crops are slow to draw, so get today's and tomorrow's ready now and keep checking
+      // pre-cut Logo Lineup crops, then every 30 minutes
       warmLineup()
       setInterval(warmLineup, 30 * 60 * 1000).unref()
     })
@@ -126,7 +126,7 @@ app.get('/players/search', async (req, res) => {
   res.json(results)
 })
 
-// GET /health cheap check for Render, never touches the database
+// GET /health for Render, no database
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
 // saved result for a puzzle date
@@ -161,13 +161,13 @@ function warmHeadshotFor(puzzle) {
   if (puzzle && puzzle.headshotUrl) loadPortrait(puzzle.headshotUrl).catch(() => {})
 }
 
-// reveal portraits come from our cache so they are already warm
+// portraits come from our warm cache
 function portraitUrl(req, date, headshotUrl) {
   if (!headshotUrl) return null
   return `${req.protocol}://${req.get('host')}/puzzle/portrait/${signPortrait(date)}`
 }
 
-// serves the cached reveal image, token proves the puzzle was finished
+// cached reveal image, the token proves you finished
 app.get('/puzzle/portrait/:token', async (req, res) => {
   const date = verifyPortrait(req.params.token)
   if (!date) return res.status(403).json({ error: 'Not available yet' })
@@ -187,13 +187,13 @@ app.get('/puzzle/portrait/:token', async (req, res) => {
 
 // strips answer fields until safe to show
 function withReveal(puzzle, { lie = false, player = false } = {}) {
-  // playerId and seed are admin internals, they would give the answer away
+  // admin internals, would give the answer away
   const { falseFactId, falseExplanation, trueText, playerName, headshotUrl,
           playerId, seed, team, position, ...safe } = puzzle
   return {
     ...safe,
     ...(lie    ? { falseFactId, falseExplanation, trueText } : {}),
-    // team and position narrow the answer so they wait for the reveal too
+    // these narrow the answer, wait for the reveal
     ...(player ? { playerName, headshotUrl, team, position } : {}),
   }
 }
@@ -376,16 +376,13 @@ app.get('/auth/me', optionalAuth, async (req, res) => {
   res.json({ user: toUserJSON(r.rows[0]) })
 })
 
-// GET /auth/history?end=2026-10-15&days=14  finished games for a run of days, newest
-// first, a page at a time for the profile's "Load 14 more". end defaults to today.
-// attempts are counted the way the games show them, the right guess included
+// GET /auth/history?end=&days=14  finished games by day, newest first, a page at a time
 const shiftDate = (date, n) => {
   const d = new Date(`${date}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
-// each game's first day. Pick 6 #1 is PUZZLE_EPOCH in GameBoard.jsx, the other two
-// are their epochs. days before a game existed don't show it, and paging stops at the oldest
+// each game's first day (Pick 6's matches PUZZLE_EPOCH in GameBoard.jsx)
 const GAME_STARTS = { pick6: '2026-08-17', filmroom: FILMROOM_EPOCH, lineup: LINEUP_EPOCH }
 const FIRST_DAY = Object.values(GAME_STARTS).sort()[0]
 app.get('/auth/history', requireAuth, async (req, res) => {
@@ -417,22 +414,22 @@ app.get('/auth/history', requireAuth, async (req, res) => {
       dayFor(r.date).filmroom = {
         score: r.score, teamFound: r.team_found,
         teamAttempts: r.team_found ? r.team_attempts + 1 : r.team_attempts,
-        // what's left after the team points: 3 exact, 1 a year off, 0 missed
+        // year points: 3 exact, 1 off by one, 0
         yearScore: r.score - teamScore, gaveUp: r.year_guess === null,
       }
     }
     for (const r of ll.rows) {
       dayFor(r.date).lineup = {
-        score: Number(r.score),   // numeric comes back as a string, quarter points
+        score: Number(r.score),   // numeric comes back as a string
         logos: r.slots.map(s => ({ solved: s.solved, attempts: s.solved ? s.attempts + 1 : s.attempts })),
       }
     }
-    // a result from before its game started is leftover test data, so it's dropped
+    // drop results from before a game started (test data)
     for (const [game, first] of Object.entries(GAME_STARTS)) {
       for (const d of days.values()) if (d.date < first) delete d[game]
     }
     res.json({
-      // more days to page back to, until the first day of the oldest game
+      // more until the oldest game's first day
       start, end, more: start > FIRST_DAY, starts: GAME_STARTS,
       days: [...days.values()].sort((a, b) => b.date.localeCompare(a.date)),
     })
@@ -457,7 +454,7 @@ app.put('/auth/username', requireAuth, authLimiter, async (req, res) => {
 })
 
 // DELETE /auth/account
-// user_results and puzzle_progress cascade off users so one delete clears it all
+// results and progress cascade, one delete clears everything
 app.delete('/auth/account', requireAuth, authLimiter, async (req, res) => {
   try {
     const r = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.userId])

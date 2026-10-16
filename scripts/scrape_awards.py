@@ -1,18 +1,8 @@
 """
-Scrapes footballdb.com and Wikipedia for NFL award data and writes public/awards.csv.
+Scrapes NFL awards (footballdb.com, Pro Bowls from Wikipedia) into public/awards.csv.
+Columns: player, award, year, team, position. Pro Bowl years 1997, 1998 and 2013-2015 are skipped.
 
-Columns: player, award, year, team, position
-
-Awards collected:
-  MVP, OPOY, DPOY, OROY, DROY, CPOY, ALL_PRO_FIRST, HOF  - footballdb.com
-  PRO_BOWL                                               - Wikipedia (footballdb has no Pro Bowl data)
-
-A Pro Bowl honoring <season_year> is played the following January/February and
-titled accordingly on Wikipedia (e.g. the 2022-season game is "2023 Pro Bowl").
-1997, 1998, and 2013-2015 use one-off page layouts and are skipped.
-
-Usage:
-  python3 scripts/scrape_awards.py
+Run: python3 scripts/scrape_awards.py
 """
 
 import re, time, csv, os
@@ -109,8 +99,7 @@ def scrape_hof():
         rows.append((player_a.get_text(strip=True), 'HOF', current_year, '', pos))
 
 # ── Pro Bowl (Wikipedia) ──────────────────────────────────────────────────────
-# A link's title is the player's full name, or a team/season page name — used
-# to tell player links from team links in the roster tables below.
+# tells player links from team links
 PROBOWL_TEAM_TITLES = {
     'Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bills',
     'Carolina Panthers', 'Chicago Bears', 'Cincinnati Bengals', 'Cleveland Browns',
@@ -120,7 +109,7 @@ PROBOWL_TEAM_TITLES = {
     'Minnesota Vikings', 'New England Patriots', 'New Orleans Saints', 'New York Giants',
     'New York Jets', 'Philadelphia Eagles', 'Pittsburgh Steelers', 'San Francisco 49ers',
     'Seattle Seahawks', 'Tampa Bay Buccaneers', 'Tennessee Titans', 'Washington Commanders',
-    # Historical franchise names within the 1980–2025 window
+    # old franchise names
     'Oakland Raiders', 'Los Angeles Raiders', 'San Diego Chargers', 'St. Louis Rams',
     'Washington Redskins', 'Washington Football Team', 'Houston Oilers', 'Tennessee Oilers',
     'Phoenix Cardinals', 'St. Louis Cardinals', 'Baltimore Colts', 'Boston Patriots',
@@ -144,8 +133,7 @@ def scrape_probowl(season_year):
     if not roster_heads:
         return
 
-    # Some mid-90s pages use a <table class="col-begin"> column layout instead
-    # of a wikitable — every selection is a plain link, no starter/reserve split.
+    # some mid-90s pages use a column layout instead of a table
     for tbl in roster_heads[0].find_all_next('table', class_='col-begin', limit=1):
         for p in tbl.find_all('p'):
             for a in p.find_all('a'):
@@ -166,7 +154,7 @@ def scrape_probowl(season_year):
         header = [c.get_text(strip=True).lower() for c in trs[0].find_all(['th', 'td'])]
         if not header or 'position' not in header[0]:
             continue
-        # Alternate(s) only played if someone dropped out, so only count Starter(s)/Reserve(s)
+        # skip alternates
         col_idx = [i for i, h in enumerate(header) if 'starter' in h or 'reserve' in h]
         if not col_idx:
             continue

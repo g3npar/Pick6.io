@@ -4,31 +4,28 @@ const express = require('express')
 const { pool, todayDateStr } = require('./puzzle')
 const { optionalAuth } = require('./auth')
 
-// Film Room: guess the team, then the year, from six clues about one team season.
-// Answer data is static history, built by scripts/build_team_seasons.py.
+// Film Room: guess the team, then the year, from six clues. Data from scripts/build_team_seasons.py
 const SEASONS = require('./data/team_seasons.json')
 
-// first Film Room day, sets the "#N" number and where the schedule starts
+// day #1
 const FILMROOM_EPOCH = '2026-10-06'
 
-// only record and playoffs start face up. any player name gives the team away
-// (receiver + rusher pinned it 99% of the time), so names wait for a miss.
-// each miss flips the next clue: receiver, then rusher. coach and QB show for the year
+// record and playoffs start face up, each miss flips receiver then rusher, coach and QB show for the year
 const INITIAL_CLUES = 2
 const MAX_TEAM_ATTEMPTS = 3
 
-// seasons people actually remember, plus the famous misses at both ends
+// memorable seasons only
 const isNotable = s =>
   s.playoffs !== 'Missed Playoffs'
   || s.wins >= 10   // won a lot and still missed
   || s.wins <= 2    // the 0-16s and 1-15s
 
 const POOL = SEASONS.filter(isNotable)
-// whatever seasons the data file has, so adding one only means rebuilding it
+// year range comes from the data
 const FIRST_YEAR = Math.min(...SEASONS.map(s => s.season))
 const LAST_YEAR  = Math.max(...SEASONS.map(s => s.season))
 
-// guessing is by franchise so relocations don't matter, these are today's names
+// guessed by franchise, today's names
 const FRANCHISES = {
   ARI: 'Arizona Cardinals',    ATL: 'Atlanta Falcons',      BAL: 'Baltimore Ravens',
   BUF: 'Buffalo Bills',        CAR: 'Carolina Panthers',    CHI: 'Chicago Bears',
@@ -60,15 +57,14 @@ function mulberry32(seed) {
   }
 }
 
-// the repo is public, so the order is keyed off a server secret, otherwise
-// anyone could run this file and read off every future answer
+// shuffled with a server secret so the public repo can't spoil answers
 function cycleSeed(cycle) {
   const secret = process.env.FILMROOM_SECRET || process.env.JWT_SECRET || 'dev'
   return crypto.createHmac('sha256', secret).update(`filmroom:${cycle}`).digest().readUInt32BE(0)
 }
 
 const _orders = new Map()
-// every pool season once per cycle, so nothing repeats until the pool runs out
+// every season once per cycle
 function cycleOrder(cycle) {
   if (_orders.has(cycle)) return _orders.get(cycle)
   const rng = mulberry32(cycleSeed(cycle))
@@ -104,10 +100,10 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
-// doesn't name the division, "1st in AFC West" would narrow the team round to four
+// no division name, it would narrow the team to four
 const standing = s => `${ordinal(s.divRank)} in Division${s.seed ? ` · ${ordinal(s.seed)} in Conference` : ''}`
   
-// short big word plus a small line under it, long phrases run into the center circle
+// short value plus a small line under it
 const PLAYOFF_CLUE = {
   'Won Super Bowl':          ['Won', 'Super Bowl'],
   'Lost Super Bowl':         ['Lost', 'Super Bowl'],
@@ -166,14 +162,14 @@ async function ensureFilmroomSchema(dbPool) {
       PRIMARY KEY (user_id, puzzle_date)
     )
   `)
-  // added after launch so the finished board can still show the misses
+  // misses for the finished board
   await dbPool.query(`ALTER TABLE filmroom_results ADD COLUMN IF NOT EXISTS wrong_teams TEXT[] NOT NULL DEFAULT '{}'`)
 }
 
-// a few days, so someone playing the archive doesn't push today's puzzle out
+// a few days cached
 const _cache = new Map()   // date -> puzzle
 
-// stored on first request so the day's puzzle never changes after that
+// saved on first request so a day never changes
 async function getPuzzleForDate(dateStr) {
   if (_cache.has(dateStr)) return _cache.get(dateStr)
   let res = await pool.query('SELECT puzzle FROM filmroom_puzzles WHERE puzzle_date = $1', [dateStr])
@@ -194,7 +190,7 @@ async function getPuzzleForDate(dateStr) {
 
 const teamPhaseDone = p => p.teamFound || p.attempts >= MAX_TEAM_ATTEMPTS
 
-// the last clue a miss can flip, after that you're on your final try
+// last clue a miss can flip
 const LAST_FLIPPABLE = INITIAL_CLUES + MAX_TEAM_ATTEMPTS - 1
 
 function visibleClues(puzzle, attempts, allVisible) {
@@ -205,10 +201,10 @@ function visibleClues(puzzle, attempts, allVisible) {
   }))
 }
 
-// current name only, the era name ("St. Louis Rams") would narrow the year
+// today's name, the old one would hint at the year
 const teamReveal = puzzle => ({ franchise: puzzle.franchise, name: FRANCHISES[puzzle.franchise] })
 
-// logo is looked up here, not stored in the puzzle, so days saved before logos existed still get one
+// looked up here so older saved days still get a logo
 const eraLogo = puzzle => SEASONS.find(s => s.season === puzzle.season && s.franchise === puzzle.franchise)?.logo ?? null
 
 const fullReveal = puzzle => ({ franchise: puzzle.franchise, name: puzzle.name, season: puzzle.season, logo: eraLogo(puzzle) })
@@ -216,7 +212,7 @@ const fullReveal = puzzle => ({ franchise: puzzle.franchise, name: puzzle.name, 
 function scoreOf({ teamFound, attempts, yearGuess, season }) {
   const teamScore = teamFound ? Math.max(1, MAX_TEAM_ATTEMPTS - attempts) : 0
   const off = Number.isInteger(yearGuess) ? Math.abs(yearGuess - season) : Infinity
-  // 2 off used to score too, and guessing the middle of a QB's era averaged 1.84
+  // exact 3, off by one 1
   const yearScore = off === 0 ? 3 : off === 1 ? 1 : 0
   return { teamScore, yearScore, score: teamScore + yearScore }
 }
@@ -249,8 +245,7 @@ async function fetchResult(userId, date) {
 
 const router = express.Router()
 
-// one puzzle a day for now, there's no Film Room archive yet
-// any day from #1 through today, past days are the archive
+// #1 through today
 const isPlayableDate = date =>
   /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= FILMROOM_EPOCH && date <= todayDateStr()
 
@@ -263,12 +258,12 @@ function checkDate(req, res) {
   return date
 }
 
-// local testing only: random puzzles that are never saved
+// dev only, never saved
 const PRACTICE = process.env.NODE_ENV !== 'production'
 const practiceKey = () => crypto.createHash('sha256')
   .update(`filmroom-practice:${process.env.FILMROOM_SECRET || process.env.JWT_SECRET || 'dev'}`).digest()
 
-// encrypted, so the token in the network tab doesn't spell out the answer
+// encrypted so the token doesn't reveal the answer
 function practiceToken(s) {
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv('aes-256-gcm', practiceKey(), iv)
@@ -288,7 +283,7 @@ function practiceSeason(token) {
   }
 }
 
-// today's puzzle, or a practice one when the request carries a token
+// today's puzzle, or a practice one
 async function resolvePuzzle(req, res) {
   if (req.body?.practice) {
     const s = PRACTICE && practiceSeason(req.body.practice)
@@ -311,13 +306,13 @@ router.post('/practice', (_req, res) => {
   })
 })
 
-// today's puzzle and archive days come back in the same shape
+// same shape for today and archive days
 async function sendDay(req, res, date) {
   try {
     const puzzle = await getPuzzleForDate(date)
     const base   = {
       date, number: daysSinceEpoch(date) + 1, firstYear: FIRST_YEAR, lastYear: LAST_YEAR,
-      // anonymous games are kept in the browser, signed in ones here
+      // signed out games live in the browser
       signedIn: !!req.userId,
     }
 
@@ -351,7 +346,7 @@ router.get('/date/:date', optionalAuth, (req, res) => {
   sendDay(req, res, req.params.date)
 })
 
-// GET /filmroom/archive  every past day, newest first, with your score if you played it
+// GET /filmroom/archive  past days, newest first, with your score
 router.get('/archive', optionalAuth, async (req, res) => {
   try {
     const today = todayDateStr()
@@ -389,12 +384,11 @@ router.post('/guess-team', optionalAuth, async (req, res) => {
     const ctx = await resolvePuzzle(req, res)
     if (!ctx) return
     const { puzzle, date, userId } = ctx
-    // both lookups at once, every round trip is a hop from Render to RDS
+    // in parallel, saves a round trip
     const [finished, saved] = await Promise.all([fetchResult(userId, date), fetchProgress(userId, date)])
     if (finished) return res.status(409).json({ error: 'Already finished this Film Room' })
 
-    // signed in the server count is the truth, anonymous counts come from the
-    // browser since nothing gets saved for them anyway
+    // signed out attempts come from the browser
     let p = saved
     if (!p) {
       const sent = Number(req.body.attempts)
@@ -438,9 +432,7 @@ router.post('/guess-team', optionalAuth, async (req, res) => {
 })
 
 // POST /filmroom/claim  { puzzleDate, wrongTeams, team?, finished, yearGuess? }
-// someone played signed out, then signed in: save that game to their account. Only
-// when the account has nothing for the day yet, and the team has to be the real
-// answer, same as Pick 6 where the lie and player are checked, so you can't just claim a 6
+// saves a signed out game after sign in, only if nothing's saved and the team is the real answer
 router.post('/claim', optionalAuth, async (req, res) => {
   if (!req.userId) return res.status(401).json({ error: 'Sign in first' })
   const date = checkDate(req, res)
@@ -464,7 +456,7 @@ router.post('/claim', optionalAuth, async (req, res) => {
       if (year !== null && !(Number.isInteger(year) && year >= FIRST_YEAR && year <= LAST_YEAR)) {
         return res.status(400).json({ error: 'Invalid game' })
       }
-      // a missed team round counts as all three attempts, same as /result
+      // missed team = all attempts used
       const attempts = teamFound ? wrong.length : MAX_TEAM_ATTEMPTS
       const { score } = scoreOf({ teamFound, attempts, yearGuess: year, season: puzzle.season })
       await pool.query(`
@@ -518,7 +510,7 @@ router.post('/result', optionalAuth, async (req, res) => {
     const scored = scoreOf({ teamFound, attempts, yearGuess, season: puzzle.season })
     let saved = false
     if (userId) {
-      // save the result and clear progress in one round trip
+      // save result and clear progress in one query
       const r = await pool.query(`
         WITH saved AS (
           INSERT INTO filmroom_results (user_id, puzzle_date, team_found, team_attempts, wrong_teams, year_guess, score)
@@ -536,7 +528,7 @@ router.post('/result', optionalAuth, async (req, res) => {
 
     res.json({
       teamFound, attempts, yearGuess, ...scored, saved,
-      // signed out players already have their misses in the browser
+      // signed out: misses are already in the browser
       ...(wrongTeams ? { wrongTeams } : {}),
       clues: puzzle.clues, answer: fullReveal(puzzle),
     })
@@ -546,7 +538,7 @@ router.post('/result', optionalAuth, async (req, res) => {
   }
 })
 
-// GET /filmroom/leaderboard  same shape as Pick 6's /leaderboard
+// GET /filmroom/leaderboard
 router.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`

@@ -56,12 +56,12 @@ function preloadLogos(puzzles) {
 }
 
 function App() {
-  // How to Play used to be its own page, it's an "i" button in each game now
+  // old How to Play screen goes to Pick 6
   const [screen, setScreen] = useState(() => {
     const saved = readSessionUI().screen
     return saved && saved !== 'how-to-play' ? saved : 'daily'
   })
-  // the leaderboard opens on whichever game you were last on
+  // last game played, archive and leaderboard open on it
   const [lastGame, setLastGame] = useState(() => readSessionUI().lastGame || 'pick6')
   useEffect(() => {
     if (screen === 'daily') setLastGame('pick6')
@@ -81,8 +81,7 @@ function App() {
 
   // true when viewing an archive puzzle
   const [viewingArchivePuzzle, setViewingArchivePuzzle] = useState(() => !!readSessionUI().viewingArchivePuzzle)
-  // a past Film Room or Logo Lineup day opened from the archive, { game, date }.
-  // those boards load it themselves, Pick 6 archive days go through archivePuzzle
+  // a Film Room or Logo Lineup archive day, { game, date }
   const [archiveDay, setArchiveDay] = useState(() => readSessionUI().archiveDay || null)
 
   // frozen cache snapshot avoids write race
@@ -290,8 +289,7 @@ function App() {
   // nothing shows until fully loaded
   const dailyPending   = screen === 'daily' && (!todayPuzzle || !logosReady)
   const archivePending = viewingArchive && (!archivePuzzle || !logosReady)
-  // film room loads its own puzzle, so it never waits on (or breaks with) Pick 6's
-  // the other games don't need the Pick 6 puzzle, so they skip its loading screen
+  // the other games skip Pick 6's loading screen
   if (screen !== 'filmroom' && screen !== 'lineup' && (!todayPuzzle || dailyPending || archivePending)) {
     return (
       <div className="app">

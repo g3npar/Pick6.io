@@ -32,7 +32,7 @@ const TEAM_SLUG = {
   'Tampa Bay Buccaneers':     'tampa-bay-buccaneers',
   'Tennessee Titans':         'tennessee-titans',
   'Washington Commanders':    'washington-commanders',
-  // Historical aliases
+  // old names
   'Oakland Raiders':          'las-vegas-raiders',
   'San Diego Chargers':       'los-angeles-chargers',
   'St. Louis Rams':           'los-angeles-rams',
@@ -41,15 +41,12 @@ const TEAM_SLUG = {
   'Washington Football Team': 'washington-commanders',
   'Tennessee Oilers':         'tennessee-titans',
   'Houston Oilers':           'tennessee-titans',
-  // Conferences
+  // conferences
   'AFC':                      'afc',
   'NFC':                      'nfc',
 }
 
-/**
- * Returns the absolute URL path to a team's logo PNG, or null if not found
- * @param {string} teamName - Canonical or historical team name
- */
+// logo path for a team (current or old name), or null
 export function teamLogo(teamName) {
   const slug = TEAM_SLUG[teamName]
   return slug ? `/logos/nfl/${slug}.webp` : null

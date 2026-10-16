@@ -1,10 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// starts the connection to the API and the two requests every page makes while
-// the JavaScript is still downloading, instead of after it runs. the app's own
-// fetches for these reuse the preloaded responses, so they need the same
-// credentials (`credentials: 'include'` there, `use-credentials` here)
+// preloads the API calls every page makes. must match the app's fetches (credentials: 'include')
 function earlyApiRequests(api) {
   return {
     name: 'early-api-requests',
@@ -17,7 +14,7 @@ function earlyApiRequests(api) {
 }
 
 export default defineConfig(({ mode }) => {
-  // same default as the app uses when VITE_API_URL isn't set
+  // same default as the app
   const api = loadEnv(mode, process.cwd()).VITE_API_URL || 'http://localhost:3001'
   return {
     plugins: [react(), earlyApiRequests(api)],

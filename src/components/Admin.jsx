@@ -112,8 +112,7 @@ export default function Admin() {
       .finally(() => setBusy(false))
   }
 
-  // rendered full width, outside htp-page's narrow doc layout, since the
-  // wheel needs its normal puzzle-game width, not a 680px capped column
+  // full width, the wheel doesn't fit the narrow page layout
   if (selected && candidate && playing) {
     return <AdminPlayTest puzzle={candidate} date={selected} onClose={() => setPlaying(false)} />
   }

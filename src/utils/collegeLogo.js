@@ -299,9 +299,7 @@ const COLLEGE_SLUG = {
   'Miami (FL)':                 'miami',
 }
 
-/**
- * Returns the path to a college logo PNG, or null if not found
- */
+// logo path for a college, or null
 export function collegeLogo(collegeName) {
   if (!collegeName) return null
   // exact match

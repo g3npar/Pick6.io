@@ -6,23 +6,22 @@ const sharp   = require('sharp')
 const { pool, todayDateStr } = require('./puzzle')
 const { optionalAuth } = require('./auth')
 
-// Logo Lineup: six zoomed in logos a day, one each from the NFL, NBA, MLB, NHL
-// and college, plus one old logo from any of them. Each miss zooms out.
-// Teams come from scripts/build_logo_teams.py, old logos from build_old_logos.py
+// Logo Lineup: six zoomed in logos a day (NFL, NBA, MLB, NHL, college, one old).
+// Data comes from scripts/build_logo_teams.py and build_old_logos.py
 const TEAMS = require('./data/logo_teams.json')
 let OLD = []
 try { OLD = require('./data/old_logos.json') } catch {}
 
-// first Logo Lineup day, sets the "#N" number and where the schedule starts
+// day #1
 const LINEUP_EPOCH = '2026-10-09'
 
 const LEAGUES = ['nfl', 'nba', 'mlb', 'nhl', 'ncaa']
 const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'NCAA' }
 const SLOTS = [...LEAGUES, 'old']
 const MAX_ATTEMPTS = 3
-// how far in each attempt starts. modern logos are svgs, so these can go as tight as we want
-const ZOOMS = [5, 2.2, 1]   // each miss shows ~5x more of the logo, the last attempt shows all of it
-// smallest window an old (picture) logo gets cropped to, see cropImage
+// zoom per attempt, each miss shows ~5x more, the last shows the whole logo
+const ZOOMS = [5, 2.2, 1]
+// old logos are pictures, so crops never go smaller than this (stops blur)
 const MIN_RASTER_WINDOW = 240
 const CROP_PX = 320
 
@@ -31,8 +30,7 @@ const byLeague = Object.fromEntries(LEAGUES.map(lg => [lg, TEAMS.filter(t => t.l
 const OLD_BY_LEAGUE = Object.fromEntries(LEAGUES.map(lg => [lg, OLD.filter(o => o.league === lg)]))
 const teamOf = (league, id) => byLeague[league].find(t => t.id === id)
 
-// schedule, same idea as Film Room: every team once per cycle, keyed off a
-// server secret so the public repo doesn't give away future answers
+// schedule: every team once per cycle, shuffled with a server secret so the repo can't spoil answers
 
 function daysSinceEpoch(dateStr) {
   return Math.round((new Date(dateStr) - new Date(LINEUP_EPOCH)) / 86400000)
@@ -81,16 +79,15 @@ function buildPuzzle(dateStr) {
     return { league: lg, team: t.id, logo: t.logo, old: false }
   })
   if (OLD.length) {
-    // each league gets the old slot once every five days, otherwise it'd be college a
-    // third of the time (it has the most old logos) and those are the most obscure
+    // rotate leagues so college (the most old logos) doesn't take over
     const lg = pickFor('old-league', LEAGUES, day)
     const round = Math.floor(day / LEAGUES.length)
-    // not the same team as today's modern logo from that league
+    // not the same team as that league's modern logo today
     let o, offset = 0
     do { o = pickFor(`old-${lg}`, OLD_BY_LEAGUE[lg], round + offset++) } while (o.team === slots.find(s => s.league === lg).team && offset < 5)
     slots.push({ league: o.league, team: o.team, logo: o.logo, old: true, eraName: o.eraName, years: `${o.start}-${o.end}` })
   } else {
-    // old logos not built yet, keeps local testing working
+    // no old logos built yet
     console.warn('Logo Lineup: api/data/old_logos.json is missing, using a modern logo for the old slot')
     const lg = LEAGUES[day % LEAGUES.length]
     const t = pickFor(`${lg}-old`, byLeague[lg], day)
@@ -99,12 +96,11 @@ function buildPuzzle(dateStr) {
   return { slots }
 }
 
-// stored on first request so the day's puzzle never changes after that,
-// even if a pool gets rebuilt
+// saved on first request so a day never changes
 const _puzzles = new Map()
 async function getPuzzleForDate(dateStr) {
   if (_puzzles.has(dateStr)) return _puzzles.get(dateStr)
-  // without old logos the 6th slot is a stand-in, don't lock that in for the day
+  // don't save a stand-in puzzle
   if (!OLD.length) return buildPuzzle(dateStr)
   await pool.query(
     'INSERT INTO lineup_puzzles (puzzle_date, puzzle) VALUES ($1, $2) ON CONFLICT (puzzle_date) DO NOTHING',
@@ -121,16 +117,13 @@ async function getPuzzleForDate(dateStr) {
 
 const fs = require('fs')
 
-// logos are paths like "nfl/dal.svg". puzzles saved before the svgs only have "nfl/dal"
+// older saved puzzles have no extension ("nfl/dal")
 function logoFile(logo) {
   if (path.extname(logo)) return logo
   return fs.existsSync(path.join(LOGO_DIR, `${logo}.svg`)) ? `${logo}.svg` : `${logo}.webp`
 }
 
-// most official svgs carry a ™ or ® off the bottom right corner. it would show up
-// crisp in a crop and stretch the trim, so small shapes that sit on their own in
-// the bottom right quarter get wiped. shapes drawn on top of the logo aren't on
-// their own (alpha is solid under them), so they're safe. rgba pixels, in place
+// erases ™ / ® marks: small, separate shapes along the bottom. edits rgba pixels in place
 function eraseMarks(px, w, h) {
   const label = new Int32Array(w * h)
   const solid = i => px[i * 4 + 3] > 20
@@ -168,20 +161,17 @@ function eraseMarks(px, w, h) {
   const long = Math.max(x1 - x0, y1 - y0)
   const small = (p, share, span) => p.size < total * share && p.x1 - p.x0 < long * span && p.y1 - p.y0 < long * span
   const marks = new Set(parts.filter(p =>
-    // a ™ off the bottom right
+    // ™ at the bottom right
     (small(p, 0.01, 0.1) && p.x0 > (x0 + x1) / 2 && p.y0 > (y0 + y1) / 2)
-    // or a tiny ® anywhere along the bottom (Calgary's is bottom left)
+    // tiny ® anywhere along the bottom
     || (small(p, 0.003, 0.06) && p.y0 > (y0 + y1) / 2)
   ).map(p => p.id))
-  if (eraseMarks.log) eraseMarks.log(parts.filter(p => marks.has(p.id)).map(p => ({ share: +(p.size / total).toFixed(4), at: [+((p.x0 - x0) / long).toFixed(2), +((p.y0 - y0) / long).toFixed(2)] })))
-  // the ® is two pieces (ring and R), both get caught on their own
   if (!marks.size) return
   for (let i = 0; i < w * h; i++) if (marks.has(label[i])) px[i * 4 + 3] = 0
 }
 
-// the logo trimmed to its edges on a square, transparent canvas, at high resolution.
-// svgs are drawn at SVG_PX so even the tightest zoom stays sharp
-const SVG_PX = 1600   // 5x zoom on a 320px crop needs 1600
+// logo trimmed onto a square transparent canvas. svgs are drawn big so 5x stays sharp
+const SVG_PX = 1600
 const _squares = new Map()
 async function logoSquare(logo) {
   if (_squares.has(logo)) return _squares.get(logo)
@@ -189,12 +179,12 @@ async function logoSquare(logo) {
   let img = sharp(file)
   if (file.endsWith('.svg')) {
     const meta = await img.metadata()
-    // density is dpi, 72 draws the svg at its own size
+    // density is dpi, 72 = the svg's own size
     img = sharp(file, { density: Math.min(2400, 72 * SVG_PX / Math.max(meta.width, meta.height)) })
   }
   const raw = await img.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   eraseMarks(raw.data, raw.info.width, raw.info.height)
-  // the league svgs have padding (the NHL's are 960x640 with the logo in the middle)
+  // trim the padding some svgs have
   const trimmed = await sharp(raw.data, { raw: raw.info }).trim({ threshold: 1 }).png().toBuffer({ resolveWithObject: true })
   const side = Math.max(trimmed.info.width, trimmed.info.height)
   const data = await sharp(trimmed.data)
@@ -206,7 +196,7 @@ async function logoSquare(logo) {
   return square
 }
 
-// a spot that's actually logo, not transparent corner, picked per day
+// a random spot that's on the logo, not empty space
 async function cropCenter(square, dateStr, slot) {
   const { data, info } = await sharp(square.data).resize(16, 16).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   const cells = []
@@ -220,24 +210,21 @@ async function cropCenter(square, dateStr, slot) {
 }
 
 const _crops = new Map()
-// drawing a crop takes ~1s per logo on Render, so every crop is cut once, saved in
-// lineup_crops, and kept in memory. warmLineup() cuts each day's ahead of time
-const _cutting = new Map()   // crops being cut right now, so two requests share the work
-// each logo gets its own look for the day, the same at every zoom: sometimes turned to
-// any angle, sometimes black and white. the answer (REVEAL_LEVEL) is always the real logo
+// crops are slow to cut (~1s), so each is cut once, saved in lineup_crops and kept in memory
+const _cutting = new Map()   // in progress, so requests share the work
+// each logo's look for the day: maybe turned, maybe black and white. the answer is always normal
 const ROTATE_CHANCE = 0.5
 const GRAY_CHANCE = 0.35
-const REVEAL_LEVEL = ZOOMS.length   // levels 0-2 are the attempts, 3 is the answer
+const REVEAL_LEVEL = ZOOMS.length   // the answer image
 function styleFor(dateStr, slot) {
   const rng = mulberry32(seedFor(`style:${dateStr}:${slot}`))
-  // never almost upright, that just looks like a mistake
+  // never almost upright
   const angle = rng() < ROTATE_CHANCE ? 15 + Math.floor(rng() * 331) : 0
   const gray = rng() < GRAY_CHANCE
   return { angle, gray }
 }
 
-// how a crop was made. saved crops with a different recipe (old zoom levels, older
-// version of the styles) get redrawn instead of reused
+// how a crop was made, saved crops with a different recipe get redrawn
 function recipeFor(dateStr, slot, level) {
   if (level === REVEAL_LEVEL) return 'reveal'
   const { angle, gray } = styleFor(dateStr, slot)
@@ -270,7 +257,7 @@ async function cropImage(puzzle, dateStr, slot, level) {
   try { return await job } finally { _cutting.delete(key) }
 }
 
-// turns the logo, then trims and squares it again so the zoom levels mean the same thing
+// turn the logo, then trim and square it again
 async function rotatedSquare(square, angle) {
   const turned = await sharp(square.data)
     .rotate(angle, { background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -289,8 +276,7 @@ async function cutCrop(logo, dateStr, slot, level) {
   const square = angle ? await rotatedSquare(plain, angle) : plain
   const { side } = square
   const [cx, cy] = reveal ? [0.5, 0.5] : await cropCenter(square, dateStr, slot)
-  // old logos only come as pictures, so they don't zoom past the point where
-  // the crop would be stretched bigger than the real pixels
+  // don't zoom old (picture) logos past their real pixels
   const want = reveal ? 1 : ZOOMS[level]
   const zoom = square.vector ? want : Math.min(want, Math.max(side / MIN_RASTER_WINDOW, 1))
   const win = Math.round(side / zoom)
@@ -301,10 +287,9 @@ async function cutCrop(logo, dateStr, slot, level) {
   return img.webp({ quality: 88 }).toBuffer()
 }
 
-// cuts and saves every crop for today and tomorrow, then any past day that's missing
-// some, one at a time so it doesn't hog the server. runs at startup and every 30 minutes,
-// so nobody opening a puzzle has to wait for the drawing
-const LEVELS = [...ZOOMS.keys(), REVEAL_LEVEL]   // every attempt, plus the answer
+// cuts today's, tomorrow's and any missing past crops ahead of time, one at a time.
+// runs at startup and every 30 minutes
+const LEVELS = [...ZOOMS.keys(), REVEAL_LEVEL]
 let _warming = false
 async function warmLineup() {
   if (_warming) return
@@ -315,11 +300,11 @@ async function warmLineup() {
     const dates = [today, shift(1)]
     for (let n = -1; shift(n) >= LINEUP_EPOCH; n--) dates.push(shift(n))
     for (const date of dates) {
-      // only crops made the way they're made now count
+      // only up to date crops count
       const have = await pool.query('SELECT slot, level, recipe FROM lineup_crops WHERE puzzle_date = $1', [date])
       const current = have.rows.filter(r => r.recipe === recipeFor(date, r.slot, r.level)).length
       if (current >= SLOTS.length * LEVELS.length) continue
-      // without old logos the puzzle is a stand-in that isn't saved, don't save its crops either
+      // stand-in puzzle, skip
       if (!OLD.length) continue
       const puzzle = await getPuzzleForDate(date)
       for (let slot = 0; slot < SLOTS.length; slot++) {
@@ -337,12 +322,12 @@ async function warmLineup() {
 
 const freshSlots = () => SLOTS.map(() => ({ attempts: 0, wrong: [], solved: false }))
 const slotDone = s => s.solved || s.attempts >= MAX_ATTEMPTS
-// 1 point per logo, minus 0.25 for each miss before you got it (1, 0.75, 0.5), 0 if missed
+// 1 point per logo, minus 0.25 per miss
 const MISS_COST = 0.25
 const pointsFor = s => (s.solved ? 1 - MISS_COST * s.attempts : 0)
 const scoreOf = slots => slots.reduce((n, s) => n + pointsFor(s), 0)
 
-// signed out players keep their state in the browser, so take it but sanity check it
+// signed out state comes from the browser, so clean it up
 function cleanLocal(local) {
   if (!Array.isArray(local) || local.length !== SLOTS.length) return freshSlots()
   return local.map(s => ({
@@ -358,10 +343,9 @@ function answerFor(puzzle, i) {
   return { team: s.team, name: t.name, logo: logoFile(s.logo), ...(s.old ? { eraName: s.eraName, years: s.years } : {}) }
 }
 
-// what the board needs for one slot: the crop for where you are, or the answer once it's done
+// one slot for the board: the current crop, or the answer once done
 async function slotView(puzzle, dateStr, i, state) {
-  // the answer is the real logo, upright and in color, already cut and saved so it shows
-  // instantly instead of waiting on the full logo file to download
+  // the saved answer image, so it shows instantly
   if (slotDone(state)) {
     return { ...state, done: true, answer: answerFor(puzzle, i), image: await cropImage(puzzle, dateStr, i, REVEAL_LEVEL) }
   }
@@ -393,7 +377,7 @@ async function ensureLineupSchema(dbPool) {
       created_at  TIMESTAMPTZ DEFAULT now()
     )
   `)
-  // every crop ever cut, so restarts and new days don't redraw them (see cropImage)
+  // every crop cut so far
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS lineup_crops (
       puzzle_date DATE NOT NULL,
@@ -403,10 +387,9 @@ async function ensureLineupSchema(dbPool) {
       PRIMARY KEY (puzzle_date, slot, level)
     )
   `)
-  // scores went from whole logos to quarter points
+  // quarter point scores
   await dbPool.query('ALTER TABLE lineup_games ALTER COLUMN score TYPE NUMERIC(4,2)')
-  // games saved before that (or by an older deploy) get rescored from their attempts,
-  // same rule as scoreOf. only touches rows that don't match, so it's cheap once done
+  // rescore old games with the same rule as scoreOf
   await dbPool.query(`
     UPDATE lineup_games g SET score = s.points
     FROM (
@@ -417,11 +400,10 @@ async function ensureLineupSchema(dbPool) {
     ) s
     WHERE g.user_id = s.user_id AND g.puzzle_date = s.puzzle_date AND g.score <> s.points
   `)
-  // how a crop was made (zoom, turn, black and white), so changing any of that redraws
-  // old crops instead of reusing them. replaced the zoom column
+  // how each crop was made (replaced the zoom column)
   await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS recipe TEXT')
   await dbPool.query('ALTER TABLE lineup_crops DROP COLUMN IF EXISTS zoom')
-  // progress and the finished result live in one row, completed flips at the end
+  // progress and result in one row
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS lineup_games (
       user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -442,12 +424,11 @@ const router = express.Router()
 const isPlayableDate = date =>
   typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= LINEUP_EPOCH && date <= todayDateStr()
 
-// every team's name per league, for the search box. it's all of them, so no hints
+// every team per league for the search box
 const SEARCH = Object.fromEntries(LEAGUES.map(lg => [lg, byLeague[lg].map(t => ({ id: t.id, name: t.name }))]))
 
-// a game played signed out, checked before it's saved to an account. a logo only
-// counts as solved if the browser sends the team it got and that's the real answer,
-// and misses have to be real wrong teams from that league. null if anything's off
+// checks a signed out game before saving it to an account. solved logos need the
+// real answer, misses need real teams. null if anything's off
 function verifiedLocal(puzzle, local) {
   if (!Array.isArray(local) || local.length !== SLOTS.length) return null
   const out = []
@@ -459,7 +440,7 @@ function verifiedLocal(puzzle, local) {
       if (s.team !== team || wrong.length >= MAX_ATTEMPTS) return null
       out.push({ attempts: wrong.length, wrong, solved: true })
     } else {
-      // giving up counts as all three attempts without three wrong teams
+      // giving up uses all attempts
       const attempts = Number.isInteger(s.attempts) ? Math.min(Math.max(s.attempts, wrong.length), MAX_ATTEMPTS) : wrong.length
       out.push({ attempts, wrong, solved: false })
     }
@@ -471,7 +452,7 @@ async function dayResponse(req, date, local) {
   const puzzle = await getPuzzleForDate(date)
   const saved = await fetchGame(req.userId, date)
   let slots = req.userId ? (saved?.slots || freshSlots()) : cleanLocal(local)
-  // played signed out, now signed in with nothing saved for the day: move that game over
+  // just signed in with nothing saved: keep the signed out game
   if (req.userId && !saved && local) {
     const claimed = verifiedLocal(puzzle, local)
     if (claimed && claimed.some(st => st.attempts > 0 || st.solved)) {
@@ -487,8 +468,7 @@ async function dayResponse(req, date, local) {
   }
 }
 
-// POST /lineup/day  { date?, local? }  today's puzzle or an archive day.
-// a POST so signed out players can send the state their browser kept
+// POST /lineup/day  { date?, local? }  today or an archive day (POST so the browser can send its state)
 router.post('/day', optionalAuth, async (req, res) => {
   const date = req.body?.date || todayDateStr()
   if (!isPlayableDate(date)) return res.status(400).json({ error: 'Invalid date' })
@@ -513,13 +493,13 @@ router.post('/guess', optionalAuth, async (req, res) => {
 
     let correct = false
     if (giveUp) {
-      // just the logo you're on, it counts as missed and shows the answer
+      // only the logo you're on
       if (!slotDone(slots[slot])) slots[slot].attempts = MAX_ATTEMPTS
     } else {
       const s = slots[slot]
       const { league } = puzzle.slots[slot]
       if (!teamOf(league, team)) return res.status(400).json({ error: 'Pick a team from the list' })
-      // a team you already missed on this logo doesn't cost another attempt
+      // repeating a miss is free
       if (!slotDone(s) && !s.wrong.includes(team)) {
         if (team === puzzle.slots[slot].team) {
           correct = true
@@ -543,7 +523,7 @@ router.post('/guess', optionalAuth, async (req, res) => {
   }
 })
 
-// GET /lineup/archive  every past day, newest first, with your score if you finished it
+// GET /lineup/archive  past days, newest first, with your score
 router.get('/archive', optionalAuth, async (req, res) => {
   try {
     const today = todayDateStr()
@@ -559,7 +539,7 @@ router.get('/archive', optionalAuth, async (req, res) => {
         `SELECT to_char(puzzle_date, 'YYYY-MM-DD') AS date, score FROM lineup_games WHERE user_id = $1 AND completed`,
         [req.userId]
       )
-      // numeric comes back from postgres as a string
+      // numeric comes back as a string
       for (const row of r.rows) scores.set(row.date, Number(row.score))
     }
     res.json(dates.reverse().map(date => ({
@@ -572,7 +552,7 @@ router.get('/archive', optionalAuth, async (req, res) => {
   }
 })
 
-// GET /lineup/leaderboard  same shape as the other two games
+// GET /lineup/leaderboard
 router.get('/leaderboard', async (_req, res) => {
   try {
     const r = await pool.query(`

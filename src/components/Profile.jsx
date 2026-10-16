@@ -6,16 +6,15 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 const LINEUP_LOGOS = ['NFL', 'NBA', 'MLB', 'NHL', 'College', 'Old']
 
-// one line per game, points plus how the attempts went
-// same squares as the share text: a red one per miss, then green for the one you got
+// red per miss then green, like the share text
 const tries = (got, attempts) => got ? '🟥'.repeat(Math.max(0, attempts - 1)) + '🟩' : '🟥🟥🟥'
 
-// a line for each game that existed that day, the ones you didn't finish say so
+// a line per game that existed that day
 function gameLines(day, starts) {
   const p = day.pick6, f = day.filmroom, l = day.lineup
   return [
     { game: 'Pick 6', score: p?.score, detail: p && [`Lie ${tries(p.lieFound, p.lieAttempts)}`, `Player ${p.playerCorrect ? '🟩' : '🟥'}`] },
-    // year is 🟩 exact, 🟨 one off, 🟥 missed, like the Film Room share text
+    // year: 🟩 exact, 🟨 one off, 🟥 missed
     { game: 'Film Room', score: f?.score, detail: f && [`Team ${tries(f.teamFound, f.teamAttempts)}`, `Year ${f.yearScore === 3 ? '🟩' : f.yearScore === 1 ? '🟨' : '🟥'}`] },
     { game: 'Logo Lineup', score: l?.score, detail: l && l.logos.map((x, i) => `${LINEUP_LOGOS[i]} ${tries(x.solved, x.attempts)}`) },
   ].filter((line, i) => !starts || day.date >= starts[['pick6', 'filmroom', 'lineup'][i]])
@@ -23,7 +22,7 @@ function gameLines(day, starts) {
 
 const PAGE_DAYS = 14
 
-// every calendar day from end back to start, newest first, with whatever was played
+// every day from end back to start, newest first
 function calendar(start, end, played) {
   const byDate = new Map(played.map(d => [d.date, d]))
   const out = []
@@ -36,14 +35,14 @@ function calendar(start, end, played) {
 }
 
 function PerDayStats() {
-  const [days, setDays] = useState(null)       // calendar days loaded so far
-  const [oldest, setOldest] = useState(null)   // first day of the last page
-  const [more, setMore] = useState(false)      // older days with puzzles exist
+  const [days, setDays] = useState(null)       // days loaded so far
+  const [oldest, setOldest] = useState(null)   // oldest day loaded
+  const [more, setMore] = useState(false)      // more days to load
   const [starts, setStarts] = useState(null)   // each game's first day
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
 
-  // one page of 14 days ending on `end`, or ending today when there's no end yet
+  // 14 days ending on `end` (today by default)
   const loadPage = end => {
     const q = new URLSearchParams({ days: PAGE_DAYS, ...(end ? { end } : {}) })
     return fetch(`${API}/auth/history?${q}`, { credentials: 'include' })
@@ -86,12 +85,12 @@ function PerDayStats() {
                 <div key={line.game} className={`stats-game${line.detail ? '' : ' stats-game--none'}`}>
                   <span className="stats-game-name">{line.game}</span>
                   <span className="stats-detail">
-                    {/* each piece stays on one line, so a logo's squares never split across lines */}
+                    {/* keep each piece on one line */}
                     {line.detail
                       ? line.detail.map((d, i) => <Fragment key={i}>{i > 0 && ' · '}<span className="stats-item">{d}</span></Fragment>)
                       : 'not played'}
                   </span>
-                  {/* same colors as a game's result table: green 6, gold in between, red 0 */}
+                  {/* green 6, gold in between, red 0 */}
                   <span className={`stats-score${line.detail ? ` stats-score--${line.score === 6 ? 'good' : line.score === 0 ? 'bad' : 'mid'}` : ''}`}>
                     {line.detail ? `${line.score}/6` : '–'}
                   </span>
@@ -101,7 +100,7 @@ function PerDayStats() {
           ))}
         </ul>
       )}
-      {/* only while there are older results to show */}
+      {/* only if there are older days */}
       {days && more && (
         <button className="profile-btn stats-more" onClick={loadMore} disabled={loadingMore}>
           {loadingMore ? <><span className="fr-spinner" aria-hidden="true" />Loading…</> : `Load ${PAGE_DAYS} more days`}

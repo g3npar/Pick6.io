@@ -5,7 +5,7 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const logoWrapRef = useRef(null)
 
-  // archive and leaderboard have their own game switch, so no dropdowns here
+  // plain links, archive and leaderboard pick the game on the page
   const links = [
     { id: 'daily',       label: 'Pick 6' },
     { id: 'filmroom',    label: 'Film Room' },

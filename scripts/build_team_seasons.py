@@ -1,15 +1,8 @@
 """
-Builds api/data/team_seasons.json, the answer data for Film Room.
+Builds api/data/team_seasons.json, Film Room's answer data: one row per team per season.
+Only needs rerunning to add a season (bump LAST_SEASON).
 
-One row per team per season with everything the six clues need: record and
-division and conference finish, playoff result, leading receiver, leading rusher, head
-coach, and starting QB. The API picks which seasons count as answers.
-
-Seasons are history and never change, so this only needs to be re-run to add
-a season (bump LAST_SEASON). No database needed.
-
-Run:
-  python3 scripts/build_team_seasons.py
+Run: python3 scripts/build_team_seasons.py
 """
 
 import collections
@@ -60,10 +53,8 @@ def team_name(abbr, season):
     return NAMES[abbr]
 
 
-# primary logo eras, from sportslogos.net. each year is the first season a logo
-# was used (clipped to 2002), and the file is public/logos/nfl/eras/{TEAM}-{year}.webp.
-# Washington before 2020 has no logo on purpose, the old name and logo are retired.
-# add a year here (and the image) when a team changes its logo
+# first season of each logo (from 2002), images in public/logos/nfl/eras/{TEAM}-{year}.webp.
+# Washington before 2020 has no logo on purpose
 LOGO_ERAS = {
     'ARI': [2002, 2005],             'ATL': [2002, 2003],             'BAL': [2002],
     'BUF': [2002],                   'CAR': [2002, 2012],             'CHI': [2002, 2023],
@@ -105,8 +96,7 @@ weekly = weekly[weekly['season_type'] == 'REG']
 # leading receiver / rusher per franchise-season, regular season only
 leaders = {}
 for col in ('receiving_yards', 'rushing_yards'):
-    # exact ties happen (2021 Giants: Barkley and Booker both ran for 593), so the
-    # player with fewer games wins, he was the one actually carrying the load
+    # on a tie, fewer games wins
     totals = (
         weekly.groupby(['season', 'recent_team', 'player_id', 'player_display_name'])
         .agg(yards=(col, 'sum'), games=(col, 'size')).reset_index()
@@ -143,8 +133,7 @@ for season in YEARS:
             for team, scored, allowed, coach, qb in sides:
                 record[team][0 if scored > allowed else 1 if scored < allowed else 2] += 1
                 coaches[team][coach] += 1
-                # most regular-season starts, so a third-stringer who started one
-                # playoff game never becomes the clue
+                # most regular-season starts
                 if isinstance(qb[0], str):
                     qbs[team][qb] += 1
         else:

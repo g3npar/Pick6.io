@@ -1,16 +1,9 @@
-// share text and copying, shared by all three games so their results look the same:
-//
-//   Film Room #10
-//   🟥🟩 Team: 2/3
-//   🟨 Year: 1/3
-//   3/6
-//
-//   https://pick6.io
+// share text for all three games, e.g. "Film Room #10 / 🟥🟩 Team: 2/3 / 🟨 Year: 1/3 / 3/6"
 
-// a red square per miss, then green for the one you got, or three reds if you never did
+// red per miss then green, or three reds
 export const tries = (got, misses) => (got ? '🟥'.repeat(Math.max(0, misses)) + '🟩' : '🟥🟥🟥')
 
-// 4.75, 5.5, 6, never 5.50
+// no trailing zeros
 export const pts = n => String(Number(Number(n).toFixed(2)))
 
 // lines: [[squares, label, points, out of], ...]
@@ -19,7 +12,7 @@ export function shareText(title, lines, score) {
   return `${title}\n${body}\n${pts(score)}/6\n\nhttps://pick6.io`
 }
 
-// clipboard, with the old textarea trick for browsers that block it
+// clipboard, with a fallback
 export async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text)

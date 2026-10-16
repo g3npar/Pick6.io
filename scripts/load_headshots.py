@@ -1,9 +1,7 @@
 """
-Backfills players.headshot_url from nfl_data_py, matched on gsis_id (players.nfl_id).
-Only revealed to the client after a puzzle is submitted — see api/index.js withReveal().
+Fills players.headshot_url from nfl_data_py. Only shown after a puzzle is finished.
 
-Run:
-  python3 scripts/load_headshots.py
+Run: python3 scripts/load_headshots.py
 """
 
 import os

@@ -9,10 +9,7 @@ types.setTypeParser(1082, val => val)
 // awards csv loaded at startup
 const _awardsIdx = new Map()  // normalized name to awards
 
-// Suffix- and punctuation-insensitive. "Antoine Winfield Jr", "Antoine Winfield
-// Jr." and "antoine  winfield" all collapse to the same key, which matters for
-// grading a typed guess as much as for the awards lookup — the reveal renders
-// uppercase, so a missing period looks identical on screen but wouldn't match.
+// ignores suffixes, punctuation and case ("Antoine Winfield Jr." = "antoine winfield")
 function _normName(n) {
   return String(n).toLowerCase()
     .replace(/\bj\.?r\.?\b|\bs\.?r\.?\b|\bii\b|\biii\b|\biv\b|\bv\b/g, '')
@@ -194,7 +191,7 @@ function initialsFact(p, peerNames) {
   }
 }
 
-// nominal draft slots per round, comp picks stretch later rounds a little
+// rough picks per round
 const PICKS_PER_ROUND = 32
 
 function draftFact(p) {
@@ -203,8 +200,7 @@ function draftFact(p) {
     cat: 'draft',
     text: `Was the ${ordinal(p.draft_number)} overall pick (Round ${p.draft_round}) in the ${p.draft_year} NFL Draft`,
     makeLie(rng) {
-      // pick number only fakeable for round 1, where exact order is well known
-      // round and year can always be faked, at least one always changes
+      // pick number only faked in round 1, round or year always changes
       const isFirstRound = p.draft_round === 1
       let changeRound = rng() < 0.4
       let changeYear  = rng() < 0.4
@@ -225,12 +221,12 @@ function draftFact(p) {
         fakeYear = rng() < 0.5 ? p.draft_year + delta : p.draft_year - delta
       }
 
-      // overall pick determines the round so it has to move with it
+      // round follows the pick
       let fakePick = p.draft_number
       if (changeRound) {
         fakePick = (fakeRound - 1) * PICKS_PER_ROUND + 1 + Math.floor(rng() * PICKS_PER_ROUND)
       } else if (changePick) {
-        // stays within round 1 so the pick alone is what's being tested
+        // stay in round 1
         do { fakePick = 1 + Math.floor(rng() * PICKS_PER_ROUND) } while (fakePick === p.draft_number)
       }
 
@@ -627,13 +623,13 @@ function headshotThumb(url) {
   return url.replace(/\/image\/upload\/[^/]+\//, '/image/upload/w_400,h_400,c_fill,g_face,q_auto:best,f_auto/')
 }
 
-// browsers ask for webp so warm that derivative not the png one
+// warm the webp version browsers ask for
 const BROWSER_ACCEPT = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
 const PORTRAIT_TTL   = 24 * 60 * 60 * 1000
 const PORTRAIT_MAX   = 40
 const portraitCache  = new Map()
 
-// keeps reveal bytes in memory so the reveal is not a cold cdn transform
+// reveal images kept in memory
 async function loadPortrait(url) {
   if (!url) return null
   const hit = portraitCache.get(url)
@@ -751,7 +747,7 @@ async function regeneratePuzzleFacts(candidate) {
   const trueSet = p => p.facts.map(f => (f.id === p.falseFactId ? p.trueText : f.text)).sort().join('|')
   const current = trueSet(candidate)
 
-  // players with only ~6 facts can't get a new set, so fall back to just a new lie
+  // too few facts for a new set, just make a new lie
   let puzzle = null
   for (let i = 0; i < 10; i++) {
     puzzle = buildPuzzle(candidate.id ?? 1, player, seasons, awards,
@@ -770,14 +766,14 @@ async function generatePlayerPuzzle(name, draftYear) {
   return puzzle
 }
 
-// candidates carry the id so a shared name cannot pick the wrong player
+// by id, names can be shared
 async function fetchCandidatePlayer(candidate) {
   return candidate.playerId
     ? fetchPlayerData(candidate.playerId)
     : fetchPlayerDataByName(candidate.playerName)
 }
 
-// unused facts from this players pool, for the admin swap menu
+// unused facts for the admin swap menu
 async function listFactAlternatives(candidate) {
   const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
   const rng   = seedRng(candidate.seed ?? Date.now())
@@ -786,7 +782,7 @@ async function listFactAlternatives(candidate) {
   return facts.filter(f => !used.has(f.text)).map(f => ({ cat: f.cat, text: f.text }))
 }
 
-// swaps one slot for a different fact from the same players pool
+// swap one fact for another
 async function swapPuzzleFact(candidate, factId, replacementText) {
   if (!candidate.facts.some(f => f.id === factId)) throw new Error('Invalid fact')
 
@@ -795,7 +791,7 @@ async function swapPuzzleFact(candidate, factId, replacementText) {
   const entry = buildFactPool(player, seasons, awards, rng, samePositionNames).find(f => f.text === replacementText)
   if (!entry) throw new Error('That fact is not available for this player')
 
-  // swapping the lie itself needs a fresh fake for the replacement
+  // swapping the lie needs a new fake
   const isLie = factId === candidate.falseFactId
   const lie   = isLie ? entry.makeLie(rng) : null
 
@@ -806,15 +802,13 @@ async function swapPuzzleFact(candidate, factId, replacementText) {
   }
 }
 
-// rebuilds a candidate with a specific fact forced as the lie, for the admin
-// preview's "select the lie" tool. re-derives a fresh lie for that fact from
-// its own fact builder rather than faking generic text
+// admin: make a specific fact the lie
 async function setPuzzleLie(candidate, factId) {
   const target = candidate.facts.find(f => f.id === factId)
   if (!target) throw new Error('Invalid fact')
 
   const { player, seasons, awards, samePositionNames } = await fetchCandidatePlayer(candidate)
-  // pool stays on the puzzle seed, true texts like played-for depend on it
+  // keep the puzzle seed for the true facts
   const rng  = seedRng(candidate.seed ?? Date.now())
   const pool = buildFactPool(player, seasons, awards, rng, samePositionNames)
 
@@ -823,7 +817,7 @@ async function setPuzzleLie(candidate, factId) {
   const entry  = pool.find(e => e && e.text === wanted)
   if (!entry) throw new Error('Could not regenerate a lie for that fact')
 
-  // fresh randomness per click so re-picking the same fact rolls a new lie
+  // new lie every click
   const lieRng  = seedRng(Math.floor(Math.random() * 0x7fffffff))
   const current = candidate.facts.find(f => f.id === candidate.falseFactId)?.text
   let lie = entry.makeLie(lieRng)
@@ -840,10 +834,10 @@ async function setPuzzleLie(candidate, factId) {
 
 const EPOCH = new Date('2026-01-01')
 
-// avoid repeating a puzzle subject within this many weeks of another one
+// no repeat player within this many weeks
 const RECENT_PLAYER_WEEKS = 4
 
-// players already featured within the window before refDateStr
+// players used recently
 async function fetchRecentlyUsedPlayerIds(refDateStr, weeks = RECENT_PLAYER_WEEKS) {
   const cutoff = new Date(refDateStr)
   cutoff.setDate(cutoff.getDate() - weeks * 7)
