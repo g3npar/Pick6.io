@@ -437,6 +437,55 @@ router.post('/guess-team', optionalAuth, async (req, res) => {
   }
 })
 
+// POST /filmroom/claim  { puzzleDate, wrongTeams, team?, finished, yearGuess? }
+// someone played signed out, then signed in: save that game to their account. Only
+// when the account has nothing for the day yet, and the team has to be the real
+// answer, same as Pick 6 where the lie and player are checked, so you can't just claim a 6
+router.post('/claim', optionalAuth, async (req, res) => {
+  if (!req.userId) return res.status(401).json({ error: 'Sign in first' })
+  const date = checkDate(req, res)
+  if (!date) return
+  const { wrongTeams, team, finished, yearGuess } = req.body || {}
+  try {
+    const puzzle = await getPuzzleForDate(date)
+    const [result, progress] = await Promise.all([fetchResult(req.userId, date), fetchProgress(req.userId, date)])
+    if (result || progress) return res.status(409).json({ error: 'Already saved for this day' })
+
+    const wrong = Array.isArray(wrongTeams) ? [...new Set(wrongTeams)] : []
+    if (wrong.length > MAX_TEAM_ATTEMPTS || wrong.some(t => !FRANCHISES[t] || t === puzzle.franchise)) {
+      return res.status(400).json({ error: 'Invalid game' })
+    }
+    if (team !== undefined && team !== null && team !== puzzle.franchise) return res.status(400).json({ error: 'Invalid game' })
+    const teamFound = team === puzzle.franchise
+    if (teamFound && wrong.length >= MAX_TEAM_ATTEMPTS) return res.status(400).json({ error: 'Invalid game' })
+
+    if (finished) {
+      const year = yearGuess === null || yearGuess === undefined ? null : Number(yearGuess)
+      if (year !== null && !(Number.isInteger(year) && year >= FIRST_YEAR && year <= LAST_YEAR)) {
+        return res.status(400).json({ error: 'Invalid game' })
+      }
+      // a missed team round counts as all three attempts, same as /result
+      const attempts = teamFound ? wrong.length : MAX_TEAM_ATTEMPTS
+      const { score } = scoreOf({ teamFound, attempts, yearGuess: year, season: puzzle.season })
+      await pool.query(`
+        INSERT INTO filmroom_results (user_id, puzzle_date, team_found, team_attempts, wrong_teams, year_guess, score)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (user_id, puzzle_date) DO NOTHING
+      `, [req.userId, date, teamFound, attempts, wrong, year, score])
+    } else if (teamFound || wrong.length) {
+      await pool.query(`
+        INSERT INTO filmroom_progress (user_id, puzzle_date, team_attempts, wrong_teams, team_found, updated_at)
+        VALUES ($1, $2, $3, $4, $5, now())
+        ON CONFLICT (user_id, puzzle_date) DO NOTHING
+      `, [req.userId, date, wrong.length, wrong, teamFound])
+    }
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Film Room claim failed:', err.message)
+    res.status(500).json({ error: 'Could not save that game' })
+  }
+})
+
 // POST /filmroom/result  { puzzleDate, yearGuess, teamFound?, attempts? }  or  { puzzleDate, giveUp: true }
 router.post('/result', optionalAuth, async (req, res) => {
   const { giveUp } = req.body || {}

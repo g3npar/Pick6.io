@@ -195,6 +195,13 @@ function GameBoard({
       setTabIdx(next)
       setQuery(results[next].name)
       onSelectPlayer(results[next].name, results[next].headshot_url || null)
+    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dropdownOpen && results.length > 0) {
+      // moves the highlight without changing what you typed, Enter picks it
+      e.preventDefault()
+      const step = e.key === 'ArrowDown' ? 1 : -1
+      setTabIdx(i => i < 0 ? (step > 0 ? 0 : results.length - 1) : (i + step + results.length) % results.length)
+    } else if (e.key === 'Escape' && dropdownOpen) {
+      setDropdown(false)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       const target = tabIdx >= 0 && results[tabIdx]

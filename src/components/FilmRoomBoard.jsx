@@ -40,6 +40,36 @@ const freshGame = clues => ({
   clues, attempts: 0, wrongTeams: [], teamFound: false, teamDone: false, answer: null, result: null,
 })
 
+// arrow keys move to the nearest cell that way on screen, so the same code works for
+// the year grid and the team grid (two conferences side by side). nothing focused
+// yet starts at the picked cell, or the first one
+function moveInGrid(grid, key) {
+  const cells = [...grid.querySelectorAll('button:not(:disabled)')]
+  if (!cells.length) return
+  const cur = cells.includes(document.activeElement) ? document.activeElement : null
+  if (!cur) {
+    (grid.querySelector('.fr-year-cell--on, .fr-team-cell--on:not(:disabled)') || cells[0]).focus()
+    return
+  }
+  const [dx, dy] = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] }[key]
+  const from = cur.getBoundingClientRect()
+  const cx = from.left + from.width / 2, cy = from.top + from.height / 2
+  let best = null, bestScore = Infinity
+  for (const c of cells) {
+    if (c === cur) continue
+    const r = c.getBoundingClientRect()
+    const x = r.left + r.width / 2 - cx, y = r.top + r.height / 2 - cy
+    const along = x * dx + y * dy
+    if (along < 2) continue
+    // staying in the same row or column matters more than distance
+    const score = along + Math.abs(x * dy - y * dx) * 3
+    if (score < bestScore) { bestScore = score; best = c }
+  }
+  best?.focus()
+}
+
+const ARROWS = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp']
+
 // every year in one small grid, a native select made you scroll through 25
 function YearPicker({ years, value, onChange }) {
   const [open, setOpen] = useState(false)
@@ -54,13 +84,24 @@ function YearPicker({ years, value, onChange }) {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc) }
   }, [open])
 
+  const gridRef = useRef(null)
+  const btnRef = useRef(null)
+  // arrows open the grid and move around it, Enter or Space picks
+  const onKeyDown = e => {
+    if (!ARROWS.includes(e.key)) return
+    e.preventDefault()
+    if (!open) { setOpen(true); requestAnimationFrame(() => gridRef.current && moveInGrid(gridRef.current, e.key)); return }
+    if (gridRef.current) moveInGrid(gridRef.current, e.key)
+  }
+
   // 5 to 7 columns, whichever leaves the last row closest to full
   const cols = [7, 6, 5].reduce((best, c) => ((c - years.length % c) % c < (best - years.length % best) % best ? c : best))
 
   return (
-    <div className="fr-year" ref={ref}>
+    <div className="fr-year" ref={ref} onKeyDown={onKeyDown}>
       <button
         type="button"
+        ref={btnRef}
         className={`fr-year-btn${value ? ' fr-year-btn--set' : ''}`}
         onClick={() => setOpen(o => !o)}
         aria-haspopup="true"
@@ -70,7 +111,7 @@ function YearPicker({ years, value, onChange }) {
         <span className="fr-year-caret" aria-hidden="true">▾</span>
       </button>
       {open && (
-        <div className="fr-year-grid" role="listbox" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        <div className="fr-year-grid" role="listbox" ref={gridRef} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {years.map(y => (
             <button
               key={y}
@@ -78,7 +119,7 @@ function YearPicker({ years, value, onChange }) {
               role="option"
               aria-selected={String(y) === String(value)}
               className={`fr-year-cell${String(y) === String(value) ? ' fr-year-cell--on' : ''}`}
-              onClick={() => { onChange(String(y)); setOpen(false) }}
+              onClick={() => { onChange(String(y)); setOpen(false); btnRef.current?.focus() }}
             >
               {y}
             </button>
@@ -103,10 +144,20 @@ function TeamPicker({ value, missed, onChange }) {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc) }
   }, [open])
 
+  const gridRef = useRef(null)
+  const btnRef = useRef(null)
+  const onKeyDown = e => {
+    if (!ARROWS.includes(e.key)) return
+    e.preventDefault()
+    if (!open) { setOpen(true); requestAnimationFrame(() => gridRef.current && moveInGrid(gridRef.current, e.key)); return }
+    if (gridRef.current) moveInGrid(gridRef.current, e.key)
+  }
+
   return (
-    <div className="fr-team" ref={ref}>
+    <div className="fr-team" ref={ref} onKeyDown={onKeyDown}>
       <button
         type="button"
+        ref={btnRef}
         className={`fr-year-btn${value ? ' fr-year-btn--set' : ''}`}
         onClick={() => setOpen(o => !o)}
         aria-haspopup="true"
@@ -120,7 +171,7 @@ function TeamPicker({ value, missed, onChange }) {
       </button>
       {/* always rendered, just hidden, so the logos load once with the board
           instead of every time the grid opens */}
-      <div className="fr-team-grid" hidden={!open}>
+      <div className="fr-team-grid" hidden={!open} ref={gridRef}>
         {['AFC', 'NFC'].map(conf => (
           <div key={conf} className="fr-conf">
             <span className="fr-conf-label">{conf}</span>
@@ -137,7 +188,7 @@ function TeamPicker({ value, missed, onChange }) {
                       disabled={out}
                       title={out ? `${franchiseName(key)} (already guessed)` : franchiseName(key)}
                       aria-label={franchiseName(key)}
-                      onClick={() => { onChange(key); setOpen(false) }}
+                      onClick={() => { onChange(key); setOpen(false); btnRef.current?.focus() }}
                     >
                       <img src={teamLogo(franchiseName(key))} alt="" width="28" height="28" />
                       <span className={`fr-team-cell-name${nickname(key).length >= 10 ? ' fr-team-cell-name--long' : ''}`}>{nickname(key)}</span>
@@ -176,7 +227,9 @@ function ClueRow({ clue }) {
 }
 
 // no date means today's puzzle, a date is a day from the archive
-export default function FilmRoomBoard({ date = null }) {
+// no date means today's puzzle, a date is a day from the archive. signedIn reloads
+// the board when you sign in, so a game you played signed out moves to your account
+export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const [meta, setMeta]         = useState(null)   // { date, number, firstYear, lastYear, signedIn }
   const [game, setGame]         = useState(null)
   const [error, setError]       = useState(null)
@@ -200,7 +253,7 @@ export default function FilmRoomBoard({ date = null }) {
   const [shareState, setShareState] = useState('idle')
   const [practice, setPractice] = useState(null)   // encrypted token for a generated puzzle
 
-  const load = () => {
+  const load = (claimed = false) => {
     setError(null)
     fetch(`${API}/filmroom/${date ? `date/${date}` : 'today'}`, { credentials: 'include' })
       .then(r => r.json().then(d => { if (!r.ok) throw new Error(d.error || r.status); return d }))
@@ -217,14 +270,29 @@ export default function FilmRoomBoard({ date = null }) {
             teamFound: d.progress.teamFound, teamDone: d.progress.teamPhaseComplete, answer: d.answer || null, result: null,
           })
         } else {
-          const saved = !d.signedIn && readStore(d.date)
-          setGame(saved || freshGame(d.clues))
+          const kept = readStore(d.date)
+          // played signed out, now signed in with nothing saved for the day: save it, then reload
+          if (d.signedIn && !claimed && kept && (kept.result || kept.attempts > 0 || kept.teamFound)) {
+            return post('/filmroom/claim', {
+              puzzleDate: d.date,
+              wrongTeams: kept.wrongTeams,
+              team: kept.teamFound ? kept.answer?.franchise : null,
+              finished: !!kept.result,
+              yearGuess: kept.result?.yearGuess ?? null,
+            }).catch(() => {}).then(() => load(true))
+          }
+          setGame(!d.signedIn && kept ? kept : freshGame(d.clues))
         }
       })
       .catch(err => setError(err.message))
   }
 
   useEffect(() => { setGame(null); setMeta(null); load() }, [date])
+  // the board loads before the site knows you're signed in, so only reload when that
+  // actually differs from what the server said (you just signed in or out)
+  useEffect(() => {
+    if (meta && meta.signedIn !== signedIn) { setGame(null); setMeta(null); load() }
+  }, [signedIn])
 
   useEffect(() => {
     if (meta && game && !meta.signedIn && !practice) writeStore(meta.date, game)

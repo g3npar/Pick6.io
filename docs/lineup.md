@@ -15,7 +15,7 @@ Every day has six logos:
 5. a college team (Power 4 conferences plus Notre Dame, 68 schools)
 6. an old logo from any of those, like the old Seahawks or the San Diego Chargers bolt
 
-The first five are always the team's current logo. You see each one zoomed in 5x, and you type the team into a search box that only has that league's teams. You get 3 attempts per logo. Each miss zooms out (5x, then 3x, then 1.6x), and after the third miss it shows the whole logo and the answer. Guessing a team you already missed on that logo doesn't use an attempt.
+The first five are always the team's current logo. You see each one zoomed in 5x, and you type the team into a search box that only has that league's teams. You get 3 attempts per logo. Each miss zooms out (5x, then 3x, then the whole logo on your last attempt), and after the third miss it shows the answer. Guessing a team you already missed on that logo doesn't use an attempt.
 
 You can play the logos in any order with the tabs at the top. Each one you get is 1 point, so the max is 6 like the other games, and 0 is a Pick 6. Give Up (next to the search box) only gives up on the logo you're looking at, it shows the answer and the other logos stay playable.
 
@@ -52,4 +52,6 @@ Neither list updates on its own, so a team's new logo (or one that just got reti
 - `lineup_crops` - every zoomed crop that's been cut, 18 a day (6 logos, 3 zoom levels), about 7 KB each
 - `lineup_games` - one row per player per day, with every logo's attempts and misses, the score, and whether it's finished. Unlike Film Room, progress and the result are the same row, and `completed` flips when all six logos are done.
 
-Signed out games are kept in the browser per day, and the browser sends that back when it loads so the server knows which zoom level to send.
+Signed out games are kept in the browser per day, and the browser sends that back when it loads so the server knows which zoom level to send. If you sign in after playing, the first time you load that day signed in the server saves the browser's game to your account, as long as the account has nothing for that day yet. A logo only counts as solved if the browser sends the team it got and it's the real answer, so you can't just send yourself a 6.
+
+Each saved crop remembers its zoom, so if `ZOOMS` ever changes, old crops get redrawn instead of reused.

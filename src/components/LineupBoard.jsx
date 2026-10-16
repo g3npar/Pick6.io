@@ -15,8 +15,9 @@ const writeStore = (date, slots) => {
     sessionStorage.setItem(STORE_KEY, JSON.stringify({ ...all, [date]: slots }))
   } catch {}
 }
-// only what the server needs back, not the images
-const slimSlots = slots => slots.map(({ attempts, wrong, solved }) => ({ attempts, wrong, solved }))
+// only what the server needs back, not the images. the team you got goes along so
+// the game can move to your account if you sign in later (the server checks it)
+const slimSlots = slots => slots.map(({ attempts, wrong, solved, answer }) => ({ attempts, wrong, solved, ...(solved ? { team: answer?.team } : {}) }))
 
 async function post(path, body) {
   const res = await fetch(`${API}${path}`, {
@@ -39,6 +40,7 @@ const searchHint = l => l.league === 'ncaa' ? 'Type a college team…' : `Type $
 function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(-1)   // highlighted match, moved with the arrow keys
   const ref = useRef(null)
   const term = q.trim().toLowerCase()
   const matches = term ? teams.filter(t => t.name.toLowerCase().includes(term)).slice(0, 6) : []
@@ -49,8 +51,25 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
-  const pick = t => { setQ(''); setOpen(false); onPick(t.id) }
+  const pick = t => { setQ(''); setOpen(false); setActive(-1); onPick(t.id) }
   const first = matches.find(t => !missed.includes(t.id))
+
+  // up and down skip teams you already missed on this logo
+  const move = step => {
+    const ok = matches.map((t, i) => (missed.includes(t.id) ? -1 : i)).filter(i => i >= 0)
+    if (!ok.length) return
+    const at = ok.indexOf(active)
+    setActive(at < 0 ? (step > 0 ? ok[0] : ok[ok.length - 1]) : ok[(at + step + ok.length) % ok.length])
+    setOpen(true)
+  }
+  const onKeyDown = e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); move(e.key === 'ArrowDown' ? 1 : -1) }
+    else if (e.key === 'Escape') { setOpen(false); setActive(-1) }
+    else if (e.key === 'Enter') {
+      const t = matches[active] && !missed.includes(matches[active].id) ? matches[active] : first
+      if (t) pick(t)
+    }
+  }
 
   return (
     <div className="ll-search" ref={ref}>
@@ -59,18 +78,23 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
         value={q}
         placeholder={hint}
         disabled={disabled}
-        onChange={e => { setQ(e.target.value); setOpen(true) }}
+        onChange={e => { setQ(e.target.value); setOpen(true); setActive(-1) }}
         onFocus={() => setOpen(true)}
-        onKeyDown={e => { if (e.key === 'Enter' && first) pick(first) }}
+        onKeyDown={onKeyDown}
         aria-label="Search teams"
       />
       {open && matches.length > 0 && (
         <ul className="ll-search-list" role="listbox">
-          {matches.map(t => {
+          {matches.map((t, i) => {
             const out = missed.includes(t.id)
             return (
               <li key={t.id}>
-                <button className={`ll-search-item${out ? ' ll-search-item--out' : ''}`} disabled={out} onClick={() => pick(t)}>
+                <button
+                  className={`ll-search-item${out ? ' ll-search-item--out' : ''}${i === active ? ' ll-search-item--active' : ''}`}
+                  disabled={out}
+                  onMouseEnter={() => !out && setActive(i)}
+                  onClick={() => pick(t)}
+                >
                   {t.name}{out && <span className="ll-search-miss">✗</span>}
                 </button>
               </li>
@@ -83,7 +107,9 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
 }
 
 // no date means today's puzzle, a date is a day from the archive
-export default function LineupBoard({ date = null }) {
+// no date means today's puzzle, a date is a day from the archive. signedIn reloads
+// the board when you sign in, so a game you played signed out moves to your account
+export default function LineupBoard({ date = null, signedIn = false }) {
   const [data, setData]     = useState(null)   // the /lineup/day response
   const [error, setError]   = useState(null)
   const [current, setCurrent] = useState(0)
@@ -101,7 +127,9 @@ export default function LineupBoard({ date = null }) {
     // for today the date isn't known until the first answer, so that can take a second trip
     post('/lineup/day', { date, local: date ? readStore(date) : null })
       .then(d => {
-        const kept = !date && !d.signedIn && readStore(d.date)
+        // signed in with nothing saved yet, the server takes the browser's game (after checking it)
+        const nothingSaved = d.slots.every(st => !st.attempts && !st.solved)
+        const kept = !date && (!d.signedIn || nothingSaved) && readStore(d.date)
         return kept ? post('/lineup/day', { date: d.date, local: kept }) : d
       })
       .then(d => { setData(d); setCurrent(firstOpen(d.slots)) })
@@ -109,6 +137,11 @@ export default function LineupBoard({ date = null }) {
   }
 
   useEffect(() => { setData(null); load() }, [date])
+  // the board loads before the site knows you're signed in, so only reload when that
+  // actually differs from what the server said (you just signed in or out)
+  useEffect(() => {
+    if (data && data.signedIn !== signedIn) { setData(null); load() }
+  }, [signedIn])
 
   useEffect(() => {
     if (data && !data.signedIn) writeStore(data.date, slimSlots(data.slots))

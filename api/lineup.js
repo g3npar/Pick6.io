@@ -21,7 +21,7 @@ const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'NC
 const SLOTS = [...LEAGUES, 'old']
 const MAX_ATTEMPTS = 3
 // how far in each attempt starts. modern logos are svgs, so these can go as tight as we want
-const ZOOMS = [5, 3, 1.6]
+const ZOOMS = [5, 3, 1]   // the last attempt shows the whole logo
 // smallest window an old (picture) logo gets cropped to, see cropImage
 const MIN_RASTER_WINDOW = 240
 const CROP_PX = 320
@@ -230,13 +230,15 @@ async function cropImage(puzzle, dateStr, slot, level) {
   if (_cutting.has(key)) return _cutting.get(key)
   const job = (async () => {
     const saved = await pool.query(
-      'SELECT image FROM lineup_crops WHERE puzzle_date = $1 AND slot = $2 AND level = $3', [dateStr, slot, level])
-    let buf = saved.rows[0]?.image
+      'SELECT image, zoom FROM lineup_crops WHERE puzzle_date = $1 AND slot = $2 AND level = $3', [dateStr, slot, level])
+    // a crop saved before the zoom levels changed gets redrawn
+    let buf = saved.rows[0]?.zoom === ZOOMS[level] ? saved.rows[0].image : null
     if (!buf) {
       buf = await cutCrop(logo, dateStr, slot, level)
-      await pool.query(
-        'INSERT INTO lineup_crops (puzzle_date, slot, level, image) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-        [dateStr, slot, level, buf])
+      await pool.query(`
+        INSERT INTO lineup_crops (puzzle_date, slot, level, image, zoom) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (puzzle_date, slot, level) DO UPDATE SET image = EXCLUDED.image, zoom = EXCLUDED.zoom
+      `, [dateStr, slot, level, buf, ZOOMS[level]])
     }
     const url = `data:image/webp;base64,${buf.toString('base64')}`
     if (_crops.size >= 300) _crops.delete(_crops.keys().next().value)
@@ -277,7 +279,9 @@ async function warmLineup() {
     const dates = [today, shift(1)]
     for (let n = -1; shift(n) >= LINEUP_EPOCH; n--) dates.push(shift(n))
     for (const date of dates) {
-      const have = await pool.query('SELECT count(*)::int AS n FROM lineup_crops WHERE puzzle_date = $1', [date])
+      // only crops cut at today's zoom levels count
+      const have = await pool.query(
+        'SELECT count(*)::int AS n FROM lineup_crops WHERE puzzle_date = $1 AND zoom = ($2::real[])[level + 1]', [date, ZOOMS])
       if (have.rows[0].n >= CROPS_PER_DAY) continue
       // without old logos the puzzle is a stand-in that isn't saved, don't save its crops either
       if (!OLD.length) continue
@@ -356,6 +360,8 @@ async function ensureLineupSchema(dbPool) {
       PRIMARY KEY (puzzle_date, slot, level)
     )
   `)
+  // the zoom a crop was cut at, so changing ZOOMS redraws old ones instead of reusing them
+  await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS zoom REAL')
   // progress and the finished result live in one row, completed flips at the end
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS lineup_games (
@@ -380,10 +386,40 @@ const isPlayableDate = date =>
 // every team's name per league, for the search box. it's all of them, so no hints
 const SEARCH = Object.fromEntries(LEAGUES.map(lg => [lg, byLeague[lg].map(t => ({ id: t.id, name: t.name }))]))
 
+// a game played signed out, checked before it's saved to an account. a logo only
+// counts as solved if the browser sends the team it got and that's the real answer,
+// and misses have to be real wrong teams from that league. null if anything's off
+function verifiedLocal(puzzle, local) {
+  if (!Array.isArray(local) || local.length !== SLOTS.length) return null
+  const out = []
+  for (let i = 0; i < SLOTS.length; i++) {
+    const s = local[i] || {}, { league, team } = puzzle.slots[i]
+    const wrong = Array.isArray(s.wrong) ? [...new Set(s.wrong)] : []
+    if (wrong.length > MAX_ATTEMPTS || wrong.some(t => !teamOf(league, t) || t === team)) return null
+    if (s.solved) {
+      if (s.team !== team || wrong.length >= MAX_ATTEMPTS) return null
+      out.push({ attempts: wrong.length, wrong, solved: true })
+    } else {
+      // giving up counts as all three attempts without three wrong teams
+      const attempts = Number.isInteger(s.attempts) ? Math.min(Math.max(s.attempts, wrong.length), MAX_ATTEMPTS) : wrong.length
+      out.push({ attempts, wrong, solved: false })
+    }
+  }
+  return out
+}
+
 async function dayResponse(req, date, local) {
   const puzzle = await getPuzzleForDate(date)
   const saved = await fetchGame(req.userId, date)
-  const slots = req.userId ? (saved?.slots || freshSlots()) : cleanLocal(local)
+  let slots = req.userId ? (saved?.slots || freshSlots()) : cleanLocal(local)
+  // played signed out, now signed in with nothing saved for the day: move that game over
+  if (req.userId && !saved && local) {
+    const claimed = verifiedLocal(puzzle, local)
+    if (claimed && claimed.some(st => st.attempts > 0 || st.solved)) {
+      await saveGame(req.userId, date, claimed)
+      slots = claimed
+    }
+  }
   return {
     date, number: daysSinceEpoch(date) + 1, signedIn: !!req.userId,
     leagues: puzzle.slots.map(s => ({ league: s.league, label: LEAGUE_NAMES[s.league], old: s.old })),

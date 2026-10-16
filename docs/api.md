@@ -24,13 +24,14 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `GET /filmroom/archive` | Every past Film Room day, with your score if you played it |
 | `POST /filmroom/guess-team` | Checks your team guess and flips the next clue if you miss |
 | `POST /filmroom/result` | Submits your year guess and gets your score |
+| `POST /filmroom/claim` | Saves a game you played signed out to your account after you sign in (only if you have nothing for that day) |
 | `GET /filmroom/leaderboard` | Top 50 Film Room players by total score |
 
 ## Logo Lineup stuff
 
 | Route | What it does |
 |---|---|
-| `POST /lineup/day` | Today's logos, or an archive day if you send a date. Signed out players send the progress their browser kept. |
+| `POST /lineup/day` | Today's logos, or an archive day if you send a date. Signed out players send the progress their browser kept, and if you just signed in with nothing saved for the day, that game gets saved to your account. |
 | `POST /lineup/guess` | Checks a guess on one logo and zooms out if you miss, or gives up on just that logo |
 | `GET /lineup/archive` | Every past Logo Lineup day, with your score if you finished it |
 | `GET /lineup/leaderboard` | Top 50 Logo Lineup players by total score |

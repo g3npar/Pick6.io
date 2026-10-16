@@ -304,8 +304,8 @@ function App() {
             </div>
           )}
           {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
-          {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} />}
-          {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} />}
+          {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} signedIn={!!user} />}
+          {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} signedIn={!!user} />}
           {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
@@ -398,14 +398,14 @@ function App() {
       <Header screen={screen} onNav={handleNav} user={user} onSignedIn={handleSignedIn} onSignOut={handleSignOut} />
       <main className="main-content">
         {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
-        {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} />}
-        {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} />}
+        {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} signedIn={!!user} />}
+        {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} signedIn={!!user} />}
         {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'admin'       && <Admin />}
-        {screen === 'filmroom'    && <FilmRoomBoard />}
-        {screen === 'lineup'      && <LineupBoard />}
+        {screen === 'filmroom'    && <FilmRoomBoard signedIn={!!user} />}
+        {screen === 'lineup'      && <LineupBoard signedIn={!!user} />}
         {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         {showBoard && puzzle && (
         <GameBoard

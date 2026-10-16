@@ -70,7 +70,7 @@ For testing there's a "Generate puzzle" button that loads a random practice puzz
 
 Pick 6 and Film Room are both tabs in the nav. Archive and Leaderboard are one tab each with a Pick 6 / Film Room switch at the top, and they open on whichever game you were last on. There's no How to Play page anymore, each game has an "i" button next to its puzzle number that pops up its rules (both games' rules are in `src/components/HowToPlay.jsx`). The Film Room board is `GET /filmroom/leaderboard`, same top 50 by total score as Pick 6, just reading `filmroom_results`.
 
-The Film Room archive lists every day from #1 up to yesterday. Since the answer for any day comes from the shuffle, old days don't need to have been saved ahead of time, the puzzle gets saved the first time someone opens it. You can play any past day as long as it's not before #1 or in the future, and signed in results save under that day. Signed out games are kept in the browser per day, so playing an old one doesn't wipe today's.
+The Film Room archive lists every day from #1 up to yesterday. Since the answer for any day comes from the shuffle, old days don't need to have been saved ahead of time, the puzzle gets saved the first time someone opens it. You can play any past day as long as it's not before #1 or in the future, and signed in results save under that day. Signed out games are kept in the browser per day, so playing an old one doesn't wipe today's. If you play signed out and then sign in, the board sends that game to `/filmroom/claim`, which saves it to your account if the account has nothing for that day yet. The team you got has to be the real answer and the server scores the year itself, same idea as Pick 6 checking your lie and player after you sign in.
 
 ## Tables
 

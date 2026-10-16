@@ -2210,7 +2210,8 @@ kbd {
   border-top: 1px solid var(--border);
 }
 .ll-search-list li:first-child .ll-search-item { border-top: none; }
-.ll-search-item:hover:not(:disabled) { background: #1a2035; color: var(--text); }
+.ll-search-item:hover:not(:disabled),
+.ll-search-item--active { background: #1a2035; color: var(--text); }
 .ll-search-item--out { opacity: 0.4; cursor: not-allowed; }
 .ll-search-miss { color: var(--red); font-weight: 900; }
 
@@ -2232,3 +2233,7 @@ kbd {
   .ll-tab-label { font-size: 11px; }
   .ll-stage { padding: 12px; }
 }
+
+/* keyboard focus in the Film Room pickers, arrows move it around */
+.fr-team-cell:focus-visible,
+.fr-year-cell:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
