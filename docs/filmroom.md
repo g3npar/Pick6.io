@@ -22,7 +22,7 @@ Rows 1-3 sit above the middle row and 4-6 below it. Only the record and playoffs
 
 Max is 6, same as Pick 6. Score 0 and it's a Pick 6, the result box says so like it does in Pick 6.
 
-You pick the team from a grid of all 32 teams laid out by division, and the year from a grid of every season, so there's no scrolling. Teams are franchises, so "Rams" counts for a St. Louis Rams season. During the year round the team shows up under its current name, because the old name would give away the year ("St. Louis Rams" means 2015 or earlier). The real name for that season only shows at the end.
+You pick the team from a grid of all 32 teams laid out by division, and the year from a grid of every season, so there's no scrolling. The arrow keys move around both grids. Enter picks, and pressing Enter again guesses it (same as Pick 6 and Logo Lineup), while Space or the arrows reopen the grid if you want to change your pick. Teams are franchises, so "Rams" counts for a St. Louis Rams season. During the year round the team shows up under its current name, because the old name would give away the year ("St. Louis Rams" means 2015 or earlier). The real name for that season only shows at the end.
 
 ## The final screen
 

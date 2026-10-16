@@ -850,6 +850,7 @@ body {
   line-height: 1;
 }
 .clear-search-btn:hover { color: var(--text); }
+.clear-search-btn--hidden { visibility: hidden; }
 
 /* dropdown */
 .player-dropdown {

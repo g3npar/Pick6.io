@@ -207,7 +207,9 @@ function GameBoard({
       const target = tabIdx >= 0 && results[tabIdx]
         ? results[tabIdx]
         : dropdownOpen && results.length > 0 ? results[0] : null
+      // first Enter picks the player, the next one locks it in (same as Logo Lineup)
       if (target) handleSelect(target)
+      else if (canSubmitPlayer) onSubmit()
     }
   }
 
@@ -398,9 +400,15 @@ function GameBoard({
                     autoComplete="off"
                     spellCheck="false"
                   />
-                  {query && (
-                    <button className="clear-search-btn" onClick={handleClear} aria-label="Clear">✕</button>
-                  )}
+                  {/* always there and just invisible while empty, the box is as wide as what's in
+                      it, so popping the ✕ in when you type made the whole box grow */}
+                  <button
+                    className={`clear-search-btn${query ? '' : ' clear-search-btn--hidden'}`}
+                    onClick={handleClear}
+                    aria-label="Clear"
+                    tabIndex={query ? 0 : -1}
+                    aria-hidden={!query}
+                  >✕</button>
                 </div>
                 {dropdownOpen && (
                   <ul className="player-dropdown">

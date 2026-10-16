@@ -71,7 +71,7 @@ function moveInGrid(grid, key) {
 const ARROWS = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp']
 
 // every year in one small grid, a native select made you scroll through 25
-function YearPicker({ years, value, onChange }) {
+function YearPicker({ years, value, onChange, onSubmit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -88,6 +88,13 @@ function YearPicker({ years, value, onChange }) {
   const btnRef = useRef(null)
   // arrows open the grid and move around it, Enter or Space picks
   const onKeyDown = e => {
+    // picked something and back on the button: Enter guesses it, like Logo Lineup.
+    // arrows or Space still open the grid to change the pick
+    if (e.key === 'Enter' && !open && value && e.target === btnRef.current) {
+      e.preventDefault()
+      onSubmit?.()
+      return
+    }
     if (!ARROWS.includes(e.key)) return
     e.preventDefault()
     if (!open) { setOpen(true); requestAnimationFrame(() => gridRef.current && moveInGrid(gridRef.current, e.key)); return }
@@ -131,7 +138,7 @@ function YearPicker({ years, value, onChange }) {
 }
 
 // all 32 teams by division, no scrolling through a list
-function TeamPicker({ value, missed, onChange }) {
+function TeamPicker({ value, missed, onChange, onSubmit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -147,6 +154,13 @@ function TeamPicker({ value, missed, onChange }) {
   const gridRef = useRef(null)
   const btnRef = useRef(null)
   const onKeyDown = e => {
+    // picked something and back on the button: Enter guesses it, like Logo Lineup.
+    // arrows or Space still open the grid to change the pick
+    if (e.key === 'Enter' && !open && value && e.target === btnRef.current) {
+      e.preventDefault()
+      onSubmit?.()
+      return
+    }
     if (!ARROWS.includes(e.key)) return
     e.preventDefault()
     if (!open) { setOpen(true); requestAnimationFrame(() => gridRef.current && moveInGrid(gridRef.current, e.key)); return }
@@ -482,7 +496,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                     </div>
                   </div>
                   <div className="fr-call-inputs">
-                    <TeamPicker value={team} missed={game.wrongTeams} onChange={setTeam} />
+                    <TeamPicker value={team} missed={game.wrongTeams} onChange={setTeam} onSubmit={guessTeam} />
                     <button className={`circle-guess-btn fr-btn${submitting ? ' fr-btn--busy' : ''}`} onClick={guessTeam} disabled={!team || busy} aria-busy={submitting}>
                       {slow ? <><span className="fr-spinner" aria-hidden="true" />Checking…</> : team ? 'GUESS TEAM →' : 'Pick a team'}
                     </button>
@@ -499,7 +513,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                     </span>
                   </div>
                   <div className="fr-call-inputs">
-                    <YearPicker years={years} value={year} onChange={setYear} />
+                    <YearPicker years={years} value={year} onChange={setYear} onSubmit={() => finish(false)} />
                     <button className={`circle-guess-btn fr-btn${submitting ? ' fr-btn--busy' : ''}`} onClick={() => finish(false)} disabled={!year || busy} aria-busy={submitting}>
                       {slow ? <><span className="fr-spinner" aria-hidden="true" />Checking…</> : year ? 'LOCK IN →' : 'Pick a year'}
                     </button>
