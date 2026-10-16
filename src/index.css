@@ -2131,8 +2131,10 @@ kbd {
   color: rgba(255, 255, 255, 0.75);
   transition: background 0.15s, color 0.15s;
 }
-.ll-tab:hover { background: rgba(0, 0, 0, 0.15); color: #fff; }
+/* hover is as dark as the picked tab (lighter read like it was getting brighter) */
+.ll-tab:hover { background: rgba(0, 0, 0, 0.3); color: #fff; }
 .ll-tab--on { background: rgba(0, 0, 0, 0.3); color: #fff; }
+.ll-tab--on:hover { background: rgba(0, 0, 0, 0.4); }
 .ll-tab-label { font-family: 'Anton', sans-serif; font-size: 13px; letter-spacing: 0.06em; }
 .ll-tab-mark {
   width: 18px;
@@ -2181,6 +2183,7 @@ kbd {
 .ll-guess-row .ll-search { flex: 1; min-width: 0; }
 /* same height as the search box, and narrow enough to fit beside it on a phone */
 .ll-give-up { flex-shrink: 0; padding: 0 14px; font-size: 12px; white-space: nowrap; }
+.ll-enter { flex-shrink: 0; padding: 0 14px; white-space: nowrap; }
 .ll-checking { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
 .ll-search { position: relative; }
 .ll-search-input {

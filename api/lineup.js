@@ -223,22 +223,43 @@ const _crops = new Map()
 // drawing a crop takes ~1s per logo on Render, so every crop is cut once, saved in
 // lineup_crops, and kept in memory. warmLineup() cuts each day's ahead of time
 const _cutting = new Map()   // crops being cut right now, so two requests share the work
+// each logo gets its own look for the day, the same at every zoom: sometimes turned to
+// any angle, sometimes black and white. the answer (REVEAL_LEVEL) is always the real logo
+const ROTATE_CHANCE = 0.5
+const GRAY_CHANCE = 0.35
+const REVEAL_LEVEL = ZOOMS.length   // levels 0-2 are the attempts, 3 is the answer
+function styleFor(dateStr, slot) {
+  const rng = mulberry32(seedFor(`style:${dateStr}:${slot}`))
+  // never almost upright, that just looks like a mistake
+  const angle = rng() < ROTATE_CHANCE ? 15 + Math.floor(rng() * 331) : 0
+  const gray = rng() < GRAY_CHANCE
+  return { angle, gray }
+}
+
+// how a crop was made. saved crops with a different recipe (old zoom levels, older
+// version of the styles) get redrawn instead of reused
+function recipeFor(dateStr, slot, level) {
+  if (level === REVEAL_LEVEL) return 'reveal'
+  const { angle, gray } = styleFor(dateStr, slot)
+  return `z${ZOOMS[level]} r${angle} g${gray ? 1 : 0}`
+}
+
 async function cropImage(puzzle, dateStr, slot, level) {
   const { logo } = puzzle.slots[slot]
   const key = `${dateStr}:${slot}:${level}:${logo}`
   if (_crops.has(key)) return _crops.get(key)
   if (_cutting.has(key)) return _cutting.get(key)
+  const recipe = recipeFor(dateStr, slot, level)
   const job = (async () => {
     const saved = await pool.query(
-      'SELECT image, zoom FROM lineup_crops WHERE puzzle_date = $1 AND slot = $2 AND level = $3', [dateStr, slot, level])
-    // a crop saved before the zoom levels changed gets redrawn
-    let buf = saved.rows[0]?.zoom === ZOOMS[level] ? saved.rows[0].image : null
+      'SELECT image, recipe FROM lineup_crops WHERE puzzle_date = $1 AND slot = $2 AND level = $3', [dateStr, slot, level])
+    let buf = saved.rows[0]?.recipe === recipe ? saved.rows[0].image : null
     if (!buf) {
       buf = await cutCrop(logo, dateStr, slot, level)
       await pool.query(`
-        INSERT INTO lineup_crops (puzzle_date, slot, level, image, zoom) VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (puzzle_date, slot, level) DO UPDATE SET image = EXCLUDED.image, zoom = EXCLUDED.zoom
-      `, [dateStr, slot, level, buf, ZOOMS[level]])
+        INSERT INTO lineup_crops (puzzle_date, slot, level, image, recipe) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (puzzle_date, slot, level) DO UPDATE SET image = EXCLUDED.image, recipe = EXCLUDED.recipe
+      `, [dateStr, slot, level, buf, recipe])
     }
     const url = `data:image/webp;base64,${buf.toString('base64')}`
     if (_crops.size >= 300) _crops.delete(_crops.keys().next().value)
@@ -249,26 +270,41 @@ async function cropImage(puzzle, dateStr, slot, level) {
   try { return await job } finally { _cutting.delete(key) }
 }
 
+// turns the logo, then trims and squares it again so the zoom levels mean the same thing
+async function rotatedSquare(square, angle) {
+  const turned = await sharp(square.data)
+    .rotate(angle, { background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .trim({ threshold: 1 }).png().toBuffer({ resolveWithObject: true })
+  const side = Math.max(turned.info.width, turned.info.height)
+  const data = await sharp(turned.data)
+    .resize(side, side, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png().toBuffer()
+  return { ...square, data, side }
+}
+
 async function cutCrop(logo, dateStr, slot, level) {
-  const square = await logoSquare(logo)
+  const plain = await logoSquare(logo)
+  const reveal = level === REVEAL_LEVEL
+  const { angle, gray } = reveal ? { angle: 0, gray: false } : styleFor(dateStr, slot)
+  const square = angle ? await rotatedSquare(plain, angle) : plain
   const { side } = square
-  const [cx, cy] = await cropCenter(square, dateStr, slot)
+  const [cx, cy] = reveal ? [0.5, 0.5] : await cropCenter(square, dateStr, slot)
   // old logos only come as pictures, so they don't zoom past the point where
   // the crop would be stretched bigger than the real pixels
-  const zoom = square.vector ? ZOOMS[level] : Math.min(ZOOMS[level], Math.max(side / MIN_RASTER_WINDOW, ZOOMS[ZOOMS.length - 1]))
+  const want = reveal ? 1 : ZOOMS[level]
+  const zoom = square.vector ? want : Math.min(want, Math.max(side / MIN_RASTER_WINDOW, 1))
   const win = Math.round(side / zoom)
   const left = Math.min(Math.max(0, Math.round(cx * side - win / 2)), side - win)
   const top  = Math.min(Math.max(0, Math.round(cy * side - win / 2)), side - win)
-  return sharp(square.data)
-    .extract({ left, top, width: win, height: win })
-    .resize(CROP_PX, CROP_PX)
-    .webp({ quality: 88 }).toBuffer()
+  let img = sharp(square.data).extract({ left, top, width: win, height: win }).resize(CROP_PX, CROP_PX)
+  if (gray) img = img.grayscale()
+  return img.webp({ quality: 88 }).toBuffer()
 }
 
 // cuts and saves every crop for today and tomorrow, then any past day that's missing
 // some, one at a time so it doesn't hog the server. runs at startup and every 30 minutes,
 // so nobody opening a puzzle has to wait for the drawing
-const CROPS_PER_DAY = SLOTS.length * ZOOMS.length
+const LEVELS = [...ZOOMS.keys(), REVEAL_LEVEL]   // every attempt, plus the answer
 let _warming = false
 async function warmLineup() {
   if (_warming) return
@@ -279,15 +315,15 @@ async function warmLineup() {
     const dates = [today, shift(1)]
     for (let n = -1; shift(n) >= LINEUP_EPOCH; n--) dates.push(shift(n))
     for (const date of dates) {
-      // only crops cut at today's zoom levels count
-      const have = await pool.query(
-        'SELECT count(*)::int AS n FROM lineup_crops WHERE puzzle_date = $1 AND zoom = ($2::real[])[level + 1]', [date, ZOOMS])
-      if (have.rows[0].n >= CROPS_PER_DAY) continue
+      // only crops made the way they're made now count
+      const have = await pool.query('SELECT slot, level, recipe FROM lineup_crops WHERE puzzle_date = $1', [date])
+      const current = have.rows.filter(r => r.recipe === recipeFor(date, r.slot, r.level)).length
+      if (current >= SLOTS.length * LEVELS.length) continue
       // without old logos the puzzle is a stand-in that isn't saved, don't save its crops either
       if (!OLD.length) continue
       const puzzle = await getPuzzleForDate(date)
       for (let slot = 0; slot < SLOTS.length; slot++) {
-        for (let level = 0; level < ZOOMS.length; level++) await cropImage(puzzle, date, slot, level)
+        for (const level of LEVELS) await cropImage(puzzle, date, slot, level)
       }
     }
   } catch (err) {
@@ -324,10 +360,10 @@ function answerFor(puzzle, i) {
 
 // what the board needs for one slot: the crop for where you are, or the answer once it's done
 async function slotView(puzzle, dateStr, i, state) {
-  // the answer shows the whole-logo crop, which is already cut and saved, so it shows
+  // the answer is the real logo, upright and in color, already cut and saved so it shows
   // instantly instead of waiting on the full logo file to download
   if (slotDone(state)) {
-    return { ...state, done: true, answer: answerFor(puzzle, i), image: await cropImage(puzzle, dateStr, i, ZOOMS.length - 1) }
+    return { ...state, done: true, answer: answerFor(puzzle, i), image: await cropImage(puzzle, dateStr, i, REVEAL_LEVEL) }
   }
   return { ...state, done: false, image: await cropImage(puzzle, dateStr, i, state.attempts) }
 }
@@ -381,8 +417,10 @@ async function ensureLineupSchema(dbPool) {
     ) s
     WHERE g.user_id = s.user_id AND g.puzzle_date = s.puzzle_date AND g.score <> s.points
   `)
-  // the zoom a crop was cut at, so changing ZOOMS redraws old ones instead of reusing them
-  await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS zoom REAL')
+  // how a crop was made (zoom, turn, black and white), so changing any of that redraws
+  // old crops instead of reusing them. replaced the zoom column
+  await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS recipe TEXT')
+  await dbPool.query('ALTER TABLE lineup_crops DROP COLUMN IF EXISTS zoom')
   // progress and the finished result live in one row, completed flips at the end
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS lineup_games (

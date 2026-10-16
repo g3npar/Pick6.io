@@ -150,7 +150,7 @@ function LineupRules() {
             <div className="htp-step-num">2</div>
             <div className="htp-step-body">
               <h3>Name the team</h3>
-              <p>Start typing and pick the team from the list. You get 3 attempts per logo, and every miss zooms out so you can see more.</p>
+              <p>Start typing, pick the team from the list, and hit <strong>ENTER →</strong>. You get 3 attempts per logo, and every miss zooms out so you can see more. Your last attempt shows the whole logo.</p>
             </div>
           </div>
 
@@ -169,6 +169,7 @@ function LineupRules() {
           <ul className="htp-tip-list">
             <li>The old logo's answer is the team today, so an old Oakland Raiders logo is just the Raiders.</li>
             <li>College is the Power 4 conferences plus Notre Dame.</li>
+            <li>Some logos are turned sideways or upside down, and some are black and white.</li>
             <li>Miss all six and it's a Pick 6.</li>
           </ul>
         </div>

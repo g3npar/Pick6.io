@@ -37,7 +37,7 @@ const fullLogo = logo => `/logos/leagues/${logo}`
 const pointsFor = s => (s.solved ? 1 - 0.25 * s.attempts : 0)
 const pts = n => String(Number(n.toFixed(2)))
 // the tabs only say "OLD", so the search box says which league to type
-const searchHint = l => l.league === 'ncaa' ? 'Type a college team…' : `Type ${l.old ? 'an old' : 'an'} ${l.label} team…`
+const searchHint = l => `${l.old ? 'Old ' : ''}${l.league === 'ncaa' ? (l.old ? 'college' : 'College') : l.label} team…`
 
 // type a few letters, pick from that league's teams
 function TeamSearch({ teams, missed, onPick, disabled, hint }) {
@@ -47,6 +47,8 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
   const ref = useRef(null)
   const term = q.trim().toLowerCase()
   const matches = term ? teams.filter(t => t.name.toLowerCase().includes(term)).slice(0, 6) : []
+  // the team that ENTER sends: one picked from the list, or a full name typed out
+  const chosen = teams.find(t => t.name.toLowerCase() === term && !missed.includes(t.id)) || null
 
   useEffect(() => {
     const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -54,7 +56,9 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
-  const pick = t => { setQ(''); setOpen(false); setActive(-1); onPick(t.id) }
+  // picking a team from the list fills it in, ENTER (or the Enter key) guesses it
+  const choose = t => { setQ(t.name); setOpen(false); setActive(-1) }
+  const submit = () => { if (!chosen || disabled) return; onPick(chosen.id); setQ(''); setActive(-1) }
   const first = matches.find(t => !missed.includes(t.id))
 
   // up and down skip teams you already missed on this logo
@@ -65,47 +69,55 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
     setActive(at < 0 ? (step > 0 ? ok[0] : ok[ok.length - 1]) : ok[(at + step + ok.length) % ok.length])
     setOpen(true)
   }
+  const listShowing = open && matches.length > 0
   const onKeyDown = e => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); move(e.key === 'ArrowDown' ? 1 : -1) }
     else if (e.key === 'Escape') { setOpen(false); setActive(-1) }
     else if (e.key === 'Enter') {
-      const t = matches[active] && !missed.includes(matches[active].id) ? matches[active] : first
-      if (t) pick(t)
+      const hi = listShowing && matches[active] && !missed.includes(matches[active].id) ? matches[active] : null
+      if (hi) choose(hi)                      // highlighted in the list: fill it in
+      else if (chosen) submit()               // already picked (or typed out): guess it
+      else if (listShowing && first) choose(first)
     }
   }
 
   return (
-    <div className="ll-search" ref={ref}>
-      <input
-        className="ll-search-input"
-        value={q}
-        placeholder={hint}
-        disabled={disabled}
-        onChange={e => { setQ(e.target.value); setOpen(true); setActive(-1) }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-        aria-label="Search teams"
-      />
-      {open && matches.length > 0 && (
-        <ul className="ll-search-list" role="listbox">
-          {matches.map((t, i) => {
-            const out = missed.includes(t.id)
-            return (
-              <li key={t.id}>
-                <button
-                  className={`ll-search-item${out ? ' ll-search-item--out' : ''}${i === active ? ' ll-search-item--active' : ''}`}
-                  disabled={out}
-                  onMouseEnter={() => !out && setActive(i)}
-                  onClick={() => pick(t)}
-                >
-                  {t.name}{out && <span className="ll-search-miss">✗</span>}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
+    <>
+      <div className="ll-search" ref={ref}>
+        <input
+          className="ll-search-input"
+          value={q}
+          placeholder={hint}
+          disabled={disabled}
+          onChange={e => { setQ(e.target.value); setOpen(true); setActive(-1) }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          aria-label="Search teams"
+        />
+        {listShowing && !chosen && (
+          <ul className="ll-search-list" role="listbox">
+            {matches.map((t, i) => {
+              const out = missed.includes(t.id)
+              return (
+                <li key={t.id}>
+                  <button
+                    className={`ll-search-item${out ? ' ll-search-item--out' : ''}${i === active ? ' ll-search-item--active' : ''}`}
+                    disabled={out}
+                    onMouseEnter={() => !out && setActive(i)}
+                    onClick={() => choose(t)}
+                  >
+                    {t.name}{out && <span className="ll-search-miss">✗</span>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+      <button className="circle-guess-btn fr-btn ll-enter" onClick={submit} disabled={!chosen || disabled}>
+        ENTER →
+      </button>
+    </>
   )
 }
 

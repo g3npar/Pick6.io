@@ -23,6 +23,10 @@ All six logo images sit in the card at once and switching tabs just shows a diff
 
 For the old logo, the answer is the team today, so an old Oakland Raiders logo is just the Raiders. The reveal shows the old name and years too.
 
+To make it harder, each logo gets its own look for the day: about half are turned to a random angle (15° to 345°, never almost upright) and about a third are black and white. It's the same at every zoom level, and the answer always shows the real logo upright and in color. The odds are `ROTATE_CHANCE` and `GRAY_CHANCE` in `api/lineup.js`.
+
+Picking a team from the search list (click, or arrow keys and Enter) fills it in, and the ENTER button (or pressing Enter again) guesses it. Typing a team's full name and pressing Enter guesses it right away.
+
 ## Keeping the answer hidden
 
 The browser never gets a full logo until that logo is done. The server cuts the zoomed crop itself (with `sharp`) and sends it as an image inside the response, and it only sends the zoom level you've earned. The full logo files are public, but the browser only learns which file it is once you're done with that logo.
@@ -51,9 +55,9 @@ Neither list updates on its own, so a team's new logo (or one that just got reti
 ## Tables
 
 - `lineup_puzzles` - the saved puzzle for each day
-- `lineup_crops` - every zoomed crop that's been cut, 18 a day (6 logos, 3 zoom levels), about 7 KB each
+- `lineup_crops` - every crop that's been cut, 24 a day (6 logos, 3 attempts plus the answer), about 7 KB each. `recipe` says how each one was made
 - `lineup_games` - one row per player per day, with every logo's attempts and misses, the score, and whether it's finished. Unlike Film Room, progress and the result are the same row, and `completed` flips when all six logos are done.
 
 Signed out games are kept in the browser per day, and the browser sends that back when it loads so the server knows which zoom level to send. If you sign in after playing, the first time you load that day signed in the server saves the browser's game to your account, as long as the account has nothing for that day yet. A logo only counts as solved if the browser sends the team it got and it's the real answer, so you can't just send yourself a 6.
 
-Each saved crop remembers its zoom, so if `ZOOMS` ever changes, old crops get redrawn instead of reused.
+Each saved crop remembers its recipe (zoom, turn, black and white), so if any of that ever changes, old crops get redrawn instead of reused.
