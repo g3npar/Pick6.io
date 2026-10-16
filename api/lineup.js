@@ -301,7 +301,10 @@ async function warmLineup() {
 
 const freshSlots = () => SLOTS.map(() => ({ attempts: 0, wrong: [], solved: false }))
 const slotDone = s => s.solved || s.attempts >= MAX_ATTEMPTS
-const scoreOf = slots => slots.filter(s => s.solved).length
+// 1 point per logo, minus 0.25 for each miss before you got it (1, 0.75, 0.5), 0 if missed
+const MISS_COST = 0.25
+const pointsFor = s => (s.solved ? 1 - MISS_COST * s.attempts : 0)
+const scoreOf = slots => slots.reduce((n, s) => n + pointsFor(s), 0)
 
 // signed out players keep their state in the browser, so take it but sanity check it
 function cleanLocal(local) {
@@ -321,7 +324,11 @@ function answerFor(puzzle, i) {
 
 // what the board needs for one slot: the crop for where you are, or the answer once it's done
 async function slotView(puzzle, dateStr, i, state) {
-  if (slotDone(state)) return { ...state, done: true, answer: answerFor(puzzle, i) }
+  // the answer shows the whole-logo crop, which is already cut and saved, so it shows
+  // instantly instead of waiting on the full logo file to download
+  if (slotDone(state)) {
+    return { ...state, done: true, answer: answerFor(puzzle, i), image: await cropImage(puzzle, dateStr, i, ZOOMS.length - 1) }
+  }
   return { ...state, done: false, image: await cropImage(puzzle, dateStr, i, state.attempts) }
 }
 
@@ -360,6 +367,20 @@ async function ensureLineupSchema(dbPool) {
       PRIMARY KEY (puzzle_date, slot, level)
     )
   `)
+  // scores went from whole logos to quarter points
+  await dbPool.query('ALTER TABLE lineup_games ALTER COLUMN score TYPE NUMERIC(4,2)')
+  // games saved before that (or by an older deploy) get rescored from their attempts,
+  // same rule as scoreOf. only touches rows that don't match, so it's cheap once done
+  await dbPool.query(`
+    UPDATE lineup_games g SET score = s.points
+    FROM (
+      SELECT user_id, puzzle_date,
+             SUM(CASE WHEN (e->>'solved')::boolean THEN 1 - 0.25 * (e->>'attempts')::int ELSE 0 END) AS points
+      FROM lineup_games, jsonb_array_elements(slots) e
+      GROUP BY user_id, puzzle_date
+    ) s
+    WHERE g.user_id = s.user_id AND g.puzzle_date = s.puzzle_date AND g.score <> s.points
+  `)
   // the zoom a crop was cut at, so changing ZOOMS redraws old ones instead of reusing them
   await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS zoom REAL')
   // progress and the finished result live in one row, completed flips at the end
@@ -368,7 +389,7 @@ async function ensureLineupSchema(dbPool) {
       user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       puzzle_date DATE NOT NULL,
       slots       JSONB NOT NULL,
-      score       SMALLINT NOT NULL DEFAULT 0,
+      score       NUMERIC(4,2) NOT NULL DEFAULT 0,
       completed   BOOLEAN NOT NULL DEFAULT false,
       updated_at  TIMESTAMPTZ DEFAULT now(),
       PRIMARY KEY (user_id, puzzle_date)
@@ -500,7 +521,8 @@ router.get('/archive', optionalAuth, async (req, res) => {
         `SELECT to_char(puzzle_date, 'YYYY-MM-DD') AS date, score FROM lineup_games WHERE user_id = $1 AND completed`,
         [req.userId]
       )
-      for (const row of r.rows) scores.set(row.date, row.score)
+      // numeric comes back from postgres as a string
+      for (const row of r.rows) scores.set(row.date, Number(row.score))
     }
     res.json(dates.reverse().map(date => ({
       date, number: daysSinceEpoch(date) + 1,
@@ -518,7 +540,7 @@ router.get('/leaderboard', async (_req, res) => {
     const r = await pool.query(`
       SELECT COALESCE(u.username, 'Anonymous') AS display_name,
              COUNT(*)::int AS puzzles_played,
-             SUM(g.score)::int AS total_score,
+             SUM(g.score)::float AS total_score,
              ROUND(AVG(g.score), 2)::float AS avg_score
       FROM lineup_games g
       JOIN users u ON u.id = g.user_id

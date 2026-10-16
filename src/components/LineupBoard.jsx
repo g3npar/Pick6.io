@@ -33,6 +33,9 @@ async function post(path, body) {
 
 // the server sends the file with its extension (svg for current logos, webp for old ones)
 const fullLogo = logo => `/logos/leagues/${logo}`
+// 1 point a logo, minus 0.25 a miss. shown without trailing zeros: 4.75, 5.5, 6
+const pointsFor = s => (s.solved ? 1 - 0.25 * s.attempts : 0)
+const pts = n => String(Number(n.toFixed(2)))
 // the tabs only say "OLD", so the search box says which league to type
 const searchHint = l => l.league === 'ncaa' ? 'Type a college team…' : `Type ${l.old ? 'an old' : 'an'} ${l.label} team…`
 
@@ -190,7 +193,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
 
   const handleShare = async () => {
     const row = data.slots.map(s => s.solved ? '🟩' : '🟥').join('')
-    const text = `Logo Lineup #${data.number}\n${row}\n${data.score}/6\n\nhttps://pick6.io`
+    const text = `Logo Lineup #${data.number}\n${row}\n${pts(data.score)}/6\n\nhttps://pick6.io`
     let copied = false
     try {
       await navigator.clipboard.writeText(text)
@@ -279,7 +282,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
 
             <div className={`ll-card${slot.done ? ' ll-card--full' : ''}`}>
               {slot.done
-                ? <img src={fullLogo(slot.answer.logo)} alt={slot.answer.name} />
+                ? <img src={slot.image || fullLogo(slot.answer.logo)} alt={slot.answer.name} />
                 : <img src={slot.image} alt="Zoomed in logo" />}
             </div>
 
@@ -329,14 +332,14 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                       </span>
                       {l.old ? 'Old' : l.label}
                     </span>
-                    <span className="result-table-value">+{s.solved ? 1 : 0}</span>
+                    <span className="result-table-value">+{pts(pointsFor(s))}</span>
                   </div>
                 )
               })}
               <div className="result-table-divider" />
               <div className={`result-table-row result-table-total result-table-total--${scoreTier}`}>
                 <span className="result-table-label">Total</span>
-                <span className="result-table-value">{data.score}/6</span>
+                <span className="result-table-value">{pts(data.score)}/6</span>
               </div>
               {/* 0/6 in any game is a Pick 6, same message as Pick 6 */}
               {scoreTier === 'bad' && (

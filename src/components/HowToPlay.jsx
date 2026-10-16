@@ -158,7 +158,7 @@ function LineupRules() {
             <div className="htp-step-num">3</div>
             <div className="htp-step-body">
               <h3>Go in any order</h3>
-              <p>Tap the tabs at the top to jump between logos. Your score is how many of the six you get.</p>
+              <p>Tap the tabs at the top to jump between logos. Each logo is worth 1 point, minus 0.25 for every miss before you get it, so the max is 6.</p>
             </div>
           </div>
 

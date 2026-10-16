@@ -55,7 +55,8 @@ Built for casual fans who don't know every player. Each puzzle is one memorable 
 For really casual fans. Six logos a day, each zoomed in 5x.
 
 - One current logo each from the NFL, NBA, MLB, NHL and college (Power 4 + Notre Dame), plus one old logo from any of them
-- 3 attempts per logo, every miss zooms out. **+1** per logo you get
+- 3 attempts per logo, every miss zooms out, and the last attempt shows the whole logo
+- **+1** per logo, minus **0.25** for each miss before you get it (so 1, 0.75 or 0.5), for scores like 4.75/6
 - Play the logos in any order, and Give Up only gives up on the logo you're on
 
 ## Tech stack

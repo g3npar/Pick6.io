@@ -423,7 +423,7 @@ app.get('/auth/history', requireAuth, async (req, res) => {
     }
     for (const r of ll.rows) {
       dayFor(r.date).lineup = {
-        score: r.score,
+        score: Number(r.score),   // numeric comes back as a string, quarter points
         logos: r.slots.map(s => ({ solved: s.solved, attempts: s.solved ? s.attempts + 1 : s.attempts })),
       }
     }
