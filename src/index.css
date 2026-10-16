@@ -2164,10 +2164,18 @@ kbd {
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
-.ll-card img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ll-card { position: relative; }
+/* all six images are stacked here, only the current one is visible. visibility (not
+   display: none) keeps the others decoded so switching tabs is instant */
+.ll-card img { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; object-fit: contain; display: block; }
+.ll-card img.ll-card-off { visibility: hidden; }
 /* the full logo gets some breathing room, the crops go edge to edge */
-.ll-card--full img { width: 80%; height: 80%; }
+.ll-card img.ll-card-full { width: 80%; height: 80%; }
 
+/* the results rows are longer here (six logos, "used 2/3 attempts", "+0.75") */
+@media (min-width: 601px) {
+  .circle-side.ll-side { flex-basis: 200px; width: 200px; }
+}
 .ll-guess { display: flex; flex-direction: column; gap: 8px; }
 .ll-guess-row { display: flex; gap: 8px; align-items: stretch; }
 .ll-guess-row .ll-search { flex: 1; min-width: 0; }

@@ -17,7 +17,9 @@ Every day has six logos:
 
 The first five are always the team's current logo. You see each one zoomed in 5x, and you type the team into a search box that only has that league's teams. You get 3 attempts per logo. Each miss zooms out (5x, then 3x, then the whole logo on your last attempt), and after the third miss it shows the answer. Guessing a team you already missed on that logo doesn't use an attempt.
 
-You can play the logos in any order with the tabs at the top. Each logo is worth 1 point, minus 0.25 for every miss before you get it (1, 0.75 or 0.5), and 0 if you don't get it. So the max is still 6 like the other games, scores can be things like 4.75, and 0 is a Pick 6. Scores show without trailing zeros (5.5, not 5.50), and `lineup_games.score` is a `NUMERIC(4,2)` instead of a whole number. Games saved under the old whole-logo scoring get rescored from their attempts when the API starts. Give Up (next to the search box) only gives up on the logo you're looking at, it shows the answer and the other logos stay playable.
+You can play the logos in any order with the tabs at the top. Each logo is worth 1 point, minus 0.25 for every miss before you get it (1, 0.75 or 0.5), and 0 if you don't get it. So the max is still 6 like the other games, scores can be things like 4.75, and 0 is a Pick 6. Scores show without trailing zeros (5.5, not 5.50), and `lineup_games.score` is a `NUMERIC(4,2)` instead of a whole number. Games saved under the old whole-logo scoring get rescored from their attempts when the API starts. Give Up (next to the search box) only gives up on the logo you're looking at, it shows the answer and the other logos stay playable. When you're done, the results table shows each logo's points and how many attempts it took (or "gave up").
+
+All six logo images sit in the card at once and switching tabs just shows a different one, so a logo never loads after the rest of the screen.
 
 For the old logo, the answer is the team today, so an old Oakland Raiders logo is just the Raiders. The reveal shows the old name and years too.
 

@@ -280,10 +280,19 @@ export default function LineupBoard({ date = null, signedIn = false }) {
               )}
             </div>
 
-            <div className={`ll-card${slot.done ? ' ll-card--full' : ''}`}>
-              {slot.done
-                ? <img src={slot.image || fullLogo(slot.answer.logo)} alt={slot.answer.name} />
-                : <img src={slot.image} alt="Zoomed in logo" />}
+            {/* every logo's image is in the card at once, already loaded and decoded, and
+                switching tabs just shows another one, so it appears with the rest of the screen */}
+            <div className="ll-card">
+              {data.slots.map((s, i) => (
+                <img
+                  key={i}
+                  src={s.done ? (s.image || fullLogo(s.answer.logo)) : s.image}
+                  alt={i === current ? (s.done ? s.answer.name : 'Zoomed in logo') : ''}
+                  aria-hidden={i !== current}
+                  decoding="sync"
+                  className={`${s.done ? 'll-card-full' : ''}${i !== current ? ' ll-card-off' : ''}`}
+                />
+              ))}
             </div>
 
             {slot.done ? (
@@ -319,7 +328,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
           </div>
         </div>
 
-        <div className="circle-side circle-side--right">
+        <div className="circle-side circle-side--right ll-side">
           {data.completed && (
             <div className="result-table">
               {data.leagues.map((l, i) => {
@@ -331,6 +340,10 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                         {s.solved ? '✓' : '✗'}
                       </span>
                       {l.old ? 'Old' : l.label}
+                      {/* the right guess counts, a give up before three misses says so */}
+                      <span className="result-table-attempts">
+                        {s.solved ? `used ${s.attempts + 1}/${MAX_ATTEMPTS} attempts` : s.wrong.length < MAX_ATTEMPTS ? 'gave up' : `used ${MAX_ATTEMPTS}/${MAX_ATTEMPTS} attempts`}
+                      </span>
                     </span>
                     <span className="result-table-value">+{pts(pointsFor(s))}</span>
                   </div>
