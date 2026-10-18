@@ -688,6 +688,14 @@ body {
   transform: rotate(-6deg);
 }
 .fl-true-value .fl-value { color: var(--green); }
+/* real value and its year on one line so the reveal stays inside its slice */
+.fl-true-value {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  column-gap: clamp(3px, 1cqw, 6px);
+}
 .fl-hovered .fl-sublabel,
 .fl-selected .fl-sublabel { color: rgba(255,255,255,0.5); }
 .fl-true  .fl-sublabel { color: rgba(0,240,128,0.6); }
@@ -696,6 +704,9 @@ body {
 .fl-selected .fl-text,
 .fl-true  .fl-text,
 .fl-false .fl-text { color: var(--text); }
+.fl-false .fl-wrong-line .fl-sublabel { color: var(--text); }
+.fl-false .fl-true-value .fl-value:not(.fl-jersey),
+.fl-false .fl-true-value .fl-sublabel { color: var(--green); }
 
 /* keeps jersey number red fill on reveal */
 .fl-hovered .fl-jersey,
