@@ -53,8 +53,7 @@ def team_name(abbr, season):
     return NAMES[abbr]
 
 
-# first season of each logo (from 2002), images in public/logos/nfl/eras/{TEAM}-{year}.webp.
-# Washington before 2020 has no logo on purpose
+# first season of each logo (from 2002), images in public/logos/nfl/eras/{TEAM}-{year}.webp
 LOGO_ERAS = {
     'ARI': [2002, 2005],             'ATL': [2002, 2003],             'BAL': [2002],
     'BUF': [2002],                   'CAR': [2002, 2012],             'CHI': [2002, 2023],
@@ -66,7 +65,7 @@ LOGO_ERAS = {
     'MIN': [2002, 2010, 2013],       'NE':  [2002],                   'NO':  [2002, 2012, 2017],
     'NYG': [2002],                   'NYJ': [2002, 2019, 2024],       'PHI': [2002],
     'PIT': [2002],                   'SEA': [2002, 2009, 2012],       'SF':  [2002, 2005, 2009],
-    'TB':  [2002, 2014, 2020],       'TEN': [2002],                   'WAS': [2020, 2022],
+    'TB':  [2002, 2014, 2020],       'TEN': [2002],                   'WAS': [2002, 2020, 2022],
 }
 
 

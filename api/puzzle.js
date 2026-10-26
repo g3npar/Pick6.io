@@ -50,7 +50,12 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')
     ? { rejectUnauthorized: false }
     : false,
+  // closes idle connections before RDS drops them
+  idleTimeoutMillis: 30000,
+  keepAlive: true,
 })
+// a dropped idle connection emits this, unhandled it crashes the whole API
+pool.on('error', err => console.error('Postgres idle client error:', err.message))
 
 function seedRng(seed) {
   let s = (seed ^ 0xdeadbeef) >>> 0 || 1

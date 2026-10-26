@@ -30,7 +30,7 @@ The middle row shows what you guessed, with a green ✓ after the year and the t
 
 If you got the team or the year wrong, it says "You guessed" above it. Your guessed team is the last one you picked. Then a "Show Correct Answer" button next to the score table swaps in the real answer and its era logo. If you gave up there's no guess to show, so it goes straight to the answer.
 
-Washington before 2020 doesn't get a logo, same reason as the name.
+Washington before 2020 shows its old logo from back then, even though the name just says "Washington".
 
 ## Which seasons can be the answer
 

@@ -19,13 +19,24 @@ const writeStore = (date, slots) => {
 // state for the server, with the team you got so it can be checked if you sign in later
 const slimSlots = slots => slots.map(({ attempts, wrong, solved, answer }) => ({ attempts, wrong, solved, ...(solved ? { team: answer?.team } : {}) }))
 
-async function post(path, body) {
-  const res = await fetch(`${API}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  })
+async function post(path, body, retry = true) {
+  // a network error (like the API restarting) gets one retry. resending a guess is safe,
+  // a repeated miss is free and a right answer stays right
+  let res
+  try {
+    res = await fetch(`${API}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    })
+  } catch {
+    if (retry) {
+      await new Promise(r => setTimeout(r, 1500))
+      return post(path, body, false)
+    }
+    throw new Error("Couldn't reach the server, try again in a moment")
+  }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || `Server error ${res.status}`)
   return data
@@ -38,6 +49,8 @@ const pointsFor = s => (s.solved ? 1 - 0.25 * s.attempts : 0)
 
 // the tab only says OLD, so the hint names the league
 const searchHint = l => `${l.old ? 'Old ' : ''}${l.league === 'ncaa' ? (l.old ? 'college' : 'College') : l.label} team…`
+// "GUESS THE NFL LOGO", "GUESS THE OLD COLLEGE LOGO"
+const logoTitle = l => `GUESS THE ${l.old ? 'OLD ' : ''}${l.league === 'ncaa' ? 'COLLEGE' : l.label.toUpperCase()} LOGO`
 
 // search within the logo's league
 function TeamSearch({ teams, missed, onPick, disabled, hint }) {
@@ -293,7 +306,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
 
           <div className="ll-stage">
             <div className="ll-stage-top">
-              <span className="fr-call-label">GUESS THE LOGO</span>
+              <span className="fr-call-label">{logoTitle(league)}</span>
               {!slot.done && (
                 <div className="fr-attempts" title={`${MAX_ATTEMPTS - slot.attempts} attempts left`}>
                   <span className="attempt-label fr-attempts-label">ATTEMPTS</span>

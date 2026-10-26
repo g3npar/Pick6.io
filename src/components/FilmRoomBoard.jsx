@@ -501,7 +501,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                   {showingGuess ? (
                     <>
                       {/* your guess, Show Correct Answer swaps in the answer */}
-                      {/* that season's logo, none for Washington before 2020 */}
+                      {/* that season's logo */}
                       {guessLogo
                         ? <img className="fr-answer-logo" src={guessLogo} alt="" />
                         : <span className="fr-answer-logo" />}
@@ -519,7 +519,6 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                     </>
                   ) : (
                     <>
-                      {/* none for Washington before 2020 */}
                       {answer.logo && <img className="fr-answer-logo" src={eraLogo(answer.logo)} alt="" />}
                       <div className="fr-answer-text">
                         {gotSomethingWrong && <span className="fr-answer-lead fr-answer-lead--correct">Correct answer</span>}
