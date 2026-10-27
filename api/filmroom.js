@@ -3,6 +3,7 @@ const crypto  = require('crypto')
 const express = require('express')
 const { pool, todayDateStr } = require('./puzzle')
 const { optionalAuth } = require('./auth')
+const { recordScore } = require('./percentile')
 
 // Film Room: guess the team, then the year, from six clues. Data from scripts/build_team_seasons.py
 const SEASONS = require('./data/team_seasons.json')
@@ -484,6 +485,7 @@ router.post('/result', optionalAuth, async (req, res) => {
       if (!r.rows.length) return res.status(409).json({ error: 'Already finished this Film Room' })
       saved = true
     }
+    await recordScore('filmroom', date, scored.score, userId, req.body?.anonId)
 
     res.json({
       teamFound, attempts, yearGuess, ...scored, saved,
@@ -494,27 +496,6 @@ router.post('/result', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Film Room result failed:', err.message)
     res.status(500).json({ error: 'Could not save result' })
-  }
-})
-
-// GET /filmroom/leaderboard
-router.get('/leaderboard', async (_req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT COALESCE(u.username, 'Anonymous') AS display_name,
-             COUNT(*)::int AS puzzles_played,
-             SUM(fr.score)::int AS total_score,
-             ROUND(AVG(fr.score), 2)::float AS avg_score
-      FROM filmroom_results fr
-      JOIN users u ON u.id = fr.user_id
-      GROUP BY u.id, u.username
-      ORDER BY total_score DESC
-      LIMIT 50
-    `)
-    res.json(r.rows)
-  } catch (err) {
-    console.error('Film Room leaderboard failed:', err.message)
-    res.status(500).json({ error: 'Could not load leaderboard' })
   }
 })
 

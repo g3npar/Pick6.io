@@ -19,6 +19,8 @@ const {
 } = require('./auth')
 const { filmroomRouter, ensureFilmroomSchema, FILMROOM_EPOCH } = require('./filmroom')
 const { lineupRouter, ensureLineupSchema, warmLineup, LINEUP_EPOCH } = require('./lineup')
+const { ensurePercentileSchema, recordScore, percentilesFor, percentileRouter } = require('./percentile')
+const { ensureBugSchema, bugsRouter, listBugs } = require('./bugs')
 
 const app = express()
 
@@ -57,6 +59,9 @@ ensureAuthSchema(pool)
       setInterval(warmLineup, 30 * 60 * 1000).unref()
     })
     .catch(err => console.error('Logo Lineup schema init failed:', err.message)))
+  // reads all three games' results, so it goes last
+  .then(() => ensurePercentileSchema(pool).catch(err => console.error('Percentile schema init failed:', err.message)))
+  .then(() => ensureBugSchema(pool).catch(err => console.error('Bug report schema init failed:', err.message)))
   .catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
@@ -428,6 +433,12 @@ app.get('/auth/history', requireAuth, async (req, res) => {
     for (const [game, first] of Object.entries(GAME_STARTS)) {
       for (const d of days.values()) if (d.date < first) delete d[game]
     }
+    // top % for each game played
+    await Promise.all(Object.keys(GAME_STARTS).map(async game => {
+      const played = [...days.values()].filter(d => d[game]).map(d => ({ date: d.date, score: d[game].score }))
+      const tops = await percentilesFor(req.userId, game, played)
+      for (const d of days.values()) if (d[game]) d[game].top = tops.get(d.date) ?? null
+    }))
     res.json({
       // more until the oldest game's first day
       start, end, more: start > FIRST_DAY, starts: GAME_STARTS,
@@ -515,6 +526,7 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
       await pool.query('DELETE FROM puzzle_progress WHERE user_id = $1 AND puzzle_date = $2', [req.userId, puzzleDate])
       saved = true
     }
+    await recordScore('pick6', puzzleDate, score, req.userId, req.body?.anonId)
 
     res.json({
       lieFound, lieAttempts: attempts, playerCorrect, score, saved,
@@ -525,27 +537,6 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Save result failed:', err.message)
     res.status(500).json({ error: 'Could not save result' })
-  }
-})
-
-// GET /leaderboard
-app.get('/leaderboard', async (_req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT COALESCE(u.username, 'Anonymous') AS display_name,
-             COUNT(*)::int AS puzzles_played,
-             SUM(ur.score)::int AS total_score,
-             ROUND(AVG(ur.score), 2)::float AS avg_score
-      FROM user_results ur
-      JOIN users u ON u.id = ur.user_id
-      GROUP BY u.id, u.username
-      ORDER BY total_score DESC
-      LIMIT 50
-    `)
-    res.json(r.rows)
-  } catch (err) {
-    console.error('Leaderboard fetch failed:', err.message)
-    res.status(500).json({ error: 'Could not load leaderboard' })
   }
 })
 
@@ -568,6 +559,16 @@ function upcomingDates(days) {
 }
 
 // GET /admin/puzzles status per date
+// GET /admin/bugs  newest bug reports
+app.get('/admin/bugs', requireAuth, requireAdmin, adminLimiter, async (_req, res) => {
+  try {
+    res.json(await listBugs())
+  } catch (err) {
+    console.error('Bug list failed:', err.message)
+    res.status(500).json({ error: 'Could not load bug reports' })
+  }
+})
+
 app.get('/admin/puzzles', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
   const days = Math.min(30, Math.max(1, Number(req.query.days) || 14))
   try {
@@ -661,6 +662,9 @@ app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res)
 
 app.use('/filmroom', filmroomRouter)
 app.use('/lineup', lineupRouter)
+app.use('/percentile', percentileRouter)
+// tighter limit so the form can't be spammed
+app.use('/bugs', authLimiter, bugsRouter)
 
 // 404 unmatched route
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))

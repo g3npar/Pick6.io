@@ -5,6 +5,7 @@ const express = require('express')
 const sharp   = require('sharp')
 const { pool, todayDateStr } = require('./puzzle')
 const { optionalAuth } = require('./auth')
+const { recordScore } = require('./percentile')
 
 // Logo Lineup: six zoomed in logos a day (NFL, NBA, MLB, NHL, college, one old).
 // Data comes from scripts/build_logo_teams.py and build_old_logos.py
@@ -387,6 +388,18 @@ async function ensureLineupSchema(dbPool) {
       PRIMARY KEY (puzzle_date, slot, level)
     )
   `)
+  // progress and result in one row
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS lineup_games (
+      user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      puzzle_date DATE NOT NULL,
+      slots       JSONB NOT NULL,
+      score       NUMERIC(4,2) NOT NULL DEFAULT 0,
+      completed   BOOLEAN NOT NULL DEFAULT false,
+      updated_at  TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, puzzle_date)
+    )
+  `)
   // quarter point scores
   await dbPool.query('ALTER TABLE lineup_games ALTER COLUMN score TYPE NUMERIC(4,2)')
   // rescore old games with the same rule as scoreOf
@@ -403,18 +416,6 @@ async function ensureLineupSchema(dbPool) {
   // how each crop was made (replaced the zoom column)
   await dbPool.query('ALTER TABLE lineup_crops ADD COLUMN IF NOT EXISTS recipe TEXT')
   await dbPool.query('ALTER TABLE lineup_crops DROP COLUMN IF EXISTS zoom')
-  // progress and result in one row
-  await dbPool.query(`
-    CREATE TABLE IF NOT EXISTS lineup_games (
-      user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      puzzle_date DATE NOT NULL,
-      slots       JSONB NOT NULL,
-      score       NUMERIC(4,2) NOT NULL DEFAULT 0,
-      completed   BOOLEAN NOT NULL DEFAULT false,
-      updated_at  TIMESTAMPTZ DEFAULT now(),
-      PRIMARY KEY (user_id, puzzle_date)
-    )
-  `)
 }
 
 // routes
@@ -512,6 +513,7 @@ router.post('/guess', optionalAuth, async (req, res) => {
     }
 
     const completed = req.userId ? await saveGame(req.userId, date, slots) : slots.every(slotDone)
+    if (completed) await recordScore('lineup', date, scoreOf(slots), req.userId, req.body?.anonId)
     res.json({
       correct,
       slots: await Promise.all(slots.map((st, i) => slotView(puzzle, date, i, st))),
@@ -549,28 +551,6 @@ router.get('/archive', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Logo Lineup archive failed:', err.message)
     res.status(500).json({ error: 'Could not load archive' })
-  }
-})
-
-// GET /lineup/leaderboard
-router.get('/leaderboard', async (_req, res) => {
-  try {
-    const r = await pool.query(`
-      SELECT COALESCE(u.username, 'Anonymous') AS display_name,
-             COUNT(*)::int AS puzzles_played,
-             SUM(g.score)::float AS total_score,
-             ROUND(AVG(g.score), 2)::float AS avg_score
-      FROM lineup_games g
-      JOIN users u ON u.id = g.user_id
-      WHERE g.completed
-      GROUP BY u.id, u.username
-      ORDER BY total_score DESC
-      LIMIT 50
-    `)
-    res.json(r.rows)
-  } catch (err) {
-    console.error('Logo Lineup leaderboard failed:', err.message)
-    res.status(500).json({ error: 'Could not load leaderboard' })
   }
 })
 
