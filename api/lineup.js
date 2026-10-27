@@ -14,7 +14,7 @@ let OLD = []
 try { OLD = require('./data/old_logos.json') } catch {}
 
 // day #1
-const LINEUP_EPOCH = '2026-10-09'
+const LINEUP_EPOCH = '2026-10-22'
 
 const LEAGUES = ['nfl', 'nba', 'mlb', 'nhl', 'ncaa']
 const LEAGUE_NAMES = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', ncaa: 'NCAA' }

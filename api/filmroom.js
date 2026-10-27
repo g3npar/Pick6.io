@@ -9,7 +9,7 @@ const { recordScore } = require('./percentile')
 const SEASONS = require('./data/team_seasons.json')
 
 // day #1
-const FILMROOM_EPOCH = '2026-10-06'
+const FILMROOM_EPOCH = '2026-10-22'
 
 // record and playoffs start face up, each miss flips receiver then rusher, coach and QB show for the year
 const INITIAL_CLUES = 2

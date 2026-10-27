@@ -10,7 +10,7 @@ import RulesButton from './HowToPlay'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 // first puzzle date
-const PUZZLE_EPOCH = new Date(2026, 7, 17)
+const PUZZLE_EPOCH = new Date(2026, 9, 22)
 
 function puzzleNumber(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)

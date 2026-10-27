@@ -229,10 +229,15 @@ app.get('/puzzle/today/current', optionalAuth, async (req, res) => {
   }
 })
 
-// GET /puzzle/date/2026-08-10 archive date
+// Pick 6 #1, matches PUZZLE_EPOCH in GameBoard.jsx. only numbering and the archive use it,
+// puzzles come from EPOCH in puzzle.js
+const PICK6_START = '2026-10-22'
+const isPick6Day = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') && date >= PICK6_START && date <= todayDateStr()
+
+// GET /puzzle/date/2026-10-22 archive date
 app.get('/puzzle/date/:date', optionalAuth, async (req, res) => {
   const date = req.params.date
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' })
+  if (!isPick6Day(date)) return res.status(400).json({ error: 'Invalid date' })
   try {
     const puzzle = await getPuzzleForDate(date)
     const result = await fetchSavedResult(req.userId, date)
@@ -255,7 +260,7 @@ app.post('/puzzle/guess-lie', optionalAuth, async (req, res) => {
   const { puzzleDate, factId, giveUp } = req.body || {}
   const date  = puzzleDate
   const today = todayDateStr()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today) return res.status(400).json({ error: 'Invalid date' })
+  if (!isPick6Day(date)) return res.status(400).json({ error: 'Invalid date' })
   if (!giveUp && !Number.isInteger(factId)) return res.status(400).json({ error: 'Invalid fact' })
 
   try {
@@ -331,7 +336,7 @@ app.post('/puzzle/guess-lie', optionalAuth, async (req, res) => {
 app.get('/puzzle/archive', optionalAuth, async (req, res) => {
   try {
     // todays puzzle lives on daily tab
-    const dates = (await listArchiveDates()).filter(d => d < todayDateStr())
+    const dates = (await listArchiveDates()).filter(d => d >= PICK6_START && d < todayDateStr())
     if (!dates.length) return res.json([])
     const r = await pool.query(`
       SELECT dp.puzzle_date, ur.score
@@ -382,7 +387,11 @@ app.post('/auth/logout', (_req, res) => {
 app.get('/auth/me', optionalAuth, async (req, res) => {
   if (!req.userId) return res.json({ user: null })
   const r = await pool.query('SELECT id, email, display_name, username, avatar_url FROM users WHERE id = $1', [req.userId])
-  if (!r.rows.length) return res.json({ user: null })
+  // account was deleted, drop the old cookie so game saves don't use a missing user
+  if (!r.rows.length) {
+    res.clearCookie(COOKIE_NAME, cookieOptions)
+    return res.json({ user: null })
+  }
   res.json({ user: toUserJSON(r.rows[0]) })
 })
 
@@ -392,8 +401,8 @@ const shiftDate = (date, n) => {
   d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
-// each game's first day (Pick 6's matches PUZZLE_EPOCH in GameBoard.jsx)
-const GAME_STARTS = { pick6: '2026-08-17', filmroom: FILMROOM_EPOCH, lineup: LINEUP_EPOCH }
+// each game's first day
+const GAME_STARTS = { pick6: PICK6_START, filmroom: FILMROOM_EPOCH, lineup: LINEUP_EPOCH }
 const FIRST_DAY = Object.values(GAME_STARTS).sort()[0]
 app.get('/auth/history', requireAuth, async (req, res) => {
   const end = /^\d{4}-\d{2}-\d{2}$/.test(req.query.end || '') ? req.query.end : todayDateStr()
@@ -497,7 +506,7 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)) return res.status(400).json({ error: 'Invalid result' })
   try {
     const today = todayDateStr()
-    if (puzzleDate > today) return res.status(400).json({ error: 'Invalid puzzle date' })
+    if (puzzleDate > today || puzzleDate < PICK6_START) return res.status(400).json({ error: 'Invalid puzzle date' })
     const puzzle = puzzleDate === today ? await getDailyCurrentPuzzle() : await getPuzzleForDate(puzzleDate)
 
     // tracked progress wins over client reported
