@@ -76,7 +76,7 @@ export default function BugReport({ defaultGame = 'pick6', user }) {
               )}
               {error && <p className="bug-error">{error}</p>}
               <button className="profile-btn" type="submit" disabled={state === 'sending' || message.trim().length < 5}>
-                {state === 'sending' ? 'Sending…' : 'Send'}
+                {state === 'sending' ? <><span className="fr-spinner" aria-hidden="true" />Sending…</> : 'Send'}
               </button>
             </form>
           )}

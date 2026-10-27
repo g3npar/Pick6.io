@@ -90,6 +90,8 @@ function App() {
 
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [pendingResult, setPendingResult] = useState(null)
+  // which Pick 6 guess is being checked: 'lie', 'player' or null
+  const [checking, setChecking] = useState(null)
 
   // puzzle currently on screen
   const viewingArchive     = screen === 'archive' && viewingArchivePuzzle
@@ -198,6 +200,7 @@ function App() {
   // sends result to server
   const postResult = ({ finalLieId, finalAttempts, finalPlayerGuess }) => {
     if (!activePlayingDate) return
+    setChecking('player')
     fetch(`${API}/puzzle/result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -230,6 +233,7 @@ function App() {
         }
       })
       .catch(() => {})
+      .finally(() => setChecking(null))
   }
 
   // saves finished result
@@ -341,9 +345,10 @@ function App() {
 
   // server verified lie guess
   const handleGuessLie = async () => {
-    if (!selectedLieId || liePhaseComplete || !puzzle || !activePlayingDate) return
+    if (!selectedLieId || liePhaseComplete || !puzzle || !activePlayingDate || checking) return
     const factId = selectedLieId
     let data
+    setChecking('lie')
     try {
       const r = await fetch(`${API}/puzzle/guess-lie`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -351,6 +356,7 @@ function App() {
       })
       data = r.ok ? await r.json() : null
     } catch { data = null }
+    setChecking(null)
     if (!data) return
 
     // anonymous attempts tracked locally only
@@ -426,6 +432,7 @@ function App() {
           onBackfillHeadshot={headshot => updateCurrent({ headshot })}
           onGuessLie={handleGuessLie}
           onSubmit={handleSubmit}
+          checking={checking}
           onGiveUp={handleGiveUp}
           currentScore={currentScore}
         />

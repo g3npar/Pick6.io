@@ -35,7 +35,7 @@ Either way, your in-progress game is saved in `sessionStorage` so a refresh does
 
 ## Top X% instead of a leaderboard
 
-There's no leaderboard anymore. An all-time total just rewarded whoever played the most (or binged the archive), so now each results screen says something like "Top 12% today, out of 340 players", and the share text and your profile's per day stats show it too.
+There's no leaderboard anymore. An all-time total just rewarded whoever played the most (or binged the archive), so now each results screen says something like "Top 12% today, out of 340 players", and your profile's per day stats show it too (the share text doesn't).
 
 - Every finished game goes in the `day_scores` table, signed in or not, but **only if you finished it on the puzzle's own day**. Archive plays don't count, though you still see where you would have placed.
 - Signed out players are counted by a random ID their browser makes (`pick6_anon_id` in localStorage), so refreshing doesn't count you twice. Clearing your browser or switching devices would, which is fine.

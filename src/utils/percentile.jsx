@@ -20,12 +20,13 @@ export function anonId() {
   }
 }
 
-// "top X%" for a finished game, null until it loads or if you're the only one
+// "top X%" for a finished game: 'loading', then { top, players }, or null if it failed
 export function usePercentile(game, date, score) {
   const [result, setResult] = useState(null)
   useEffect(() => {
     setResult(null)
     if (!date || score === null || score === undefined) return
+    setResult('loading')
     let cancelled = false
     const q = new URLSearchParams({ game, date, score: String(score) })
     const id = anonId()
@@ -33,7 +34,7 @@ export function usePercentile(game, date, score) {
     fetch(`${API}/percentile?${q}`, { credentials: 'include' })
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (!cancelled) setResult(d) })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setResult(null) })
     return () => { cancelled = true }
   }, [game, date, score])
   return result
@@ -42,6 +43,9 @@ export function usePercentile(game, date, score) {
 // e.g. "Top 12% today", or "Top 12% of players that day" for an archive day
 export function TopPercent({ result, today }) {
   if (!result) return null
+  if (result === 'loading') {
+    return <p className="top-percent top-percent--loading"><span className="fr-spinner" aria-hidden="true" />Seeing how everyone did…</p>
+  }
   if (result.top === null) {
     return today ? <p className="top-percent">You're the first to finish today</p> : null
   }

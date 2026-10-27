@@ -169,7 +169,7 @@ export default function Admin() {
                   </div>
                   {swapFor === f.id && (
                     <ul className="admin-swap-menu">
-                      {!alternatives && <li className="admin-swap-empty">Loading…</li>}
+                      {!alternatives && <li className="admin-swap-empty"><span className="fr-spinner" aria-hidden="true" />Loading…</li>}
                       {alternatives?.length === 0 && <li className="admin-swap-empty">No other facts available</li>}
                       {alternatives?.map(alt => (
                         <li key={alt.text} onClick={() => !busy && swapFact(f.id, alt.text)}>{alt.text}</li>

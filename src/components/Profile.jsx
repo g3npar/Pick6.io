@@ -191,7 +191,7 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
               aria-label="Username"
             />
             <button className="profile-btn" disabled={!canSave} onClick={saveUsername}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? <><span className="fr-spinner" aria-hidden="true" />Saving…</> : 'Save'}
             </button>
           </div>
           <p className="profile-hint">
@@ -233,7 +233,7 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
                   disabled={confirmText !== CONFIRM_WORD || deleting}
                   onClick={deleteAccount}
                 >
-                  {deleting ? 'Deleting…' : 'Delete forever'}
+                  {deleting ? <><span className="fr-spinner" aria-hidden="true" />Deleting…</> : 'Delete forever'}
                 </button>
                 <button
                   className="profile-btn"

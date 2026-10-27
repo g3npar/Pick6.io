@@ -259,7 +259,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     const text = shareText(`Logo Lineup #${data.number}`, data.leagues.map((l, i) => {
       const s = data.slots[i]
       return [tries(s.solved, s.attempts), l.old ? 'Old' : l.label, pointsFor(s), 1]
-    }), data.score, percentile?.top)
+    }), data.score)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }

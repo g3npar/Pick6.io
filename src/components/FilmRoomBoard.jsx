@@ -363,7 +363,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     const text = shareText(`Film Room #${meta.number}`, [
       [tries(r.teamFound, r.attempts), 'Team', r.teamScore, 3],
       [r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥', 'Year', r.yearScore, 3],
-    ], r.score, percentile?.top)
+    ], r.score)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }

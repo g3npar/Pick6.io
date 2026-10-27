@@ -1,4 +1,4 @@
-// share text for all three games, e.g. "Film Room #10 / 🟥🟩 Team: 2/3 / 🟨 Year: 1/3 / 3/6 (Top 20%)"
+// share text for all three games, e.g. "Film Room #10 / 🟥🟩 Team: 2/3 / 🟨 Year: 1/3 / 3/6"
 
 // red per miss then green, or three reds
 export const tries = (got, misses) => (got ? '🟥'.repeat(Math.max(0, misses)) + '🟩' : '🟥🟥🟥')
@@ -6,10 +6,10 @@ export const tries = (got, misses) => (got ? '🟥'.repeat(Math.max(0, misses)) 
 // no trailing zeros
 export const pts = n => String(Number(Number(n).toFixed(2)))
 
-// lines: [[squares, label, points, out of], ...], top: the day's top %, if known
-export function shareText(title, lines, score, top = null) {
+// lines: [[squares, label, points, out of], ...]
+export function shareText(title, lines, score) {
   const body = lines.map(([squares, label, got, of]) => `${squares} ${label}: ${pts(got)}/${of}`).join('\n')
-  return `${title}\n${body}\n${pts(score)}/6${top ? ` (Top ${top}%)` : ''}\n\nhttps://pick6.io`
+  return `${title}\n${body}\n${pts(score)}/6\n\nhttps://pick6.io`
 }
 
 // clipboard, with a fallback

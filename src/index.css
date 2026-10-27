@@ -2258,3 +2258,4 @@ kbd {
 .bug-item-message { white-space: pre-wrap; margin: 4px 0 0; color: var(--text); }
 .legal-section .bug-item { padding-left: 0; }
 .legal-section .bug-item::before { content: none; }
+.top-percent--loading { color: var(--text-muted); }

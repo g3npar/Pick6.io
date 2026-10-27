@@ -90,7 +90,7 @@ function GameBoard({
   submitted, playerCorrect, gaveUp,
   onSelectLie, onSelectPlayer, onBackfillHeadshot,
   onGuessLie, onSubmit, onGiveUp,
-  currentScore,
+  currentScore, checking,
 }) {
   const [query,        setQuery]        = useState('')
   const [dropdownOpen, setDropdown]     = useState(false)
@@ -228,7 +228,7 @@ function GameBoard({
     const text = shareText(`Pick 6${num}`, [
       [tries(lieFound, lieAttempts), 'Lie', lieScore, 3],
       [playerCorrect ? '🟩' : '🟥', 'Player', playerScore, 3],
-    ], currentScore, percentile?.top)
+    ], currentScore)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
@@ -366,8 +366,8 @@ function GameBoard({
                   ))}
                 </div>
               </div>
-              <button className="circle-guess-btn" onClick={onGuessLie} disabled={!canGuessLie}>
-                {canGuessLie ? 'GUESS LIE →' : 'Select a fact'}
+              <button className="circle-guess-btn" onClick={onGuessLie} disabled={!canGuessLie || !!checking}>
+                {checking === 'lie' ? <><span className="fr-spinner" aria-hidden="true" />Checking…</> : canGuessLie ? 'GUESS LIE →' : 'Select a fact'}
               </button>
             </div>
           ) : !submitted ? (
@@ -398,7 +398,7 @@ function GameBoard({
                 </div>
                 {dropdownOpen && (
                   <ul className="player-dropdown">
-                    {searching && <li className="dropdown-item no-results">Searching…</li>}
+                    {searching && <li className="dropdown-item no-results"><span className="fr-spinner" aria-hidden="true" />Searching…</li>}
                     {!searching && results.map((item, i) => (
                       <li key={item.id} className={`dropdown-item${i === tabIdx ? ' dropdown-item-active' : ''}`} onMouseDown={() => handleSelect(item)}>
                         <span className="dropdown-player-name">{item.name}</span>
@@ -410,8 +410,8 @@ function GameBoard({
                   </ul>
                 )}
               </div>
-              <button className="circle-guess-btn" onClick={onSubmit} disabled={!canSubmitPlayer}>
-                {canSubmitPlayer ? 'LOCK IN →' : 'Pick a player'}
+              <button className="circle-guess-btn" onClick={onSubmit} disabled={!canSubmitPlayer || !!checking}>
+                {checking === 'player' ? <><span className="fr-spinner" aria-hidden="true" />Checking…</> : canSubmitPlayer ? 'LOCK IN →' : 'Pick a player'}
               </button>
             </div>
           ) : (() => {
