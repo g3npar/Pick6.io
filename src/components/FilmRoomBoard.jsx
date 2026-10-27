@@ -8,8 +8,6 @@ import RulesButton from './HowToPlay'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const MAX_ATTEMPTS = 3
-// dev only
-const DEV = import.meta.env.DEV
 
 // signed out games are kept in the browser, one per day
 const STORE_KEY = 'pick6_filmroom_days'
@@ -257,7 +255,6 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const [shareState, setShareState] = useState('idle')
-  const [practice, setPractice] = useState(null)   // encrypted practice token
 
   const load = (claimed = false) => {
     setError(null)
@@ -300,32 +297,10 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   }, [signedIn])
 
   useEffect(() => {
-    if (meta && game && !meta.signedIn && !practice) writeStore(meta.date, game)
-  }, [meta, game, practice])
+    if (meta && game && !meta.signedIn) writeStore(meta.date, game)
+  }, [meta, game])
 
-  const resetInputs = () => { setTeam(null); setYear(''); setConfirmingGiveUp(false); setShowAnswer(false) }
-
-  const generatePuzzle = async () => {
-    if (busy) return
-    setBusy(true)
-    try {
-      const d = await post('/filmroom/practice', {})
-      setPractice(d.practice)
-      // practice games are never saved
-      setMeta(m => ({ ...m, firstYear: d.firstYear, lastYear: d.lastYear, signedIn: false }))
-      setGame(freshGame(d.clues))
-      resetInputs()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // clear practice first so it isn't saved as today's game
-  const backToToday = () => { setGame(null); setPractice(null); resetInputs(); load() }
-
-  const puzzleRef = () => (practice ? { practice } : { puzzleDate: meta.date })
+  const puzzleRef = () => ({ puzzleDate: meta.date })
 
   // reverts confirm state if untouched
   useEffect(() => {
@@ -383,7 +358,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
 
   const handleShare = async () => {
     const r = game.result
-    const text = shareText(practice ? 'Film Room (practice)' : `Film Room #${meta.number}`, [
+    const text = shareText(`Film Room #${meta.number}`, [
       [tries(r.teamFound, r.attempts), 'Team', r.teamScore, 3],
       [r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥', 'Year', r.yearScore, 3],
     ], r.score)
@@ -433,22 +408,16 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
         <div className="circle-side circle-side--left">
           <span className="puzzle-date-big">{formatDate(meta.date)}</span>
           <span className="puzzle-number-row">
-            <span className="puzzle-number-label">{practice ? 'Practice puzzle' : `Film Room #${meta.number}`}</span>
+            <span className="puzzle-number-label">{`Film Room #${meta.number}`}</span>
             <RulesButton game="filmroom" />
           </span>
-          {DEV && (
-            <div className="fr-dev-tools">
-              <button className="header-icon-btn" onClick={generatePuzzle} disabled={busy}>Generate puzzle</button>
-              {practice && <button className="header-icon-btn" onClick={backToToday} disabled={busy}>Today's puzzle</button>}
-            </div>
-          )}
         </div>
 
         <div className="fr-sheet">
           <div className="fr-sheet-head">
             <span className="fr-hole" aria-hidden="true" />
             <span className="fr-sheet-title">FILM ROOM</span>
-            <span className="fr-sheet-no">{practice ? 'PRACTICE' : `NO. ${meta.number}`}</span>
+            <span className="fr-sheet-no">{`NO. ${meta.number}`}</span>
             <span className="fr-hole" aria-hidden="true" />
           </div>
 
@@ -583,7 +552,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                   {showAnswer ? 'Hide Correct Answer' : 'Show Correct Answer'}
                 </button>
               )}
-              {!meta.signedIn && !practice && <p className="fr-signin-hint">Sign in to save your Film Room results.</p>}
+              {!meta.signedIn && <p className="fr-signin-hint">Sign in to save your Film Room results.</p>}
               <div className="share-row">
                 <button className="share-btn" onClick={handleShare}>Share Result</button>
                 {shareState === 'copied' && <span className="share-toast">Copied!</span>}

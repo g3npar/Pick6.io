@@ -258,53 +258,12 @@ function checkDate(req, res) {
   return date
 }
 
-// dev only, never saved
-const PRACTICE = process.env.NODE_ENV !== 'production'
-const practiceKey = () => crypto.createHash('sha256')
-  .update(`filmroom-practice:${process.env.FILMROOM_SECRET || process.env.JWT_SECRET || 'dev'}`).digest()
-
-// encrypted so the token doesn't reveal the answer
-function practiceToken(s) {
-  const iv = crypto.randomBytes(12)
-  const cipher = crypto.createCipheriv('aes-256-gcm', practiceKey(), iv)
-  const body = Buffer.concat([cipher.update(`${s.season}:${s.franchise}`, 'utf8'), cipher.final()])
-  return Buffer.concat([iv, cipher.getAuthTag(), body]).toString('base64url')
-}
-
-function practiceSeason(token) {
-  try {
-    const raw = Buffer.from(String(token), 'base64url')
-    const decipher = crypto.createDecipheriv('aes-256-gcm', practiceKey(), raw.subarray(0, 12))
-    decipher.setAuthTag(raw.subarray(12, 28))
-    const [season, franchise] = Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString('utf8').split(':')
-    return SEASONS.find(s => s.season === Number(season) && s.franchise === franchise) || null
-  } catch {
-    return null
-  }
-}
-
-// today's puzzle, or a practice one
+// today's puzzle or an archive day
 async function resolvePuzzle(req, res) {
-  if (req.body?.practice) {
-    const s = PRACTICE && practiceSeason(req.body.practice)
-    if (!s) { res.status(400).json({ error: 'Invalid practice puzzle' }); return null }
-    // never saved, even for signed in players
-    return { puzzle: buildPuzzle(s), date: null, userId: null }
-  }
   const date = checkDate(req, res)
   if (!date) return null
   return { puzzle: await getPuzzleForDate(date), date, userId: req.userId }
 }
-
-// POST /filmroom/practice  local dev only
-router.post('/practice', (_req, res) => {
-  if (!PRACTICE) return res.status(404).json({ error: 'Not found' })
-  const s = POOL[crypto.randomInt(POOL.length)]
-  res.json({
-    practice: practiceToken(s), firstYear: FIRST_YEAR, lastYear: LAST_YEAR,
-    clues: visibleClues(buildPuzzle(s), 0, false),
-  })
-})
 
 // same shape for today and archive days
 async function sendDay(req, res, date) {

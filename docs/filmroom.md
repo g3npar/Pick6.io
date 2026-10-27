@@ -62,10 +62,6 @@ The shuffle is based on `FILMROOM_SECRET` (or `JWT_SECRET` if that isn't set). T
 
 `FILMROOM_EPOCH` in `api/filmroom.js` is the first day, which is Film Room #1.
 
-## Generate puzzle button
-
-For testing there's a "Generate puzzle" button that loads a random practice puzzle. It only exists in the dev build, it's not in the real site at all, and the `/filmroom/practice` route is turned off in production. Practice games are never saved. The puzzle comes with an encrypted token instead of the answer, so the network tab doesn't give it away.
-
 ## Archive, leaderboard and rules
 
 Pick 6 and Film Room are both tabs in the nav. Archive and Leaderboard are one tab each with a Pick 6 / Film Room switch at the top, and they open on whichever game you were last on. There's no How to Play page anymore, each game has an "i" button next to its puzzle number that pops up its rules (both games' rules are in `src/components/HowToPlay.jsx`). The Film Room board is `GET /filmroom/leaderboard`, same top 50 by total score as Pick 6, just reading `filmroom_results`.
