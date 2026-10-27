@@ -205,7 +205,17 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     slowTimer.current = setTimeout(() => setSlow(true), 500)
     try {
       const d = await post('/lineup/guess', { date: data.date, local: slimSlots(data.slots), anonId: anonId(), ...body })
-      setData(prev => ({ ...prev, slots: d.slots, score: d.score, completed: d.completed }))
+      // only the guessed logo comes with a picture, keep the rest
+      const same = (a, b) => a.attempts === b.attempts && a.done === b.done
+      if (d.slots.some((s, i) => !s.image && !same(s, data.slots[i]))) {
+        // changed somewhere else (another tab), reload to get the right pictures
+        load()
+        return d
+      }
+      setData(prev => ({
+        ...prev, score: d.score, completed: d.completed,
+        slots: d.slots.map((s, i) => (s.image ? s : { ...s, image: prev.slots[i].image })),
+      }))
       return d
     } catch (e) {
       alert(e.message)

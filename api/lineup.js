@@ -345,12 +345,13 @@ function answerFor(puzzle, i) {
 }
 
 // one slot for the board: the current crop, or the answer once done
-async function slotView(puzzle, dateStr, i, state) {
+// withImage false leaves the picture out, the browser already has it
+async function slotView(puzzle, dateStr, i, state, withImage = true) {
+  const done = slotDone(state)
+  const view = { ...state, done, ...(done ? { answer: answerFor(puzzle, i) } : {}) }
   // the saved answer image, so it shows instantly
-  if (slotDone(state)) {
-    return { ...state, done: true, answer: answerFor(puzzle, i), image: await cropImage(puzzle, dateStr, i, REVEAL_LEVEL) }
-  }
-  return { ...state, done: false, image: await cropImage(puzzle, dateStr, i, state.attempts) }
+  if (withImage) view.image = await cropImage(puzzle, dateStr, i, done ? REVEAL_LEVEL : state.attempts)
+  return view
 }
 
 async function fetchGame(userId, date) {
@@ -516,7 +517,8 @@ router.post('/guess', optionalAuth, async (req, res) => {
     if (completed) await recordScore('lineup', date, scoreOf(slots), req.userId, req.body?.anonId)
     res.json({
       correct,
-      slots: await Promise.all(slots.map((st, i) => slotView(puzzle, date, i, st))),
+      // only the guessed logo's picture changes, so the others are left out (saves ~80% of the bytes)
+      slots: await Promise.all(slots.map((st, i) => slotView(puzzle, date, i, st, i === slot))),
       score: scoreOf(slots), completed,
     })
   } catch (err) {

@@ -68,4 +68,4 @@ Only works if your email is in `ADMIN_EMAILS`.
 
 `GET /health` just returns `{ ok: true }` so Render can check the server is up.
 
-Rate limiting is only on in production (60 requests/min overall, stricter for login).
+Rate limiting is only on in production (60 requests/min overall, stricter for login and bug reports). It counts by the player's real IP from the `CF-Connecting-IP` header, because Render's edge is Cloudflare and `req.ip` can be a Cloudflare server that lots of players share.

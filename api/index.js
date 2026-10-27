@@ -68,9 +68,13 @@ ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:'
 // rate limiting only in production
 const RATE_LIMITING_ENABLED = process.env.NODE_ENV === 'production'
 const noopLimiter = (req, res, next) => next()
+// Render's edge is Cloudflare, so req.ip can be a Cloudflare server shared by lots of players.
+// CF-Connecting-IP is the real player (Cloudflare sets it), req.ip is the fallback
+const clientKey = req => rateLimit.ipKeyGenerator(String(req.get('cf-connecting-ip') || req.ip))
 
 const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
+  keyGenerator: clientKey,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
@@ -80,6 +84,7 @@ const apiLimiter = RATE_LIMITING_ENABLED ? rateLimit({
 // tighter limit for auth
 const authLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
+  keyGenerator: clientKey,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -542,6 +547,7 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
 
 const adminLimiter = RATE_LIMITING_ENABLED ? rateLimit({
   windowMs: 60 * 1000,
+  keyGenerator: clientKey,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
