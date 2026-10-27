@@ -23,7 +23,9 @@ Three daily sports trivia games, each scored out of 6:
 - A new puzzle for each game every day, max score **6 points** in each
 - Score **0/6** in any game and it's a Pick 6
 - Missed a day? Past puzzles stay playable in the archive
-- Sign in with Google to save your results across devices, appear on each game's leaderboard, and see your per day stats on your profile
+- Every results screen shows where you placed that day, like **Top 12%**
+- Sign in with Google to save your results across devices and see your per day stats on your profile
+- Found something broken? There's a **Report a bug** link in the footer
 - Each game's rules are behind the **i** next to its puzzle number
 
 ### Pick 6
@@ -82,8 +84,8 @@ How the code works, how to deploy it, and what's planned next live in [`docs/`](
 
 ```
 ├── src/                  # React frontend
-│   ├── components/       # GameBoard (Pick 6), FilmRoomBoard, LineupBoard, Header, HowToPlay, Archive, Leaderboard, Profile, Admin, ...
-│   ├── utils/            # factDisplay, teamLogo, collegeLogo, franchises
+│   ├── components/       # GameBoard (Pick 6), FilmRoomBoard, LineupBoard, Header, HowToPlay, Archive, Profile, BugReport, Admin, ...
+│   ├── utils/            # factDisplay, teamLogo, collegeLogo, franchises, share, percentile
 │   └── App.jsx
 ├── api/                  # Express API server
 │   ├── index.js          # Pick 6 + account routes, security middleware
@@ -91,6 +93,8 @@ How the code works, how to deploy it, and what's planned next live in [`docs/`](
 │   ├── puzzle.js         # Pick 6 puzzle generation logic
 │   ├── filmroom.js       # Film Room
 │   ├── lineup.js         # Logo Lineup, including the server-side logo crops
+│   ├── percentile.js     # each day's Top X%
+│   ├── bugs.js           # bug reports
 │   └── data/             # Film Room seasons + Logo Lineup team and old logo lists
 ├── public/
 │   ├── awards.csv        # HOF, Pro Bowl, All-Pro, MVP, OPOY, DPOY, ROY, CPOY (1957–2025)

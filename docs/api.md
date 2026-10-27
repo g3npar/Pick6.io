@@ -13,7 +13,6 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `GET /puzzle/archive` | List of past puzzles and whether you've done them |
 | `GET /puzzle/portrait/:token` | The player's headshot for the reveal |
 | `GET /players/search?q=` | Player name autocomplete |
-| `GET /leaderboard` | Top 50 Pick 6 players by total score |
 
 ## Film Room stuff
 
@@ -25,7 +24,6 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `POST /filmroom/guess-team` | Checks your team guess and flips the next clue if you miss |
 | `POST /filmroom/result` | Submits your year guess and gets your score |
 | `POST /filmroom/claim` | Saves a game you played signed out to your account after you sign in (only if you have nothing for that day) |
-| `GET /filmroom/leaderboard` | Top 50 Film Room players by total score |
 
 ## Logo Lineup stuff
 
@@ -34,7 +32,13 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `POST /lineup/day` | Today's logos, or an archive day if you send a date. Signed out players send the progress their browser kept, and if you just signed in with nothing saved for the day, that game gets saved to your account. |
 | `POST /lineup/guess` | Checks a guess on one logo and zooms out if you miss, or gives up on just that logo |
 | `GET /lineup/archive` | Every past Logo Lineup day, with your score if you finished it |
-| `GET /lineup/leaderboard` | Top 50 Logo Lineup players by total score |
+
+## Percentiles and bug reports
+
+| Route | What it does |
+|---|---|
+| `GET /percentile?game=&date=&score=&anonId=` | Where a score places among everyone who finished that game on its day: `{ top, players }`, so `top: 12` means "Top 12%". `top` is `null` if nobody else has played yet. You're left out of the count (by your account, or `anonId` if you're signed out) |
+| `POST /bugs` | Sends a bug report from the "Report a bug" page: `{ game, message, contact? }`. Uses the stricter login rate limit so it can't be spammed |
 
 ## Account stuff
 
@@ -44,7 +48,7 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `POST /auth/logout` | Sign out |
 | `GET /auth/me` | Who's signed in |
 | `PUT /auth/username` | Change your username |
-| `GET /auth/history?end=&days=` | Your finished games from all three, grouped by day, for the "Per day stats" on your profile. Comes 14 days at a time ending on `end` (today by default), with each game's first day so days before a game launched don't show it. Paging stops at Pick 6 #1 |
+| `GET /auth/history?end=&days=` | Your finished games from all three, grouped by day, each with your top % for that day, for the "Per day stats" on your profile. Comes 14 days at a time ending on `end` (today by default), with each game's first day so days before a game launched don't show it. Paging stops at Pick 6 #1 |
 | `DELETE /auth/account` | Delete your account and all your results |
 
 ## Admin stuff
@@ -60,6 +64,7 @@ Only works if your email is in `ADMIN_EMAILS`.
 | `POST /admin/preview/alternatives` | Gets other facts you could swap in |
 | `POST /admin/preview/swap` | Swaps a fact |
 | `POST /admin/set` | Saves a puzzle for a future date |
+| `GET /admin/bugs` | The newest 100 bug reports |
 
 `GET /health` just returns `{ ok: true }` so Render can check the server is up.
 

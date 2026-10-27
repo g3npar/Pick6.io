@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
+import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
 import { teamLogo } from '../utils/teamLogo'
 import { formatDate } from '../utils/formatDate'
 import { DIVISIONS, franchiseName, nickname } from '../utils/franchises'
@@ -255,6 +256,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const [shareState, setShareState] = useState('idle')
+  const percentile = usePercentile('filmroom', game?.result ? meta?.date : null, game?.result?.score)
 
   const load = (claimed = false) => {
     setError(null)
@@ -336,8 +338,8 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     startSubmit()
     try {
       const d = await post('/filmroom/result', giveUp
-        ? { ...puzzleRef(), giveUp: true }
-        : { ...puzzleRef(), yearGuess: Number(year), teamFound: game.teamFound, attempts: game.attempts })
+        ? { ...puzzleRef(), anonId: anonId(), giveUp: true }
+        : { ...puzzleRef(), anonId: anonId(), yearGuess: Number(year), teamFound: game.teamFound, attempts: game.attempts })
       setGame(g => ({
         ...g, clues: d.clues, teamDone: true, teamFound: d.teamFound, attempts: d.attempts, answer: d.answer,
         wrongTeams: d.wrongTeams || g.wrongTeams,
@@ -361,7 +363,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
     const text = shareText(`Film Room #${meta.number}`, [
       [tries(r.teamFound, r.attempts), 'Team', r.teamScore, 3],
       [r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥', 'Year', r.yearScore, 3],
-    ], r.score)
+    ], r.score, percentile?.top)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
@@ -540,6 +542,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{result.score}/6</span>
               </div>
+              <TopPercent result={percentile} today={meta.date === todayNY()} />
               {/* 0/6 is a Pick 6 */}
               {scoreTier === 'bad' && (
                 <>

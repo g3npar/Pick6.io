@@ -13,11 +13,13 @@ const tries = (got, attempts) => got ? '🟥'.repeat(Math.max(0, attempts - 1)) 
 function gameLines(day, starts) {
   const p = day.pick6, f = day.filmroom, l = day.lineup
   return [
-    { game: 'Pick 6', score: p?.score, detail: p && [`Lie ${tries(p.lieFound, p.lieAttempts)}`, `Player ${p.playerCorrect ? '🟩' : '🟥'}`] },
+    { game: 'Pick 6', score: p?.score, top: p?.top, detail: p && [`Lie ${tries(p.lieFound, p.lieAttempts)}`, `Player ${p.playerCorrect ? '🟩' : '🟥'}`] },
     // year: 🟩 exact, 🟨 one off, 🟥 missed
-    { game: 'Film Room', score: f?.score, detail: f && [`Team ${tries(f.teamFound, f.teamAttempts)}`, `Year ${f.yearScore === 3 ? '🟩' : f.yearScore === 1 ? '🟨' : '🟥'}`] },
-    { game: 'Logo Lineup', score: l?.score, detail: l && l.logos.map((x, i) => `${LINEUP_LOGOS[i]} ${tries(x.solved, x.attempts)}`) },
+    { game: 'Film Room', score: f?.score, top: f?.top, detail: f && [`Team ${tries(f.teamFound, f.teamAttempts)}`, `Year ${f.yearScore === 3 ? '🟩' : f.yearScore === 1 ? '🟨' : '🟥'}`] },
+    { game: 'Logo Lineup', score: l?.score, top: l?.top, detail: l && l.logos.map((x, i) => `${LINEUP_LOGOS[i]} ${tries(x.solved, x.attempts)}`) },
   ].filter((line, i) => !starts || day.date >= starts[['pick6', 'filmroom', 'lineup'][i]])
+    // where you placed among that day's players
+    .map(line => (line.detail && line.top ? { ...line, detail: [...line.detail, `Top ${line.top}%`] } : line))
 }
 
 const PAGE_DAYS = 14
@@ -178,7 +180,7 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Username</h2>
-          <p>This is the name shown on the leaderboard.</p>
+          <p>This is the name shown on your profile.</p>
           <div className="profile-edit-row">
             <input
               className="profile-input"
@@ -204,7 +206,7 @@ export default function Profile({ user, onUserUpdated, onDeleted }) {
           <h2 className="htp-section-title">Delete account</h2>
           <p>
             This permanently deletes your account along with every puzzle result and
-            in-progress guess tied to it. Your scores disappear from the leaderboard.
+            in-progress guess tied to it.
             This cannot be undone.
           </p>
 

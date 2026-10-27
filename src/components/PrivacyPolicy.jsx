@@ -12,12 +12,12 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Playing without an account</h2>
-          <p>You can play every game without signing up for anything. Your in-progress games are kept in your browser. Each guess is sent to our server so it can be checked, but nothing about your game is saved there. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention. We don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
+          <p>You can play every game without signing up for anything. Your in-progress games are kept in your browser. Each guess is sent to our server so it can be checked. When you finish a game on its day, we save your score with a random ID your browser makes up (not tied to you in any way) so we can show everyone where they placed that day. Nothing else about your game is saved there. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention. We don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
         </div>
 
         <div className="legal-section">
           <h2 className="htp-section-title">If you create an account</h2>
-          <p>Signing in with Google lets you save your results across devices and shows them on the leaderboards and your profile. Creating an account means we store:</p>
+          <p>Signing in with Google lets you save your results across devices and shows them on your profile. Creating an account means we store:</p>
           <ul>
             <li>Your email address and a display name.</li>
             <li>If you sign in with Google, the account identifier Google gives us, not your Google password, which we never see.</li>
@@ -25,12 +25,12 @@ export default function PrivacyPolicy() {
             <li>Your progress in a game you've started but not finished, so you can pick it up on another device.</li>
             <li>A session cookie that keeps you signed in.</li>
           </ul>
-          <p>That's the complete list. We don't collect payment information, location data, or anything beyond what's needed to save your progress and show a leaderboard.</p>
+          <p>That's the complete list. We don't collect payment information, location data, or anything beyond what's needed to save your progress and show where you placed each day.</p>
         </div>
 
         <div className="legal-section">
           <h2 className="htp-section-title">How we use it</h2>
-          <p>Solely to run the features you'd expect: signing you in, saving your results, showing your per day stats on your profile, and listing your username and scores on the leaderboards (as "Anonymous" until you pick a username). We don't sell data, share it with advertisers, or use it for anything beyond operating Pick6.io.</p>
+          <p>Solely to run the features you'd expect: signing you in, saving your results, showing your per day stats on your profile, and counting your score (with no name attached) when we show players where they placed that day. We don't sell data, share it with advertisers, or use it for anything beyond operating Pick6.io.</p>
         </div>
 
         <div className="legal-section">
@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Your rights</h2>
-          <p>You can delete your account and all associated data at any time from your profile settings, or by emailing us. Deleting your account removes your saved results and leaderboard entry.</p>
+          <p>You can delete your account and all associated data at any time from your profile settings, or by emailing us. Deleting your account removes your saved results.</p>
         </div>
 
         <div className="legal-section">

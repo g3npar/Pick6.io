@@ -1552,7 +1552,7 @@ body {
 .legal-section strong { color: var(--text); }
 .legal-section a { color: var(--red); text-decoration: underline; }
 
-/* leaderboard and archive */
+/* archive */
 .board-empty {
   text-align: center;
   font-size: 13px;
@@ -1572,13 +1572,6 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   padding: 10px 16px;
-}
-.board-rank {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text-muted);
-  width: 20px;
-  flex-shrink: 0;
 }
 .board-name {
   font-size: 13px;
@@ -1611,12 +1604,6 @@ body {
   transition: border-color 0.15s, color 0.15s;
 }
 .board-reveal-btn:hover { border-color: var(--border-bright); color: var(--text); }
-.board-score {
-  font-size: 15px;
-  font-weight: 900;
-  color: var(--red);
-  flex-shrink: 0;
-}
 
 kbd {
   display: inline-block;
@@ -2254,3 +2241,20 @@ kbd {
 /* keyboard focus in the Film Room pickers */
 .fr-team-cell:focus-visible,
 .fr-year-cell:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+
+/* where you placed among the day's players, under the total */
+.top-percent { font-size: 13px; color: var(--text-sec); text-align: center; margin: 6px 0 0; }
+.top-percent strong { color: var(--text); font-weight: 800; }
+.top-percent-count { display: block; font-size: 11px; color: var(--text-muted); }
+
+/* report a bug */
+.bug-form { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.bug-label { display: flex; flex-direction: column; gap: 6px; width: 100%; font-size: 13px; font-weight: 700; color: var(--text-sec); }
+.bug-label .profile-input { flex: none; width: 100%; font-family: inherit; }
+.bug-message { resize: vertical; min-height: 110px; }
+.bug-error { color: var(--red); font-size: 13px; margin: 0; }
+.bug-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.bug-item { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.bug-item-message { white-space: pre-wrap; margin: 4px 0 0; color: var(--text); }
+.legal-section .bug-item { padding-left: 0; }
+.legal-section .bug-item::before { content: none; }

@@ -214,6 +214,43 @@ export default function Admin() {
         )}
 
       </div>
+      <BugList />
+    </div>
+  )
+}
+
+const GAME_NAMES = { pick6: 'Pick 6', filmroom: 'Film Room', lineup: 'Logo Lineup', other: 'Other' }
+
+// reports from the "Report a bug" page, newest first
+function BugList() {
+  const [bugs, setBugs] = useState(null)
+  useEffect(() => {
+    fetch(`${API}/admin/bugs`, { credentials: 'include' })
+      .then(r => (r.ok ? r.json() : []))
+      .then(setBugs)
+      .catch(() => setBugs([]))
+  }, [])
+
+  return (
+    <div className="htp-card">
+      <div className="legal-section">
+        <h2 className="htp-section-title">Bug reports</h2>
+        {!bugs && <WheelSpinner size={32} />}
+        {bugs && bugs.length === 0 && <p className="board-empty">No bug reports yet.</p>}
+        {bugs && bugs.length > 0 && (
+          <ul className="bug-list">
+            {bugs.map(b => (
+              <li key={b.id} className="bug-item">
+                <span className="board-meta">
+                  {new Date(b.created_at).toLocaleString()} · {GAME_NAMES[b.game] || b.game}
+                  {(b.email || b.contact) && ` · ${b.email || b.contact}`}
+                </span>
+                <p className="bug-item-message">{b.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }

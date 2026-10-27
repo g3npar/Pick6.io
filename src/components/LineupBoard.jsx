@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText, pts } from '../utils/share'
+import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
 import { formatDate } from '../utils/formatDate'
 import WheelSpinner from './WheelSpinner'
 import RulesButton from './HowToPlay'
@@ -159,6 +160,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
   const slowTimer = useRef(null)
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
   const [shareState, setShareState] = useState('idle')
+  const percentile = usePercentile('lineup', data?.completed ? data.date : null, data?.score)
 
   const firstOpen = slots => Math.max(0, slots.findIndex(s => !s.done))
 
@@ -202,7 +204,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     // spinner only on slow connections
     slowTimer.current = setTimeout(() => setSlow(true), 500)
     try {
-      const d = await post('/lineup/guess', { date: data.date, local: slimSlots(data.slots), ...body })
+      const d = await post('/lineup/guess', { date: data.date, local: slimSlots(data.slots), anonId: anonId(), ...body })
       setData(prev => ({ ...prev, slots: d.slots, score: d.score, completed: d.completed }))
       return d
     } catch (e) {
@@ -247,7 +249,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
     const text = shareText(`Logo Lineup #${data.number}`, data.leagues.map((l, i) => {
       const s = data.slots[i]
       return [tries(s.solved, s.attempts), l.old ? 'Old' : l.label, pointsFor(s), 1]
-    }), data.score)
+    }), data.score, percentile?.top)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
@@ -392,6 +394,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{pts(data.score)}/6</span>
               </div>
+              <TopPercent result={percentile} today={data.date === todayNY()} />
               {/* 0/6 is a Pick 6 */}
               {scoreTier === 'bad' && (
                 <>

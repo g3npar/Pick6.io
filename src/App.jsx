@@ -4,7 +4,7 @@ import Footer from './components/Footer'
 import GameBoard from './components/GameBoard'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
-import Leaderboard from './components/Leaderboard'
+import BugReport from './components/BugReport'
 import Archive from './components/Archive'
 import Admin from './components/Admin'
 import FilmRoomBoard from './components/FilmRoomBoard'
@@ -15,6 +15,7 @@ import WheelSpinner from './components/WheelSpinner'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
+import { anonId } from './utils/percentile'
 
 const API          = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const PUZZLE_COUNT = 3
@@ -56,12 +57,12 @@ function preloadLogos(puzzles) {
 }
 
 function App() {
-  // old How to Play screen goes to Pick 6
+  // old How to Play and Leaderboard screens go to Pick 6
   const [screen, setScreen] = useState(() => {
     const saved = readSessionUI().screen
-    return saved && saved !== 'how-to-play' ? saved : 'daily'
+    return saved && saved !== 'how-to-play' && saved !== 'leaderboard' ? saved : 'daily'
   })
-  // last game played, archive and leaderboard open on it
+  // last game played, archive opens on it
   const [lastGame, setLastGame] = useState(() => readSessionUI().lastGame || 'pick6')
   useEffect(() => {
     if (screen === 'daily') setLastGame('pick6')
@@ -203,6 +204,7 @@ function App() {
       credentials: 'include',
       body: JSON.stringify({
         puzzleDate: activePlayingDate,
+        anonId: anonId(),
         selectedLieId: finalLieId,
         lieAttempts: finalAttempts,
         playerGuess: finalPlayerGuess,
@@ -304,9 +306,9 @@ function App() {
           {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
           {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} signedIn={!!user} />}
           {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} signedIn={!!user} />}
-          {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
           {screen === 'privacy'     && <PrivacyPolicy />}
           {screen === 'terms'       && <TermsOfService />}
+          {screen === 'bug'         && <BugReport defaultGame={lastGame} user={user} />}
           {screen === 'admin'       && <Admin />}
           {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         </main>
@@ -398,9 +400,9 @@ function App() {
         {screen === 'archive' && !viewingArchivePuzzle && !archiveDay && <Archive user={user} defaultGame={lastGame} onPlayDate={handleArchivePlay} />}
         {screen === 'archive' && archiveDay?.game === 'filmroom' && <FilmRoomBoard date={archiveDay.date} signedIn={!!user} />}
         {screen === 'archive' && archiveDay?.game === 'lineup' && <LineupBoard date={archiveDay.date} signedIn={!!user} />}
-        {screen === 'leaderboard' && <Leaderboard defaultGame={lastGame} />}
         {screen === 'privacy'     && <PrivacyPolicy />}
         {screen === 'terms'       && <TermsOfService />}
+        {screen === 'bug'         && <BugReport defaultGame={lastGame} user={user} />}
         {screen === 'admin'       && <Admin />}
         {screen === 'filmroom'    && <FilmRoomBoard signedIn={!!user} />}
         {screen === 'lineup'      && <LineupBoard signedIn={!!user} />}

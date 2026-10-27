@@ -26,7 +26,7 @@ export default function TermsOfService() {
           <ul>
             <li>Scrape, automate, or bulk-request the site or its API outside of normal gameplay.</li>
             <li>Attempt to bypass rate limits, find or exploit security vulnerabilities, or disrupt the service for other players.</li>
-            <li>Use the leaderboard or your account to harass, impersonate, or mislead other users.</li>
+            <li>Use your account to harass, impersonate, or mislead other users.</li>
           </ul>
           <p>We may suspend or terminate access for accounts or activity that violate this.</p>
         </div>
@@ -38,7 +38,7 @@ export default function TermsOfService() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">No warranty</h2>
-          <p>Pick6.io is provided "as is," free of charge, with no guarantee of uptime, accuracy, or availability. We do our best to keep player facts correct, but this is a hobby project maintained by one person. If you spot an error, we'd genuinely like to hear about it, but we can't promise it'll never happen.</p>
+          <p>Pick6.io is provided "as is," free of charge, with no guarantee of uptime, accuracy, or availability. We do our best to keep player facts correct. If you spot an error, we'd genuinely like to hear about it, but we can't promise it'll never happen.</p>
         </div>
 
         <div className="legal-section">

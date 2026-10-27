@@ -9,6 +9,8 @@ There are basically four parts:
   - `auth.js` handles Google sign in and sessions
   - `filmroom.js` is everything for Film Room, the second game (see [filmroom.md](filmroom.md))
   - `lineup.js` is everything for Logo Lineup, the third game (see [lineup.md](lineup.md))
+  - `percentile.js` is the "Top X%" for each day (see below)
+  - `bugs.js` saves bug reports
 - **Database** - Postgres on AWS RDS.
 - **Scripts** (`scripts/`) - Python scripts that pull NFL data into the database. One of them runs every week on a Render cron job.
 
@@ -26,10 +28,24 @@ This is for Pick 6. Film Room and Logo Lineup work the same way but load their o
 
 ## Signed in vs not signed in
 
-- **Not signed in:** you can play, but your result isn't saved. After you finish it asks you to sign in once.
-- **Signed in:** your guesses are tracked on the server (so refreshing doesn't reset your attempts), and your result is saved for the leaderboard.
+- **Not signed in:** you can play, but your result isn't saved (just your score for the percentile, see below). After you finish it asks you to sign in once.
+- **Signed in:** your guesses are tracked on the server (so refreshing doesn't reset your attempts), and your result is saved to your profile.
 
 Either way, your in-progress game is saved in `sessionStorage` so a refresh doesn't wipe it.
+
+## Top X% instead of a leaderboard
+
+There's no leaderboard anymore. An all-time total just rewarded whoever played the most (or binged the archive), so now each results screen says something like "Top 12% today, out of 340 players", and the share text and your profile's per day stats show it too.
+
+- Every finished game goes in the `day_scores` table, signed in or not, but **only if you finished it on the puzzle's own day**. Archive plays don't count, though you still see where you would have placed.
+- Signed out players are counted by a random ID their browser makes (`pick6_anon_id` in localStorage), so refreshing doesn't count you twice. Clearing your browser or switching devices would, which is fine.
+- Ties share the best spot. Top % is `(people who beat you + 1) / (everyone including you)`, so if 3 people played and you tied for first you're Top 33%.
+- When the API starts it copies in old signed in results that were finished on their own day, so days from before this still have numbers.
+- It's live, so your top % can change during the day as more people play.
+
+## Bug reports
+
+The footer has a "Report a bug" link that opens a little form (which game, what happened, and an optional email if you're signed out). Reports go in the `bug_reports` table and show up at the bottom of the Admin page.
 
 ## Keeping the first load fast
 

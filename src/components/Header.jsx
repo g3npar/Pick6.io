@@ -5,13 +5,12 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const logoWrapRef = useRef(null)
 
-  // plain links, archive and leaderboard pick the game on the page
+  // plain links, archive picks the game on the page
   const links = [
     { id: 'daily',       label: 'Pick 6' },
     { id: 'filmroom',    label: 'Film Room' },
     { id: 'lineup',      label: 'Logo Lineup' },
     { id: 'archive',     label: 'Archive' },
-    { id: 'leaderboard', label: 'Leaderboard' },
     ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]
 

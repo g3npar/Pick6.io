@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
+import { usePercentile, TopPercent, todayNY } from '../utils/percentile'
 import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
@@ -98,6 +99,7 @@ function GameBoard({
   const [hoveredIdx,   setHoveredIdx]   = useState(null)
   const [tabIdx,       setTabIdx]       = useState(-1)
   const [shareState, setShareState] = useState('idle') // 'idle' | 'copied'
+  const percentile = usePercentile('pick6', submitted ? puzzle.date : null, currentScore)
   const [confirmingGiveUp, setConfirmingGiveUp] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const wrapRef       = useRef(null)
@@ -226,7 +228,7 @@ function GameBoard({
     const text = shareText(`Pick 6${num}`, [
       [tries(lieFound, lieAttempts), 'Lie', lieScore, 3],
       [playerCorrect ? '🟩' : '🟥', 'Player', playerScore, 3],
-    ], currentScore)
+    ], currentScore, percentile?.top)
     setShareState(await copyText(text) ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
@@ -482,6 +484,7 @@ function GameBoard({
                 <span className="result-table-label">Total</span>
                 <span className="result-table-value">{currentScore}/6</span>
               </div>
+              <TopPercent result={percentile} today={puzzle.date === todayNY()} />
               {scoreTier === 'bad' && (
                 <>
                   <p className="result-table-pick6">You scored a Pick 6.</p>
