@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
 import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
+import UpNext from './UpNext'
 import { teamLogo } from '../utils/teamLogo'
 import { formatDate } from '../utils/formatDate'
 import { DIVISIONS, franchiseName, nickname } from '../utils/franchises'
@@ -234,7 +235,7 @@ function ClueRow({ clue }) {
 }
 
 // no date = today, a date = an archive day
-export default function FilmRoomBoard({ date = null, signedIn = false }) {
+export default function FilmRoomBoard({ date = null, signedIn = false, onPlay }) {
   const [meta, setMeta]         = useState(null)   // { date, number, firstYear, lastYear, signedIn }
   const [game, setGame]         = useState(null)
   const [error, setError]       = useState(null)
@@ -561,6 +562,7 @@ export default function FilmRoomBoard({ date = null, signedIn = false }) {
                 {shareState === 'copied' && <span className="share-toast">Copied!</span>}
                 {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
+              {meta.date === todayNY() && <UpNext current="filmroom" onPlay={onPlay} />}
             </div>
           )}
         </div>

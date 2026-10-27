@@ -410,12 +410,13 @@ function App() {
         {screen === 'terms'       && <TermsOfService />}
         {screen === 'bug'         && <BugReport defaultGame={lastGame} user={user} />}
         {screen === 'admin'       && <Admin />}
-        {screen === 'filmroom'    && <FilmRoomBoard signedIn={!!user} />}
-        {screen === 'lineup'      && <LineupBoard signedIn={!!user} />}
+        {screen === 'filmroom'    && <FilmRoomBoard signedIn={!!user} onPlay={handleNav} />}
+        {screen === 'lineup'      && <LineupBoard signedIn={!!user} onPlay={handleNav} />}
         {screen === 'profile'     && <Profile user={user} onUserUpdated={handleUserUpdated} onDeleted={handleAccountDeleted} />}
         {showBoard && puzzle && (
         <GameBoard
           puzzle={puzzle}
+          onPlay={handleNav}
           totalPuzzles={1}
           selectedLieId={selectedLieId}
           selectedPlayer={selectedPlayer}

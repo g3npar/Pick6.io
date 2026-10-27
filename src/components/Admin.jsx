@@ -52,6 +52,17 @@ export default function Admin() {
       .finally(() => setBusy(false))
   }
 
+  // new players for the next 7 days, saved right away (today stays)
+  const [shufflingWeek, setShufflingWeek] = useState(false)
+  const shuffleWeek = () => {
+    if (!window.confirm('Replace the Pick 6 puzzles for the next 7 days with new random players? Today stays the same.')) return
+    setShufflingWeek(true)
+    postJSON('/admin/shuffle-week', {})
+      .then(() => { setSelected(null); setCandidate(null); load() })
+      .catch(e => alert(e.message))
+      .finally(() => setShufflingWeek(false))
+  }
+
   const regenerateFacts = () => {
     setBusy(true)
     postJSON('/admin/preview/regenerate', { candidate })
@@ -120,6 +131,12 @@ export default function Admin() {
   return (
     <div className="htp-page">
       <div className="htp-card">
+        <div className="stats-head">
+          <h2 className="htp-section-title">Upcoming Pick 6</h2>
+          <button className="profile-btn" onClick={shuffleWeek} disabled={shufflingWeek || busy || !rows}>
+            {shufflingWeek ? <><span className="fr-spinner" aria-hidden="true" />Shuffling…</> : 'Shuffle next 7 days'}
+          </button>
+        </div>
 
         {error && <p className="board-empty">Couldn't load the schedule.</p>}
         {!error && !rows && (
@@ -214,12 +231,90 @@ export default function Admin() {
         )}
 
       </div>
+      <TodayStats />
       <BugList />
     </div>
   )
 }
 
 const GAME_NAMES = { pick6: 'Pick 6', filmroom: 'Film Room', lineup: 'Logo Lineup', other: 'Other' }
+const GAME_IDS = ['pick6', 'filmroom', 'lineup']
+
+// today's players per game, the last week, and finishes per hour
+function TodayStats() {
+  const [stats, setStats] = useState(null)
+  const [error, setError] = useState(false)
+  const load = () => {
+    setStats(null); setError(false)
+    fetch(`${API}/admin/stats`, { credentials: 'include' })
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then(setStats)
+      .catch(() => setError(true))
+  }
+  useEffect(load, [])
+
+  const byGame = stats && Object.fromEntries(stats.games.map(g => [g.game, g]))
+  const days = stats && [...new Set(stats.week.map(w => w.date))]
+  const weekCount = (date, game) => stats.week.find(w => w.date === date && w.game === game)?.players ?? 0
+  const maxHour = stats && Math.max(1, ...stats.hours.map(h => h.finishes))
+  const hourLabel = h => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`
+
+  return (
+    <div className="htp-card">
+      <div className="legal-section">
+        <div className="stats-head">
+          <h2 className="htp-section-title">Today</h2>
+          <button className="profile-btn" onClick={load} disabled={!stats && !error}>Refresh</button>
+        </div>
+        {error && <p className="board-empty">Couldn't load stats.</p>}
+        {!stats && !error && <WheelSpinner size={32} />}
+        {stats && (
+          <>
+            <table className="admin-stats">
+              <thead><tr><th>Game</th><th>Players</th><th>Signed in</th><th>Avg</th></tr></thead>
+              <tbody>
+                {GAME_IDS.map(id => (
+                  <tr key={id}>
+                    <td>{GAME_NAMES[id]}</td>
+                    <td>{byGame[id]?.players ?? 0}</td>
+                    <td>{byGame[id]?.signed_in ?? 0}</td>
+                    <td>{byGame[id] ? `${byGame[id].avg}/6` : '–'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="board-meta">
+              {stats.accounts.total} accounts ({stats.accounts.today} new today) · {stats.bugReports} bug reports
+            </p>
+
+            <h3 className="admin-stats-sub">Finishes per hour (ET)</h3>
+            {stats.hours.length === 0 ? <p className="board-empty">Nobody yet today.</p> : (
+              <div className="admin-hours">
+                {stats.hours.map(h => (
+                  <div key={h.hour} className="admin-hour" title={`${h.finishes} finishes`}>
+                    <span className="admin-hour-bar" style={{ height: `${(h.finishes / maxHour) * 100}%` }} />
+                    <span className="admin-hour-n">{h.finishes}</span>
+                    <span className="admin-hour-label">{hourLabel(h.hour)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <h3 className="admin-stats-sub">Last 7 days</h3>
+            <table className="admin-stats">
+              <thead><tr><th>Day</th>{GAME_IDS.map(id => <th key={id}>{GAME_NAMES[id]}</th>)}</tr></thead>
+              <tbody>
+                {days.map(d => (
+                  <tr key={d}><td>{formatDate(d)}</td>{GAME_IDS.map(id => <td key={id}>{weekCount(d, id)}</td>)}</tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // reports from the "Report a bug" page, newest first
 function BugList() {

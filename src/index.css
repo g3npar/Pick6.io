@@ -2259,3 +2259,40 @@ kbd {
 .legal-section .bug-item { padding-left: 0; }
 .legal-section .bug-item::before { content: none; }
 .top-percent--loading { color: var(--text-muted); }
+
+/* admin today stats */
+.stats-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.admin-stats { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+.admin-stats th { text-align: left; color: var(--text-muted); font-weight: 700; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.admin-stats td { color: var(--text); padding: 5px 6px; border-bottom: 1px solid var(--border); }
+.admin-stats-sub { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 18px 0 6px; }
+.admin-hours { display: flex; align-items: flex-end; gap: 4px; height: 110px; padding-top: 14px; }
+.admin-hour { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.admin-hour-bar { width: 100%; max-width: 22px; background: var(--red); min-height: 2px; }
+.admin-hour-n { position: absolute; top: -14px; font-size: 10px; color: var(--text-sec); }
+.admin-hour-label { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+/* up next, on today's results screens */
+.up-next {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 100%; margin-top: 14px; padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-bright);
+  color: var(--text); font-family: inherit; cursor: pointer;
+}
+.up-next:hover { border-color: var(--red); background: rgba(255, 34, 68, 0.08); }
+.up-next-label { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.up-next-name { font-size: 16px; font-weight: 800; color: var(--text); }
+.up-next-pitch { font-size: 12px; color: var(--text-sec); }
+.up-next-done { margin-top: 14px; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+/* game tabs under the header, phones only */
+.mobile-game-tabs { display: none; }
+@media (max-width: 600px) {
+  .mobile-game-tabs { display: flex; border-top: 1px solid var(--border); }
+  .mobile-game-tab {
+    flex: 1; padding: 9px 4px; background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--text-sec); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .mobile-game-tab + .mobile-game-tab { border-left: 1px solid var(--border); }
+  .mobile-game-tab.active { color: var(--text); border-bottom-color: var(--red); background: rgba(255, 34, 68, 0.08); }
+}

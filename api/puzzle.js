@@ -977,6 +977,24 @@ async function shuffleDailyPuzzle(dateStr) {
   return puzzle
 }
 
+// new random puzzles for several future days, saved in date order so no player repeats
+async function shuffleDates(dates) {
+  const ids = await fetchCurrentPlayerIds()
+  if (!ids.length) throw new Error('No current eligible players found')
+  const attempted = new Set()   // shared, so the same player can't show up twice
+  const out = []
+  for (const [i, dateStr] of [...dates].sort().entries()) {
+    const seed = Date.now() + i
+    // earlier days in the batch are already saved, so they count as recent too
+    const recentlyUsed = await fetchRecentlyUsedPlayerIds(dateStr)
+    const puzzle = await pickOneFromBucket(ids, seedRng(seed), seed, 1, attempted, recentlyUsed)
+    if (!puzzle) throw new Error(`Could not build a puzzle for ${dateStr}`)
+    await setScheduledPuzzle(dateStr, puzzle)
+    out.push({ date: dateStr, scheduled: true, puzzle })
+  }
+  return out
+}
+
 // locks in a puzzle for future dates only
 async function setScheduledPuzzle(dateStr, puzzle) {
   if (dateStr <= todayDateStr()) throw new Error('Can only schedule a date after today')
@@ -1056,7 +1074,7 @@ async function listArchiveDates(limit = 60) {
 module.exports = {
   generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
-  previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
+  previewDailyPuzzle, shuffleDailyPuzzle, shuffleDates, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
   normalizePlayerName: _normName, regeneratePuzzleFacts,
 }

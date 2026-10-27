@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser')
 const {
   generatePlayerPuzzle, getDailyCurrentPuzzle,
   getPuzzleForDate, listArchiveDates, ensurePuzzleSchema, todayDateStr, pool,
-  previewDailyPuzzle, shuffleDailyPuzzle, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
+  previewDailyPuzzle, shuffleDailyPuzzle, shuffleDates, setScheduledPuzzle, getScheduledDates, previewUpcomingDates,
   headshotThumb, loadPortrait, setPuzzleLie, listFactAlternatives, swapPuzzleFact,
   normalizePlayerName, regeneratePuzzleFacts,
 } = require('./puzzle')
@@ -574,6 +574,36 @@ function upcomingDates(days) {
 }
 
 // GET /admin/puzzles status per date
+// GET /admin/stats  today's activity, from day_scores (only games finished on their own day)
+app.get('/admin/stats', requireAuth, requireAdmin, adminLimiter, async (_req, res) => {
+  const today = "(now() AT TIME ZONE 'America/New_York')::date"
+  try {
+    const [games, week, hours, accounts, bugs] = await Promise.all([
+      pool.query(`
+        SELECT game, count(*)::int AS players, count(user_id)::int AS signed_in, round(avg(score), 2)::float AS avg
+        FROM day_scores WHERE puzzle_date = ${today} GROUP BY game
+      `),
+      pool.query(`
+        SELECT to_char(puzzle_date, 'YYYY-MM-DD') AS date, game, count(*)::int AS players
+        FROM day_scores WHERE puzzle_date > ${today} - 7 GROUP BY 1, 2 ORDER BY 1 DESC
+      `),
+      pool.query(`
+        SELECT extract(hour FROM created_at AT TIME ZONE 'America/New_York')::int AS hour, count(*)::int AS finishes
+        FROM day_scores WHERE puzzle_date = ${today} GROUP BY 1 ORDER BY 1
+      `),
+      pool.query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE (created_at AT TIME ZONE 'America/New_York')::date = ${today})::int AS today FROM users`),
+      pool.query('SELECT count(*)::int AS n FROM bug_reports'),
+    ])
+    res.json({
+      games: games.rows, week: week.rows, hours: hours.rows,
+      accounts: accounts.rows[0], bugReports: bugs.rows[0].n,
+    })
+  } catch (err) {
+    console.error('Stats failed:', err.message)
+    res.status(500).json({ error: 'Could not load stats' })
+  }
+})
+
 // GET /admin/bugs  newest bug reports
 app.get('/admin/bugs', requireAuth, requireAdmin, adminLimiter, async (_req, res) => {
   try {
@@ -662,6 +692,16 @@ app.post('/admin/preview/swap', requireAuth, requireAdmin, adminLimiter, async (
 })
 
 // POST /admin/set locks in a puzzle
+// POST /admin/shuffle-week  new random Pick 6 puzzles for the next 7 days, saved right away. today never changes
+app.post('/admin/shuffle-week', requireAuth, requireAdmin, adminLimiter, async (_req, res) => {
+  try {
+    res.json(await shuffleDates(upcomingDates(7)))
+  } catch (err) {
+    console.error('Shuffle week failed:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.post('/admin/set', requireAuth, requireAdmin, adminLimiter, async (req, res) => {
   const { date, puzzle } = req.body || {}
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !puzzle?.facts) {

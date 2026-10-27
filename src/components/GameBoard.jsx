@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
 import { usePercentile, TopPercent, todayNY } from '../utils/percentile'
+import UpNext from './UpNext'
 import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
@@ -90,7 +91,7 @@ function GameBoard({
   submitted, playerCorrect, gaveUp,
   onSelectLie, onSelectPlayer, onBackfillHeadshot,
   onGuessLie, onSubmit, onGiveUp,
-  currentScore, checking,
+  currentScore, checking, onPlay,
 }) {
   const [query,        setQuery]        = useState('')
   const [dropdownOpen, setDropdown]     = useState(false)
@@ -501,6 +502,7 @@ function GameBoard({
                 {shareState === 'copied' && <span className="share-toast">Copied!</span>}
                 {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
+              {puzzle.date === todayNY() && <UpNext current="pick6" onPlay={onPlay} />}
             </div>
           )}
         </div>

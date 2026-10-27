@@ -64,7 +64,9 @@ Only works if your email is in `ADMIN_EMAILS`.
 | `POST /admin/preview/alternatives` | Gets other facts you could swap in |
 | `POST /admin/preview/swap` | Swaps a fact |
 | `POST /admin/set` | Saves a puzzle for a future date |
+| `POST /admin/shuffle-week` | Picks new random players for the next 7 Pick 6 days and saves them right away (no repeats, today never changes). The "Shuffle next 7 days" button on the Admin page |
 | `GET /admin/bugs` | The newest 100 bug reports |
+| `GET /admin/stats` | Today's players and average score per game, finishes per hour, the last 7 days, and account and bug report counts (all from `day_scores`) |
 
 `GET /health` just returns `{ ok: true }` so Render can check the server is up.
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText, pts } from '../utils/share'
 import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
+import UpNext from './UpNext'
 import { formatDate } from '../utils/formatDate'
 import WheelSpinner from './WheelSpinner'
 import RulesButton from './HowToPlay'
@@ -151,7 +152,7 @@ function TeamSearch({ teams, missed, onPick, disabled, hint }) {
 }
 
 // no date = today, a date = an archive day
-export default function LineupBoard({ date = null, signedIn = false }) {
+export default function LineupBoard({ date = null, signedIn = false, onPlay }) {
   const [data, setData]     = useState(null)
   const [error, setError]   = useState(null)
   const [current, setCurrent] = useState(0)
@@ -418,6 +419,7 @@ export default function LineupBoard({ date = null, signedIn = false }) {
                 {shareState === 'copied' && <span className="share-toast">Copied!</span>}
                 {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
+              {data.date === todayNY() && <UpNext current="lineup" onPlay={onPlay} />}
             </div>
           )}
         </div>

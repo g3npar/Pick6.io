@@ -95,6 +95,19 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
         </div>
 
       </div>
+
+      {/* phones hide the nav, so the three games always show as tabs */}
+      <nav className="mobile-game-tabs" aria-label="Games">
+        {links.slice(0, 3).map(l => (
+          <button
+            key={l.id}
+            className={`mobile-game-tab${screen === l.id ? ' active' : ''}`}
+            onClick={() => onNav(l.id)}
+          >
+            {l.label}
+          </button>
+        ))}
+      </nav>
     </header>
   )
 }
