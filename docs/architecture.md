@@ -45,7 +45,7 @@ There's no leaderboard anymore. An all-time total just rewarded whoever played t
 
 ## Getting people to the other games
 
-- On phones the header nav is hidden, so there's a row of three game tabs (Pick 6 | Film Room | Logo Lineup) under the header. Archive and the rest are still in the ▾ menu by the logo.
+- On phones the header nav is hidden, so there's a row of three game tabs (Pick 6 | Logo Lineup | Film Room) under the header. Archive and the rest are still in the ▾ menu by the logo.
 - Today's results screen in each game has an "Up next" button (`src/components/UpNext.jsx`) pointing at a game you haven't finished today, in the order Pick 6 → Logo Lineup → Film Room. Which games you've finished is kept in localStorage (`pick6_played_today`), so it's per browser. Once you've done all three it says so instead. Archive days don't show it.
 
 ## Bug reports

@@ -8,8 +8,8 @@ function Header({ screen, onNav, user, onSignedIn, onSignOut }) {
   // plain links, archive picks the game on the page
   const links = [
     { id: 'daily',       label: 'Pick 6' },
-    { id: 'filmroom',    label: 'Film Room' },
     { id: 'lineup',      label: 'Logo Lineup' },
+    { id: 'filmroom',    label: 'Film Room' },
     { id: 'archive',     label: 'Archive' },
     ...(user?.isAdmin ? [{ id: 'admin', label: 'Admin' }] : []),
   ]

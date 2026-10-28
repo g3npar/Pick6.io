@@ -6,8 +6,8 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 const GAMES = {
   pick6:    { title: 'Pick 6',    path: '/puzzle/archive' },
-  filmroom: { title: 'Film Room', path: '/filmroom/archive' },
   lineup:   { title: 'Logo Lineup', path: '/lineup/archive' },
+  filmroom: { title: 'Film Room', path: '/filmroom/archive' },
 }
 
 // cached per game to avoid a loading flash

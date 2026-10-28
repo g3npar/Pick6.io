@@ -4,8 +4,8 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 const GAMES = [
   ['pick6', 'Pick 6'],
-  ['filmroom', 'Film Room'],
   ['lineup', 'Logo Lineup'],
+  ['filmroom', 'Film Room'],
   ['other', 'Something else'],
 ]
 
