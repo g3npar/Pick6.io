@@ -257,7 +257,7 @@ app.get('/puzzle/date/:date', optionalAuth, async (req, res) => {
 
 // POST /puzzle/guess-lie server verified guess
 app.post('/puzzle/guess-lie', optionalAuth, async (req, res) => {
-  const { puzzleDate, factId, giveUp } = req.body || {}
+  const { puzzleDate, factId, giveUp, attempts: sentMisses } = req.body || {}
   const date  = puzzleDate
   const today = todayDateStr()
   if (!isPick6Day(date)) return res.status(400).json({ error: 'Invalid date' })
@@ -277,9 +277,10 @@ app.post('/puzzle/guess-lie', optionalAuth, async (req, res) => {
     }
 
     if (!req.userId) {
-      // anonymous verified but not persisted
+      // anonymous verified but not persisted. the browser sends its misses so far, so the 3rd miss reveals the lie
       const correct = !giveUp && factId === puzzle.falseFactId
-      const liePhaseComplete = correct || !!giveUp
+      const misses = Number.isInteger(sentMisses) ? Math.min(Math.max(sentMisses, 0), 2) : 0
+      const liePhaseComplete = correct || !!giveUp || misses + 1 >= 3
       return res.json({
         correct, lieFound: correct, lieAttempts: null, wrongIds: null, liePhaseComplete,
         ...(liePhaseComplete
@@ -522,6 +523,13 @@ app.post('/puzzle/result', optionalAuth, async (req, res) => {
       attempts = Number(lieAttempts)
       if (!Number.isInteger(attempts) || attempts < 0 || attempts > 3) attempts = 3
       lieFound = Number.isInteger(selectedLieId) && selectedLieId === puzzle.falseFactId
+    }
+
+    // a guess has to be a real player from the search list (empty means gave up)
+    const guessName = String(playerGuess ?? '').trim()
+    if (guessName) {
+      const known = await pool.query('SELECT 1 FROM players WHERE LOWER(name) = LOWER($1) LIMIT 1', [guessName])
+      if (!known.rows.length) return res.status(400).json({ error: 'Pick a player from the list' })
     }
 
     const playerCorrect = normalizePlayerName(playerGuess) === normalizePlayerName(puzzle.playerName)

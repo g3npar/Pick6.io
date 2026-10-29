@@ -94,6 +94,8 @@ function GameBoard({
   currentScore, checking, onPlay,
 }) {
   const [query,        setQuery]        = useState('')
+  // the name picked from the dropdown, typing alone can't be submitted
+  const [pickedName,   setPickedName]   = useState('')
   const [dropdownOpen, setDropdown]     = useState(false)
   const [results,      setResults]      = useState([])
   const [searching,    setSearching]    = useState(false)
@@ -182,7 +184,7 @@ function GameBoard({
   }
 
   const handleSelect = item => {
-    setQuery(item.name); onSelectPlayer(item.name, item.headshot_url || null)
+    setQuery(item.name); setPickedName(item.name); onSelectPlayer(item.name, item.headshot_url || null)
     setDropdown(false); setResults([]); setTabIdx(-1)
   }
 
@@ -196,7 +198,7 @@ function GameBoard({
       e.preventDefault()
       const next = (tabIdx + 1) % results.length
       setTabIdx(next)
-      setQuery(results[next].name)
+      setQuery(results[next].name); setPickedName(results[next].name)
       onSelectPlayer(results[next].name, results[next].headshot_url || null)
     } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dropdownOpen && results.length > 0) {
       // move the highlight
@@ -235,7 +237,7 @@ function GameBoard({
   }
 
   const canGuessLie     = selectedLieId !== null && !liePhaseComplete
-  const canSubmitPlayer = selectedPlayer.trim().length > 0 && liePhaseComplete && !submitted
+  const canSubmitPlayer = !!pickedName && selectedPlayer === pickedName && liePhaseComplete && !submitted
 
   const scoreTier = currentScore === 6 ? 'good' : currentScore === 0 ? 'bad' : 'mid'
 

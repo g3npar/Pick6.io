@@ -352,7 +352,8 @@ function App() {
     try {
       const r = await fetch(`${API}/puzzle/guess-lie`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ puzzleDate: activePlayingDate, factId }),
+        // misses so far, signed out players need it for the 3rd miss to reveal the lie
+        body: JSON.stringify({ puzzleDate: activePlayingDate, factId, attempts: lieAttempts }),
       })
       data = r.ok ? await r.json() : null
     } catch { data = null }

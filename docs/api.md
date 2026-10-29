@@ -8,8 +8,8 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 |---|---|
 | `GET /puzzle/today/current` | Today's puzzle (without the answers) |
 | `GET /puzzle/date/:date` | A past puzzle from the archive |
-| `POST /puzzle/guess-lie` | Checks your guess for the lie |
-| `POST /puzzle/result` | Submits your player guess and gets your score. The server calculates the score itself so you can't fake it. |
+| `POST /puzzle/guess-lie` | Checks your guess for the lie. Signed out players send how many misses they have so far, so the 3rd miss reveals the lie |
+| `POST /puzzle/result` | Submits your player guess and gets your score. The server calculates the score itself so you can't fake it, and the guess has to be a real player (the browser only lets you submit a name picked from the search list). |
 | `GET /puzzle/archive` | List of past puzzles and whether you've done them |
 | `GET /puzzle/portrait/:token` | The player's headshot for the reveal |
 | `GET /players/search?q=` | Player name autocomplete |
