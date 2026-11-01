@@ -42,6 +42,7 @@ There's no leaderboard anymore. An all-time total just rewarded whoever played t
 - Ties share the best spot. Top % is `(people who beat you + 1) / (everyone including you)`, so if 3 people played and you tied for first you're Top 33%.
 - When the API starts it copies in old signed in results that were finished on their own day, so days from before this still have numbers.
 - It's live, so your top % can change during the day as more people play.
+- **Streaks** come from the same table: the number of days in a row you finished that game on its own day (each game has its own). Today's results screen shows "🔥 4-day streak", plus your best if it's higher. Signed out players' streaks follow their browser's random ID, so clearing the browser or switching phones starts over, and playing signed out then signing in doesn't carry over.
 
 ## Getting people to the other games
 

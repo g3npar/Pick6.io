@@ -37,7 +37,7 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 
 | Route | What it does |
 |---|---|
-| `GET /percentile?game=&date=&score=&anonId=` | Where a score places among everyone who finished that game on its day: `{ top, players }`, so `top: 12` means "Top 12%". `top` is `null` if nobody else has played yet. You're left out of the count (by your account, or `anonId` if you're signed out) |
+| `GET /percentile?game=&date=&score=&anonId=` | Where a score places among everyone who finished that game on its day: `{ top, players }`, so `top: 12` means "Top 12%". `top` is `null` if nobody else has played yet. You're left out of the count (by your account, or `anonId` if you're signed out). For today's puzzle it also returns `streak: { current, best }`, days in a row you finished that game |
 | `POST /bugs` | Sends a bug report from the "Report a bug" page: `{ game, message, contact? }`. Uses the stricter login rate limit so it can't be spammed |
 
 ## Tracking

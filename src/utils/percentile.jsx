@@ -47,12 +47,26 @@ export function TopPercent({ result, today }) {
     return <p className="top-percent top-percent--loading"><span className="fr-spinner" aria-hidden="true" />Seeing how everyone did…</p>
   }
   if (result.top === null) {
-    return today ? <p className="top-percent">You're the first to finish today</p> : null
+    return today ? <><p className="top-percent">You're the first to finish today</p><Streak streak={result.streak} /></> : null
   }
   return (
-    <p className="top-percent">
-      <strong>Top {result.top}%</strong> {today ? 'today' : 'of players that day'}
-      <span className="top-percent-count">out of {result.players} {result.players === 1 ? 'player' : 'players'}</span>
+    <>
+      <p className="top-percent">
+        <strong>Top {result.top}%</strong> {today ? 'today' : 'of players that day'}
+        <span className="top-percent-count">out of {result.players} {result.players === 1 ? 'player' : 'players'}</span>
+      </p>
+      <Streak streak={result.streak} />
+    </>
+  )
+}
+
+// days in a row on today's puzzle, e.g. "🔥 4-day streak · best 6"
+function Streak({ streak }) {
+  if (!streak) return null
+  return (
+    <p className="streak">
+      <span aria-hidden="true">🔥</span> <strong>{streak.current}-day streak</strong>
+      {streak.best > streak.current && <span className="streak-best"> · best {streak.best}</span>}
     </p>
   )
 }

@@ -58,6 +58,29 @@ async function percentileOf(game, date, score, userId, anonId) {
   return { top: topPercent(higher, others), players: others + 1 }
 }
 
+// days in a row you finished this game on its own day. asked for right after finishing today,
+// so today counts even if its score hasn't been saved yet
+const dayBefore = date => { const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10) }
+async function streakOf(game, today, userId, anonId) {
+  const who = userId ? 'user_id = $2' : isAnonId(anonId) ? 'anon_id = $2' : null
+  if (!who) return null
+  const r = await pool.query(
+    `SELECT DISTINCT to_char(puzzle_date, 'YYYY-MM-DD') AS d FROM day_scores WHERE game = $1 AND ${who} ORDER BY d DESC LIMIT 400`,
+    [game, userId || anonId]
+  )
+  const days = new Set([today, ...r.rows.map(x => x.d)])
+  let current = 0
+  for (let d = today; days.has(d); d = dayBefore(d)) current++
+  // longest run anywhere
+  let best = 0, run = 0, prev = null
+  for (const d of [...days].sort()) {
+    run = prev && dayBefore(d) === prev ? run + 1 : 1
+    best = Math.max(best, run)
+    prev = d
+  }
+  return { current, best }
+}
+
 // for the profile: top % for each of a user's days in one query per game
 async function percentilesFor(userId, game, rows) {
   if (!rows.length) return new Map()
@@ -76,7 +99,7 @@ const express = require('express')
 const { optionalAuth } = require('./auth')
 const router = express.Router()
 
-// GET /percentile?game=&date=&score=&anonId=
+// GET /percentile?game=&date=&score=&anonId=  top %, plus your streak on today's puzzle
 router.get('/', optionalAuth, async (req, res) => {
   const { game, date, anonId } = req.query
   const score = Number(req.query.score)
@@ -84,7 +107,12 @@ router.get('/', optionalAuth, async (req, res) => {
     return res.status(400).json({ error: 'Invalid request' })
   }
   try {
-    res.json(await percentileOf(game, date, score, req.userId, anonId))
+    const today = date === todayDateStr()
+    const [pct, streak] = await Promise.all([
+      percentileOf(game, date, score, req.userId, anonId),
+      today ? streakOf(game, date, req.userId, anonId) : null,
+    ])
+    res.json({ ...pct, streak })
   } catch (err) {
     console.error('Percentile failed:', err.message)
     res.status(500).json({ error: 'Could not load percentile' })
