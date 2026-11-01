@@ -26,12 +26,14 @@ function markPlayed(game) {
   return games
 }
 
-// time until the next puzzles (midnight ET)
+// time until the next puzzles (midnight ET). ET is UTC-4 or UTC-5, so try both and keep the one
+// that really is midnight there. works in any time zone and on daylight saving days (those are 23 or 25 hours)
 function untilMidnightET() {
-  const ny = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }))
-  const next = new Date(ny)
-  next.setHours(24, 0, 0, 0)
-  return next - ny
+  const [y, m, d] = todayNY().split('-').map(Number)
+  const tomorrow = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10)
+  const midnight = [4, 5].map(h => Date.UTC(y, m - 1, d + 1, h))
+    .find(t => new Date(t).toLocaleString('en-CA', { timeZone: 'America/New_York', hourCycle: 'h23' }).startsWith(`${tomorrow}, 00:00`))
+  return (midnight ?? Date.UTC(y, m - 1, d + 1, 5)) - Date.now()
 }
 
 function Countdown() {
