@@ -48,6 +48,12 @@ There's no leaderboard anymore. An all-time total just rewarded whoever played t
 - On phones the header nav is hidden, so there's a row of three game tabs (Pick 6 | Logo Lineup | Film Room) under the header. Archive and the rest are still in the ▾ menu by the logo.
 - Today's results screen in each game has an "Up next" button (`src/components/UpNext.jsx`) pointing at a game you haven't finished today, in the order Pick 6 → Logo Lineup → Film Room. Which games you've finished is kept in localStorage (`pick6_played_today`), so it's per browser. Once you've done all three it says so instead. Archive days don't show it.
 
+## Add to Home Screen
+
+`public/manifest.webmanifest` plus the icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`) let people add Pick6 to their phone's home screen, and it opens full screen like an app. There's **no service worker on purpose**: the home screen app loads the site from the network every time, so a deploy shows up right away, same as in a browser. Since a home screen app can sit in the background for hours, `App.jsx` reloads the page when it comes back and the day (ET) has changed. The results screens also show a countdown to the next puzzles.
+
+On phones, today's results screen also has an "Add Pick6 to your home screen" button (`src/components/InstallPrompt.jsx`). On Android it opens Chrome's real install dialog (Chrome hands it over with the `beforeinstallprompt` event, and the button only shows when it has). On iPhone, Safari doesn't let sites install, so it shows the Share → Add to Home Screen steps instead. It hides once installed, and "Not now" hides it for a week.
+
 ## Bug reports
 
 The footer has a "Report a bug" link that opens a little form (which game, what happened, and an optional email if you're signed out). Reports go in the `bug_reports` table and show up at the bottom of the Admin page.

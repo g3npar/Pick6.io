@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
 import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
 import UpNext from './UpNext'
+import { trackEvent } from '../utils/track'
 import { teamLogo } from '../utils/teamLogo'
 import { formatDate } from '../utils/formatDate'
 import { DIVISIONS, franchiseName, nickname } from '../utils/franchises'
@@ -365,7 +366,9 @@ export default function FilmRoomBoard({ date = null, signedIn = false, onPlay })
       [tries(r.teamFound, r.attempts), 'Team', r.teamScore, 3],
       [r.yearScore === 3 ? '🟩' : r.yearScore > 0 ? '🟨' : '🟥', 'Year', r.yearScore, 3],
     ], r.score)
-    setShareState(await copyText(text) ? 'copied' : 'failed')
+    const copied = await copyText(text)
+    if (copied) trackEvent('share', 'filmroom')
+    setShareState(copied ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 

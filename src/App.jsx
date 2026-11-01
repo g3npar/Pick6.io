@@ -15,7 +15,8 @@ import WheelSpinner from './components/WheelSpinner'
 import { parseFact } from './utils/factDisplay'
 import { teamLogo } from './utils/teamLogo'
 import { collegeLogo } from './utils/collegeLogo'
-import { anonId } from './utils/percentile'
+import { anonId, todayNY } from './utils/percentile'
+import { trackVisit } from './utils/track'
 
 const API          = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const PUZZLE_COUNT = 3
@@ -170,7 +171,17 @@ function App() {
       .catch(err => console.error('Failed to load puzzle:', err))
   }
 
+  // a home screen app can sit in the background for hours, so reload once a new day starts
   useEffect(() => {
+    const day = todayNY()
+    const check = () => { if (document.visibilityState === 'visible' && todayNY() !== day) window.location.reload() }
+    document.addEventListener('visibilitychange', check)
+    window.addEventListener('focus', check)
+    return () => { document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check) }
+  }, [])
+
+  useEffect(() => {
+    trackVisit()
     loadTodayPuzzle()
 
     // restore archive puzzle after reload

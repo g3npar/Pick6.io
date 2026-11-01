@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { shareText, tries, copyText } from '../utils/share'
 import { usePercentile, TopPercent, todayNY } from '../utils/percentile'
 import UpNext from './UpNext'
+import { trackEvent } from '../utils/track'
 import { parseFact } from '../utils/factDisplay'
 import { teamLogo } from '../utils/teamLogo'
 import { collegeLogo } from '../utils/collegeLogo'
@@ -232,7 +233,9 @@ function GameBoard({
       [tries(lieFound, lieAttempts), 'Lie', lieScore, 3],
       [playerCorrect ? '🟩' : '🟥', 'Player', playerScore, 3],
     ], currentScore)
-    setShareState(await copyText(text) ? 'copied' : 'failed')
+    const copied = await copyText(text)
+    if (copied) trackEvent('share', 'pick6')
+    setShareState(copied ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 

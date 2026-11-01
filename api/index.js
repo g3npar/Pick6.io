@@ -21,6 +21,7 @@ const { filmroomRouter, ensureFilmroomSchema, FILMROOM_EPOCH } = require('./film
 const { lineupRouter, ensureLineupSchema, warmLineup, LINEUP_EPOCH } = require('./lineup')
 const { ensurePercentileSchema, recordScore, percentilesFor, percentileRouter } = require('./percentile')
 const { ensureBugSchema, bugsRouter, listBugs } = require('./bugs')
+const { ensureTrackSchema, trackRouter, trafficStats } = require('./track')
 
 const app = express()
 
@@ -62,6 +63,7 @@ ensureAuthSchema(pool)
   // reads all three games' results, so it goes last
   .then(() => ensurePercentileSchema(pool).catch(err => console.error('Percentile schema init failed:', err.message)))
   .then(() => ensureBugSchema(pool).catch(err => console.error('Bug report schema init failed:', err.message)))
+  .then(() => ensureTrackSchema(pool).catch(err => console.error('Tracking schema init failed:', err.message)))
   .catch(err => console.error('Auth schema init failed:', err.message))
 ensurePuzzleSchema(pool).catch(err => console.error('Puzzle schema init failed:', err.message))
 
@@ -586,7 +588,7 @@ function upcomingDates(days) {
 app.get('/admin/stats', requireAuth, requireAdmin, adminLimiter, async (_req, res) => {
   const today = "(now() AT TIME ZONE 'America/New_York')::date"
   try {
-    const [games, week, hours, accounts, bugs] = await Promise.all([
+    const [games, week, hours, accounts, bugs, traffic] = await Promise.all([
       pool.query(`
         SELECT game, count(*)::int AS players, count(user_id)::int AS signed_in, round(avg(score), 2)::float AS avg
         FROM day_scores WHERE puzzle_date = ${today} GROUP BY game
@@ -601,10 +603,11 @@ app.get('/admin/stats', requireAuth, requireAdmin, adminLimiter, async (_req, re
       `),
       pool.query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE (created_at AT TIME ZONE 'America/New_York')::date = ${today})::int AS today FROM users`),
       pool.query('SELECT count(*)::int AS n FROM bug_reports'),
+      trafficStats(),
     ])
     res.json({
       games: games.rows, week: week.rows, hours: hours.rows,
-      accounts: accounts.rows[0], bugReports: bugs.rows[0].n,
+      accounts: accounts.rows[0], bugReports: bugs.rows[0].n, traffic,
     })
   } catch (err) {
     console.error('Stats failed:', err.message)
@@ -728,6 +731,7 @@ app.use('/lineup', lineupRouter)
 app.use('/percentile', percentileRouter)
 // tighter limit so the form can't be spammed
 app.use('/bugs', authLimiter, bugsRouter)
+app.use('/track', trackRouter)
 
 // 404 unmatched route
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))

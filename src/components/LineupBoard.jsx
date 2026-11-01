@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { shareText, tries, copyText, pts } from '../utils/share'
 import { usePercentile, TopPercent, todayNY, anonId } from '../utils/percentile'
 import UpNext from './UpNext'
+import { trackEvent } from '../utils/track'
 import { formatDate } from '../utils/formatDate'
 import WheelSpinner from './WheelSpinner'
 import RulesButton from './HowToPlay'
@@ -261,7 +262,9 @@ export default function LineupBoard({ date = null, signedIn = false, onPlay }) {
       const s = data.slots[i]
       return [tries(s.solved, s.attempts), l.old ? 'Old' : l.label, pointsFor(s), 1]
     }), data.score)
-    setShareState(await copyText(text) ? 'copied' : 'failed')
+    const copied = await copyText(text)
+    if (copied) trackEvent('share', 'lineup')
+    setShareState(copied ? 'copied' : 'failed')
     setTimeout(() => setShareState('idle'), 1800)
   }
 

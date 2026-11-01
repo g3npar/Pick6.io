@@ -40,6 +40,15 @@ All the routes are in `api/index.js`. Logging in sets a `session` cookie.
 | `GET /percentile?game=&date=&score=&anonId=` | Where a score places among everyone who finished that game on its day: `{ top, players }`, so `top: 12` means "Top 12%". `top` is `null` if nobody else has played yet. You're left out of the count (by your account, or `anonId` if you're signed out) |
 | `POST /bugs` | Sends a bug report from the "Report a bug" page: `{ game, message, contact? }`. Uses the stricter login rate limit so it can't be spammed |
 
+## Tracking
+
+Simple counts for the Admin page. Visitors are the same random browser ID the percentile uses, nothing else is stored.
+
+| Route | What it does |
+|---|---|
+| `POST /track/visit` | `{ anonId }`, sent once a day per browser. Goes in `daily_visitors`, which is how the Admin page counts visitors and how many came back |
+| `POST /track/event` | `{ kind: 'share' \| 'install', game? }` adds 1 to that day's count in `daily_events` |
+
 ## Account stuff
 
 | Route | What it does |
@@ -66,7 +75,7 @@ Only works if your email is in `ADMIN_EMAILS`.
 | `POST /admin/set` | Saves a puzzle for a future date |
 | `POST /admin/shuffle-week` | Picks new random players for the next 7 Pick 6 days and saves them right away (no repeats, today never changes). The "Shuffle next 7 days" button on the Admin page |
 | `GET /admin/bugs` | The newest 100 bug reports |
-| `GET /admin/stats` | Today's players and average score per game, finishes per hour, the last 7 days, and account and bug report counts (all from `day_scores`) |
+| `GET /admin/stats` | Today's players and average score per game, finishes per hour, the last 7 days, account and bug report counts, plus visitors, returning visitors, shares and installs for the last 7 days |
 
 `GET /health` just returns `{ ok: true }` so Render can check the server is up.
 

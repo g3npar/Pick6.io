@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
 
         <div className="legal-section">
           <h2 className="htp-section-title">Playing without an account</h2>
-          <p>You can play every game without signing up for anything. Your in-progress games are kept in your browser. Each guess is sent to our server so it can be checked. When you finish a game on its day, we save your score with a random ID your browser makes up (not tied to you in any way) so we can show everyone where they placed that day. Nothing else about your game is saved there. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention. We don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
+          <p>You can play every game without signing up for anything. Your in-progress games are kept in your browser. Each guess is sent to our server so it can be checked. When you finish a game on its day, we save your score with a random ID your browser makes up (not tied to you in any way) so we can show everyone where they placed that day. That same random ID is also used to count how many people visit each day and how many come back, and we count (without any ID) how often results get shared. Nothing else about your game is saved there. Like most web services, our hosting providers keep short-lived technical logs (e.g. IP address, request time) for security and abuse prevention. We don't use these for tracking or advertising, and we don't run any analytics or ad scripts on this site.</p>
         </div>
 
         <div className="legal-section">

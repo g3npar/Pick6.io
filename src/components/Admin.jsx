@@ -258,6 +258,12 @@ function TodayStats() {
   const weekCount = (date, game) => stats.week.find(w => w.date === date && w.game === game)?.players ?? 0
   const maxHour = stats && Math.max(1, ...stats.hours.map(h => h.finishes))
   const hourLabel = h => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`
+  // visitors, returning, shares and installs by day
+  const traffic = stats?.traffic
+  const trafficDays = traffic && [...new Set([...traffic.visits.map(v => v.date), ...traffic.events.map(e => e.date)])].sort().reverse()
+  const visitsOn = date => traffic.visits.find(v => v.date === date)
+  const eventCount = (date, kind) => traffic.events.filter(e => e.date === date && e.kind === kind).reduce((n, e) => n + e.count, 0)
+  const sharesTitle = date => traffic.events.filter(e => e.date === date && e.kind === 'share').map(e => `${GAME_NAMES[e.game] || e.game}: ${e.count}`).join(', ')
 
   return (
     <div className="htp-card">
@@ -300,7 +306,26 @@ function TodayStats() {
               </div>
             )}
 
-            <h3 className="admin-stats-sub">Last 7 days</h3>
+            <h3 className="admin-stats-sub">Traffic, last 7 days</h3>
+            {trafficDays.length === 0 ? <p className="board-empty">No visits tracked yet.</p> : (
+              <table className="admin-stats">
+                <thead><tr><th>Day</th><th>Visitors</th><th>Returning</th><th>Shares</th><th>Installs</th></tr></thead>
+                <tbody>
+                  {trafficDays.map(d => (
+                    <tr key={d}>
+                      <td>{formatDate(d)}</td>
+                      <td>{visitsOn(d)?.visitors ?? 0}</td>
+                      <td>{visitsOn(d)?.returning ?? 0}</td>
+                      {/* hover for the split by game */}
+                      <td title={sharesTitle(d)}>{eventCount(d, 'share')}</td>
+                      <td>{eventCount(d, 'install')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            <h3 className="admin-stats-sub">Finishes, last 7 days</h3>
             <table className="admin-stats">
               <thead><tr><th>Day</th>{GAME_IDS.map(id => <th key={id}>{GAME_NAMES[id]}</th>)}</tr></thead>
               <tbody>

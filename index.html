@@ -36,6 +36,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- add to home screen. no service worker on purpose, so the app always loads the latest version -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#10121e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Pick6" />
     <!-- self-hosted fonts, see src/index.css -->
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin />
