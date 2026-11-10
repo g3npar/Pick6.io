@@ -417,10 +417,10 @@ export default function LineupBoard({ date = null, signedIn = false, onPlay }) {
                 </>
               )}
               {!data.signedIn && <p className="fr-signin-hint">Sign in to save your Logo Lineup results.</p>}
-              <div className="share-row">
-                <button className="share-btn" onClick={handleShare}>Share Result</button>
-                {shareState === 'copied' && <span className="share-toast">Copied!</span>}
-                {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
+              <div className="result-copy-row">
+                <button className="result-copy-btn" onClick={handleShare}>Share Result</button>
+                {shareState === 'copied' && <span className="result-copy-toast">Copied!</span>}
+                {shareState === 'failed' && <span className="result-copy-toast result-copy-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
               {data.date === todayNY() && <UpNext current="lineup" onPlay={onPlay} />}
             </div>

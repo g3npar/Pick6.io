@@ -1180,13 +1180,14 @@ body {
 .submit-btn:not(:disabled):active { transform: scale(0.98); }
 .submit-btn.submit-btn--green { background: linear-gradient(135deg, #00c47a 0%, #008a50 100%); }
 
-.share-row {
+/* not called "share-*": ad blockers hide elements with those class names */
+.result-copy-row {
   position: relative;
   display: flex;
   justify-content: center;
   padding: 4px 0 8px;
 }
-.share-btn {
+.result-copy-btn {
   padding: 10px 14px;
   font-size: 11px;
   font-weight: 800;
@@ -1200,10 +1201,10 @@ body {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.1s;
 }
-.share-btn:hover  { background: rgba(252, 211, 77, 0.1); }
-.share-btn:active { transform: scale(0.98); }
+.result-copy-btn:hover  { background: rgba(252, 211, 77, 0.1); }
+.result-copy-btn:active { transform: scale(0.98); }
 
-.share-toast {
+.result-copy-toast {
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -1220,7 +1221,7 @@ body {
   pointer-events: none;
   animation: toast-pop 1.8s ease forwards;
 }
-.share-toast--failed {
+.result-copy-toast--failed {
   background: var(--red);
   color: #fff;
 }

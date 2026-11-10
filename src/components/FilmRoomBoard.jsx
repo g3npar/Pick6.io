@@ -560,10 +560,10 @@ export default function FilmRoomBoard({ date = null, signedIn = false, onPlay })
                 </button>
               )}
               {!meta.signedIn && <p className="fr-signin-hint">Sign in to save your Film Room results.</p>}
-              <div className="share-row">
-                <button className="share-btn" onClick={handleShare}>Share Result</button>
-                {shareState === 'copied' && <span className="share-toast">Copied!</span>}
-                {shareState === 'failed' && <span className="share-toast share-toast--failed">Couldn't copy — pick6.io</span>}
+              <div className="result-copy-row">
+                <button className="result-copy-btn" onClick={handleShare}>Share Result</button>
+                {shareState === 'copied' && <span className="result-copy-toast">Copied!</span>}
+                {shareState === 'failed' && <span className="result-copy-toast result-copy-toast--failed">Couldn't copy — pick6.io</span>}
               </div>
               {meta.date === todayNY() && <UpNext current="filmroom" onPlay={onPlay} />}
             </div>

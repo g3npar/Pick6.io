@@ -72,4 +72,5 @@ A puzzle used to take about 1.4 seconds to show up, mostly from things happening
 
 - There are two "epoch" dates. `EPOCH` in `api/puzzle.js` is used to generate puzzles, so **don't change it** or every future puzzle changes. `PUZZLE_EPOCH` in `GameBoard.jsx` is just for the "Pick 6 #N" number, and `PICK6_START` in `api/index.js` has to match it (it's the first day the archive and API allow). All three games launched with #1 on 2026-10-22.
 - `public/awards.csv` only gets read when the API starts, so redeploy after updating it.
+- Don't name classes `share-*` (or similar social-sounding names). Ad blockers like uBlock Origin hide elements with those class names, which made the Share Result button vanish for anyone using one. It's `result-copy-btn` now.
 - The database pool in `api/puzzle.js` needs its `pool.on('error')` handler. RDS sometimes drops idle connections, and without it that crashes the whole API, which shows up in the browser as "Failed to fetch". Logo Lineup's requests also retry once if they can't reach the server.
